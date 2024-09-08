@@ -1,0 +1,29 @@
+FROM python:3.11.9-slim-bullseye
+
+ENV DEBIAN_FRONTEND noninteractive
+
+# Keeps Python from generating .pyc files in the container
+ENV PYTHONDONTWRITEBYTECODE 1
+
+# Turns off buffering for easier container logging
+ENV PYTHONUNBUFFERED 1
+
+RUN apt-get update \
+    && apt-get upgrade -y \
+    && apt-get install -y \
+    && apt-get -y install make \
+    && apt-get install python3-dev -y \
+    && apt-get install gcc -y \
+    && rm -rf /var/cache/apt/archives/
+
+# RUN apt install -y git
+
+RUN pip install -U pip
+
+ADD build/requirements.txt .
+RUN pip uninstall -y -r requirements.txt --no-cache-dir
+RUN pip install -r requirements.txt --no-cache-dir
+
+ADD /src /src
+
+WORKDIR /src
