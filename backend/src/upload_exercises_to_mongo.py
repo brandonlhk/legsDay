@@ -3,7 +3,7 @@ from pymongo import MongoClient
 import pandas as pd
 
 def connect_exercise_db():
-    mongo_uri = os.getenv('MONGO_URI', 'mongodb://mongodb:27017')
+    mongo_uri = 'mongodb+srv://a9542152:qBieNIqZZsRhEzDr@legsday.69mgs.mongodb.net/?retryWrites=true&w=majority&appName=legsDay'
     client = MongoClient(mongo_uri)
     exercise_db = client['exercise_database']
     return client, exercise_db
