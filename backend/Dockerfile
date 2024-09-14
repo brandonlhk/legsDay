@@ -9,6 +9,7 @@ ENV PYTHONUNBUFFERED 1
 
 # Upgrade pip and install Python dependencies
 RUN pip install --upgrade pip
+RUN python -m pip install "pymongo[srv]"==3.11
 
 # Copy requirements.txt and install Python dependencies
 COPY requirements.txt .
