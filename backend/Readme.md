@@ -2,23 +2,13 @@
 ```
 backend/  
 │  
-├── MongoDriver/  
-│   ├── build/  
-│   │   ├── Dockerfile                   # Dockerfile for the MongoDB driver service  
-│   │   ├── docker-compose.yml           # Docker Compose to run MongoDB and any related configurations  
-|   |   ├── .env                         # environment variables  
-│   │   └── other_config_files           # Any additional config files   
-│   └── src/  
-│       ├── userdbDriver.py              # Code to manage userDB operations  
-│       └── exercisedbDriver.py          # Code to manage exerciseDB operations  
-│  
-├── OtherService1/              
-|   ├── build/                 
-|   └── src/  
-|  
-└── OtherService2/  
-    ├── build/                 
-    └── src/  
+├── Dockerfile                   # Dockerfile for the MongoDB driver service  
+├── docker-compose.yml           # Docker Compose to run MongoDB and any related configurations  
+├── .env                         # environment variables  
+└── other_config_files           # Any additional config files   
+└── src/  
+│   ├── userdbDriver.py              # Code to manage userDB operations  
+│   └── exercisedbDriver.py          # Code to manage exerciseDB operations  
 ```
 
 ## Instructions for Setting Up Docker Environment
@@ -38,13 +28,13 @@ backend/
 
 1. Navigate to the MongoDriver build directory:
    ```bash
-   cd backend/MongoDriver/build
+   cd backend/
 2. Start the Docker services using Docker Compose:
     ```bash
-    docker-compose up --build -d
+    docker build . --tag "bfg-backend"
 3. Access the MongoDriver container:
     ```bash
-    docker exec -it mongo-driver-backend bash
+    docker run -it bfg-backend bash
 
 # Notes
 Notes
