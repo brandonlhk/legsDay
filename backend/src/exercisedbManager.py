@@ -2,7 +2,7 @@ import os
 from pymongo import MongoClient
 
 def connect_exercise_db():
-    mongo_uri = os.getenv('MONGO_URI', 'mongodb://localhost:27017')
+    mongo_uri = os.getenv('MONGO_URI', 'mongodb://mongodb:27017')
     client = MongoClient(mongo_uri)
     exercise_db = client['exercise_database']
     return client, exercise_db

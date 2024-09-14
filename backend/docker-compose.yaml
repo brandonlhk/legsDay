@@ -13,16 +13,15 @@ services:
     networks:
       - backend-network # Optional but useful in local dev
 
-  mongodb-driver:
+  backend:
     build:
-      context: ../
-      dockerfile: build/Dockerfile.dev
-    container_name: mongo-driver-backend
+      dockerfile: Dockerfile
+    container_name: bfg-backend
     stdin_open: true
     tty: true
     env_file: .env
     volumes:
-      - ../src:/src
+      - ./src:/src
       # - ../data:/data
     depends_on:
       - mongodb
