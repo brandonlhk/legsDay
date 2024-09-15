@@ -32,6 +32,7 @@ services:
       - "5000:5000"  # For local testing; AWS Lambda doesn't need this
     networks:
       - backend-network
+    command: uvicorn app:app --reload --host 0.0.0.0 --port 5000
 
 volumes:
   mongo_data: # Local MongoDB data persistence
