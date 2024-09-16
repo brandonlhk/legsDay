@@ -4,7 +4,7 @@ import requests
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, EmailStr, Field
 from typing import Dict, Optional
-from werkzeug.security import check_password_hash
+from werkzeug.security import check_password_hash, generate_password_hash
 from pymongo import MongoClient
 from recommendation import Recommender
 from userdbManager import User
@@ -87,7 +87,7 @@ async def register(request_data: CreateAccountRequest):
         raise HTTPException(status_code=400, detail="Email already exists")
 
     # Hash the password
-    hashed_password = hash_password(password)
+    hashed_password = generate_password_hash(password)
 
     # Create the user object
     new_user = {
