@@ -1,21 +1,47 @@
+import os
 import requests
 from fastapi import FastAPI, HTTPException
-from pydantic import BaseModel
-from typing import Dict
+from pydantic import BaseModel, EmailStr, Field
+from typing import Dict, Optional
+from werkzeug.security import check_password_hash
+from pymongo import MongoClient
 from recommendation import Recommender
+from userdbManager import User
 
 app = FastAPI()
+# MongoDB connection
+mongo_uri = os.getenv('MONGO_URI', 'mongodb+srv://a9542152:qBieNIqZZsRhEzDr@legsday.69mgs.mongodb.net/?retryWrites=true&w=majority&appName=legsDay')
+client = MongoClient(mongo_uri)
+client.server_info()
+user_db = client.user
+user_collection = user_db.users
 
 # Pydantic model for request body validation
 class UserIDRequest(BaseModel):
     userid: str
 
-class PasswordRequest(BaseModel):
+class LoginRequest(BaseModel):
+    username: str
     password: str
 
 class CreateAccountRequest(BaseModel):
-    userid: str
+    email: EmailStr
+    username: str
     password: str
+    age: Optional[float] = Field(0.0, description="Optional age")
+    height: Optional[float] = Field(0.0, description="Optional height")
+    weight: Optional[float] = Field(0.0, description="Optional weight")
+    gender: Optional[str] = Field("", description="Optional gender")
+    frequency: Optional[str] = Field("", description="Optional workout frequency")
+    duration: Optional[str] = Field("", description="Optional workout duration")
+
+# function to check if email input is valid 
+def is_email_valid(email: str):
+    regex = r'^\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b'
+    if (re.fullmatch(regex, email)):
+        return True
+    else:
+        return False
 
 @app.post("/recommend")
 async def recommend_program(request_data: UserIDRequest):
@@ -29,43 +55,73 @@ async def recommend_program(request_data: UserIDRequest):
         user_file = recommender.fetch_user_file(userid)
         program = recommender.recommend_program(user_file)
 
-        response = {'status': 'successful', 'data': program}
+        response = {'message': 'program recommended successfully', 'data': program}
 
         return response
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"An error occurred: {str(e)}")
 
-@app.get("/login")
-# Write login endpoint here
-async def login(request_data: CreateAccountRequest):
-    userid = request_data.userid
+@app.post('/register')
+async def register(request_data: CreateAccountRequest):
+    email = request_data.email
+    username = request_data.username
+    password = request_data.password
+    age = request_data.age
+    height = request_data.height
+    weight = request_data.weight
+    gender = request_data.gender
+    frequency = request_data.frequency
+    duration = request_data.duration
+
+    # Check if email, username, and password are provided (redundant due to Pydantic validation)
+    if not username or not email or not password:
+        raise HTTPException(status_code=400, detail="Email, username, and password are required")
+
+    # Check if email is valid
+    if not is_email_valid(email):
+        raise HTTPException(status_code=400, detail="Invalid email")
+
+    # Check if the email already exists in the database
+    if user_collection.find_one({"email": email}):
+        raise HTTPException(status_code=400, detail="Email already exists")
+
+    # Hash the password
+    hashed_password = hash_password(password)
+
+    # Create the user object
+    new_user = {
+        "email": email,
+        "username": username,
+        "password": hashed_password,  # Store hashed password
+        "age": age,
+        "height": height,
+        "weight": weight,
+        "gender": gender,
+        "frequency": frequency,
+        "duration": duration
+    }
+
+    # Insert the new user into the database
+    result = user_collection.insert_one(new_user)
+
+    return {
+        "message": "User created successfully",
+        "userid": str(result.inserted_id)
+    }
+
+@app.post("/login")
+async def login(request_data: LoginRequest):
+    username = request_data.username
     password = request_data.password
 
-    # Implement your login logic here
-    # For example, check if userid and password match an entry in your database
-    try:
-        # Placeholder for actual login logic
-        if userid == "testuser" and password == "testpassword":  # Replace with actual validation
-            return {"status": "success", "message": "Login successful"}
-        else:
-            raise HTTPException(status_code=401, detail="Invalid credentials")
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"An error occurred: {str(e)}")
+    # Find the user in the database
+    user = user_collection.find_one({"username": username})
 
-
-@app.post("/create")
-async def create_account(request_data: CreateAccountRequest):
-    userid = request_data.userid
-    password = request_data.password
-
-    # Implement your account creation logic here. This should include some logic to write the new account to userdb in mongo.
-    # For example, check if userid already exists and create a new entry in your database
-    try:
-        # Placeholder for actual account creation logic
-        if userid == "testuser":  # Replace with actual check
-            raise HTTPException(status_code=400, detail="User already exists")
-        else:
-            # Create the user in the database
-            return {"status": "success", "message": "Account created successfully"}
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"An error occurred: {str(e)}")
+    # Check if user exists and password is correct
+    if user and check_password_hash(user['password'], password):
+        return {
+            "message": "Login successful",
+            "userid": str(user['_id'])
+        }
+    else:
+        raise HTTPException(status_code=401, detail="Invalid username or password")
