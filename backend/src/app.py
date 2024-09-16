@@ -2,6 +2,7 @@ import os
 import re
 import requests
 from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, EmailStr, Field
 from typing import Dict, Optional
 from werkzeug.security import check_password_hash, generate_password_hash
@@ -10,6 +11,13 @@ from recommendation import Recommender
 from userdbManager import User
 
 app = FastAPI()
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  
+    allow_credentials=True,
+    allow_methods=["*"],  
+    allow_headers=["*"]
+)
 # MongoDB connection
 mongo_uri = os.getenv('MONGO_URI', 'mongodb+srv://a9542152:qBieNIqZZsRhEzDr@legsday.69mgs.mongodb.net/?retryWrites=true&w=majority&appName=legsDay')
 client = MongoClient(mongo_uri)

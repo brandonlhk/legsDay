@@ -1,42 +1,42 @@
-version: '3.8'
-services:
-  mongodb:
-    image: mongo:6.0
-    container_name: mongodb
-    environment:
-      MONGO_INITDB_ROOT_USERNAME: root
-      MONGO_INITDB_ROOT_PASSWORD: password
-    volumes:
-      - mongo_data:/data/db  # Only for local persistence
-    ports:
-      - "27017:27017" # For local testing
-    networks:
-      - backend-network # Optional but useful in local dev
-
-  backend:
-    build:
-      dockerfile: Dockerfile
-    container_name: bfg-backend
-    stdin_open: true
-    tty: true
-    env_file: .env
-    volumes:
-      - ./src:/src
-      # - ../data:/data
-    depends_on:
-      - mongodb
-    environment:
-      MONGO_URI: mongodb://root:password@mongodb:27017
-    # command: python3 exercisedbDriver.py  # Example of starting a service, can run from inside container so commented out
-    ports:
-      - "5000:5000"  # For local testing; AWS Lambda doesn't need this
-    networks:
-      - backend-network
-    command: uvicorn app:app --reload --host 0.0.0.0 --port 5000
-
-volumes:
-  mongo_data: # Local MongoDB data persistence
-
-networks:
-  backend-network: # Local network to connect services
+version: '3.8' 
+services: 
+  # mongodb: 
+  #   image: mongo:6.0 
+  #   container_name: mongodb 
+  #   environment: 
+  #     MONGO_INITDB_ROOT_USERNAME: root 
+  #     MONGO_INITDB_ROOT_PASSWORD: password 
+  #   volumes: 
+  #     - mongo_data:/data/db  # Only for local persistence 
+  #   ports: 
+  #     - "27017:27017" # For local testing 
+  #   networks: 
+  #     - backend-network # Optional but useful in local dev 
+ 
+  backend: 
+    build: 
+      dockerfile: Dockerfile 
+    container_name: bfg-backend 
+    stdin_open: true 
+    tty: true 
+    env_file: .env 
+    volumes: 
+      - ./src:/src 
+      # - ../data:/data 
+    # depends_on: 
+    #   - mongodb 
+    environment: 
+      MONGO_URI: mongodb+srv://a9542152:qBieNIqZZsRhEzDr@legsday.69mgs.mongodb.net/?retryWrites=true&w=majority&appName=legsDay
+    # command: python3 exercisedbDriver.py  # Example of starting a service, can run from inside container so commented out 
+    ports: 
+      - "5000:5000"  # For local testing; AWS Lambda doesn't need this 
+    networks: 
+      - backend-network 
+    command: uvicorn app:app --reload --host 0.0.0.0 --port 5000 
+ 
+# volumes: 
+#   mongo_data: # Local MongoDB data persistence 
+ 
+networks: 
+  backend-network: # Local network to connect services 
     driver: bridge

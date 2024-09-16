@@ -2,7 +2,7 @@
 // import { signInWithEmailAndPassword } from "firebase/auth";
 // import { auth } from "../firebase"
 import { useNavigate } from 'react-router-dom';
-import workoutImg from "../images/workout icon.png"
+import workoutImg from "../images/workout_icon.png"
 
 export default function Login() {
 
@@ -50,10 +50,10 @@ export default function Login() {
             <div className="mt-12 text-center">
               <p className="font-bold text-4xl">Own Time</p>
               <p className="font-bold text-4xl">Own Target</p>
-              <p className="text-content">Helping you with your fitness goals</p>
+              <p className="text-content mt-6 text-gray-500 font-bold">For a healthy you 💚</p>
             </div>
 
-            <button className="btn bg-purple btn-lg mt-12 w-full text-white" onClick={() => navigate("/onboard")}>Create Account</button>
+            <button className="btn bg-purple btn-lg mt-12 w-full text-white rounded-full" onClick={() => navigate("/onboard")}>Create Account</button>
         </div>
       </div>
 

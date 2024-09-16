@@ -11,14 +11,15 @@ export default function Onboard() {
   const [password, setPassword] = useState("")
   const [height, setHeight] = useState("")
   const [weight, setWeight] = useState("")
+  const [age, setAge] = useState("")
   const [gender, setGender] = useState("")
   const [days, setDays] = useState("")
-  const [freq, setFreq] = useState("")
+  const [duration, setDuration] = useState("")
 
   
   const decision = () => {
     if (page === 0) {
-        return navigate("/")
+        return navigate("/login")
     }
     else {
         setPage((pageIndex) => pageIndex - 1)
@@ -33,9 +34,10 @@ export default function Onboard() {
 
   useEffect(() => {
     if (page === 4) {
-        return navigate("/loading")
+        const data = [username, emailAddress, password, height, weight, age, gender, days, duration]
+        return navigate("/loading", {state: {data: data}})
     }
-  }, [page])
+  }, [page, navigate, username, emailAddress, password, height, weight, age, gender, days, duration])
 
     return (
         <div className="min-h-screen bg-gray-50">
@@ -111,6 +113,14 @@ export default function Onboard() {
                             <input type="email" placeholder="Type here" className="input input-bordered w-full" value={weight} onChange={(event) => setWeight(event.target.value)}/>
                         </label>
 
+                        {/* age */}
+                        <label className="form-control w-full">
+                            <div className="label">
+                                <span className="label-text font-bold text-xl">Age</span>
+                            </div>
+                            <input type="email" placeholder="Type here" className="input input-bordered w-full" value={age} onChange={(event) => setAge(event.target.value)}/>
+                        </label>
+
                         {/* Gender */}
                         <label className="form-control w-full">
                             <div className="label">
@@ -118,8 +128,8 @@ export default function Onboard() {
                             </div>
                             <select className="select select-bordered" value={gender} onChange={(event) => setGender(event.target.value)}>
                                 <option disabled selected value="">Pick one option</option>
-                                <option value="male">Male</option>
-                                <option value="female">Female</option>
+                                <option value="M">Male</option>
+                                <option value="F">Female</option>
                             </select>
                         </label>
                     </div>
@@ -133,12 +143,12 @@ export default function Onboard() {
                     {/* Inputs */}
                     <div className="flex flex-col mt-12 gap-4 mb-6" >
                         {/* 2 days */}
-                        {["2 days", "3 days", "4 days", "5 days", "6 days", "7 days"].map((day) => (
-                        <div key={day} className="card border border-slate-300 w-full shadow-md" onClick={() => setDays(day)}>
+                        {["2 days", "3 days", "4 days", "5 days", "6 days", "7 days"].map((day, index) => (
+                        <div key={day} className="card border border-slate-300 w-full shadow-md" onClick={() => setDays(index+2)}>
                         <div className="card-body">
                             <div className="form-control">
                                 <label className="label cursor-pointer flex justify-start">
-                                <input type="radio" name="days" className="radio" value={day} checked={days === day}/>
+                                <input type="radio" name="days" className="radio" value={index+2} checked={days === index+2}/>
                                 <span className="label-text ml-2">{day}</span>
                                 </label>
                             </div>
@@ -160,26 +170,30 @@ export default function Onboard() {
                         {[
                         {
                             "day" : "15 min / day",
-                            "info": "(for sedentary beginners)"
+                            "info": "(for sedentary beginners)",
+                            "value": "15"
                         },
                         {
                             "day" : "20 min / day",
-                            "info": "(for active beginners)"
+                            "info": "(for active beginners)",
+                            "value": "20"
                         },
                         {
                             "day" : "25 min / day",
-                            "info": "(for more active beginners)"
+                            "info": "(for more active beginners)",
+                            "value": "25"
                         },
                         {
                             "day" : "30 min / day",
-                            "info": "(for super active beginners)"
+                            "info": "(for super active beginners)",
+                            "value": "30"
                         },
                             ].map((data, index) => (
-                        <div key={index} className="card border border-slate-300 w-full shadow-md" onClick={() => setFreq(data.day)}>
+                        <div key={index} className="card border border-slate-300 w-full shadow-md" onClick={() => setDuration(data.value)}>
                         <div className="card-body">
                             <div className="form-control">
                                 <label className="label cursor-pointer flex justify-start">
-                                <input type="radio" name="freq" className="radio" value={data.day} checked={freq === data.day}/>
+                                <input type="radio" name="freq" className="radio" value={data.value} checked={duration === data.value}/>
                                 <div className="ml-3">
                                     <span className="label-text">{data.day}</span>
                                     <p className="label-text text-gray-500">{data.info}</p>
