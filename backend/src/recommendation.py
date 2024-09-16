@@ -18,10 +18,10 @@ class Recommender:
         return exp_weights / exp_weights.sum()
 
     def fetch_user_file(self, userid):
-        # user_file = self.user_db.find_one(userid)
+        user_file = self.user_db.find_one(userid)
         # Simulate a hard-coded user file for local testing
-        user_file = {'status': 'advanced'}
-        status = user_file['status']
+        # user_file = {'status': 'advanced'}
+        status = 'advanced'
         
         # Fetch exercises based on the user's status level
         upper = [(i['_id'], random.uniform(0, 1)) for i in self.upper_body.find({}) if i.get(f'{status}_status')]
