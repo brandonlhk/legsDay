@@ -34,6 +34,7 @@ def upload_exercise_csv(path, mydb):
     upper_ld = [{'name': name, 
              'muscle_groups': mg, 
              'youtube_link': yt, 
+             'image_binary': img,
              'recommended_reps': reps, 
              'full_instructions': inst, 
              'form_tips': ft, 
@@ -42,10 +43,11 @@ def upload_exercise_csv(path, mydb):
              'easy_status': bool(e), 
              'beginner_status': bool(b), 
              'advanced_status': bool(a)}
-            for name, mg, yt, reps, inst, ft, pt, rt, e, b, a 
+            for name, mg, yt, img, reps, inst, ft, pt, rt, e, b, a 
             in zip(upper_body['exercise name'], 
                    upper_body['muscle groups'], 
                    upper_body['youtube link'], 
+                   upper_body['image binary'],
                    upper_body['recommended reps'], 
                    upper_body['full instructions'], 
                    upper_body['form tips'], 
@@ -58,6 +60,7 @@ def upload_exercise_csv(path, mydb):
     lower_ld = [{'name': name, 
              'muscle_groups': mg, 
              'youtube_link': yt, 
+             'image_binary': img,
              'recommended_reps': reps, 
              'full_instructions': inst, 
              'form_tips': ft, 
@@ -66,10 +69,11 @@ def upload_exercise_csv(path, mydb):
              'easy_status': bool(e), 
              'beginner_status': bool(b), 
              'advanced_status': bool(a)}
-            for name, mg, yt, reps, inst, ft, pt, rt, e, b, a 
+            for name, mg, yt, img, reps, inst, ft, pt, rt, e, b, a 
             in zip(lower_body['exercise name'], 
                    lower_body['muscle groups'], 
                    lower_body['youtube link'], 
+                   lower_body['image binary'],
                    lower_body['recommended reps'], 
                    lower_body['full instructions'], 
                    lower_body['form tips'], 
@@ -82,6 +86,7 @@ def upload_exercise_csv(path, mydb):
     abs_ld = [{'name': name, 
            'muscle_groups': mg, 
            'youtube_link': yt, 
+           'image_binary': img,
            'recommended_reps': reps, 
            'full_instructions': inst, 
            'form_tips': ft, 
@@ -90,10 +95,11 @@ def upload_exercise_csv(path, mydb):
            'easy_status': bool(e), 
            'beginner_status': bool(b), 
            'advanced_status': bool(a)}
-          for name, mg, yt, reps, inst, ft, pt, rt, e, b, a 
+          for name, mg, yt, img, reps, inst, ft, pt, rt, e, b, a 
           in zip(abdominals['exercise name'], 
                  abdominals['muscle groups'], 
                  abdominals['youtube link'], 
+                 abdominals['image binary'],
                  abdominals['recommended reps'], 
                  abdominals['full instructions'], 
                  abdominals['form tips'], 

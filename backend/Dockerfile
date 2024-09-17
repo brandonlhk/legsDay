@@ -5,7 +5,7 @@ FROM python:3.11.9
 ENV DEBIAN_FRONTEND=noninteractive
 
 # Turns off buffering for easier container logging
-ENV PYTHONUNBUFFERED 1
+ENV PYTHONUNBUFFERED=1
 
 # Upgrade pip and install Python dependencies
 RUN pip install --upgrade pip
@@ -21,3 +21,8 @@ COPY /src /src
 
 # Set working directory
 WORKDIR /src
+
+# Expose port 5000 for the FastAPI app
+EXPOSE 5000
+
+CMD [ "uvicorn", "app:app", "--reload", "--host", "0.0.0.0", "--port", "5000" ]
