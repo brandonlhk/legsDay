@@ -46,7 +46,6 @@ export default function Loading() {
     // send info to userdb manager
     useEffect(() => {
         if (isDataInitialized) {
-            // console.log(username, emailAddress, password, height, weight, age, gender, days, duration)
             const sendData = async () => {
                 
                 try {
@@ -95,8 +94,8 @@ export default function Loading() {
             
                         const result = await response.json();
                         const program = result.data
-                        console.log(program)
-                        localStorage.setItem("program", program)
+                        localStorage.setItem("program", JSON.stringify(program))
+                        navigate("/home")
                     } catch (error) {
                         console.error("Error sending data to recommend program", error)
                     }

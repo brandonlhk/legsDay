@@ -1,8 +1,58 @@
+import {useState} from "react"
 
 export default function Homepage() {
+  
+  const userID = localStorage.getItem("userid")
+  const currProgram = JSON.parse(localStorage.getItem("program"))
+  const [completedExercises, setCompletedExercises] = useState([]);
 
-  console.log(localStorage.getItem("userid"))
-  console.log(localStorage.getItem("program"))
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [currentExercise, setCurrentExercise] = useState(null);
+  const [progress, setProgress] = useState(0)
+
+  const calculateProgress = () => {
+    const freq = 2
+    const toAdd = 100/freq/3
+    setProgress((prevProgress) => prevProgress + toAdd)
+  }
+
+  const embed = (link) => {
+    const videoID = link.split("v=")[1]
+    const newLink = `https://www.youtube.com/embed/${videoID}?autoplay=1`
+    return newLink
+  }
+
+  const seperateMuscleGroups = (groups) => {
+    const muscleGroups = groups.split(";")
+    return muscleGroups
+  }
+
+  const intoOL = (words) => {
+    const newWord = words.split(".")
+    return newWord
+  }
+
+  const openModal = (exercise) => {
+    exercise.youtube_link = embed(exercise.youtube_link)
+    exercise.muscle_groups = seperateMuscleGroups(exercise.muscle_groups)
+    exercise.form_tips = intoOL(exercise.form_tips)
+    if (exercise.progressions !== "") {
+      exercise.progressions = intoOL(exercise.progressions)
+    }
+    setCurrentExercise(exercise);
+    setIsModalOpen(true);
+  };
+
+  const closeModal = () => {
+    setIsModalOpen(false);
+    setCurrentExercise(null);
+  };
+
+  const finishExercise = () => {
+    setCompletedExercises((prevCompleted) => [...prevCompleted, currentExercise._id]);
+    calculateProgress()
+    closeModal();
+  };
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -24,10 +74,12 @@ export default function Homepage() {
               </svg>
             </div>
 
+
+            {/* havent implement the logic for the progress */}
             <div className="w-full">
               <p className="font-bold">Complete the full program for X days</p>
               <div className="flex items-center">
-                <progress className="progress progress-error" value={5} max="100"></progress>
+                <progress className="progress progress-error" value={progress} max="100"></progress>
                 <span className="ml-2">0/X</span>
               </div>
             </div>
@@ -37,9 +89,36 @@ export default function Homepage() {
         </div>
 
         {/* today program */}
-        <div className=" bg-red-400">
-          <p>Today's program</p>
-          <p>Est time to complete: 15 mins</p>
+        <div className="bg-red-400 mt-6 text-center text-white rounded-lg">
+          <p className="text-2xl p-6">Today's program</p>
+          <p className="text-lg">Est time to complete: 15 mins</p>
+
+          {/* Exercises */}
+          <div className="flex-col flex gap-6 p-2 mt-3 mb-20">
+            {Object.keys(currProgram).map((program)=> {
+              const exercise = currProgram[program]
+              const isCompleted = completedExercises.includes(exercise._id)
+
+              return (
+                <div key={exercise.id} className="card card-side bg-white w-full shadow-xl h-48" 
+                onClick={() => openModal(exercise)}>
+                  <figure className="w-1/3">
+                    <img className="w-full h-full object-cover"
+                      src = ""
+                      alt="hehe"
+                    />
+                  </figure>
+                  <div className="card-body text-black text-left w-2/3">
+                    <p className="text-lg text-clip font-bold">{exercise.name}</p>
+                    <p>{exercise.recommended_reps}</p>
+                    <div className={`${isCompleted ? 'bg-myYellow' : 'bg-gray-300'} rounded-lg p-3 text-center`}>
+                        {isCompleted ? 'Completed' : 'Not completed'}
+                      </div>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
         </div>
 
         {/* sticky bottom tab */}
@@ -54,6 +133,74 @@ export default function Homepage() {
 
           </div>
         </div>
+
+
+        {/* Modal */}
+        {isModalOpen && currentExercise && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex justify-center items-center">
+          <div className="bg-gray-50 w-full h-full max-w-screen max-h-screen relative overflow-auto">
+            {/* YouTube Video */}
+            <iframe
+              className="w-full "
+              width="100%"
+              height="400"
+              src={currentExercise.youtube_link}
+              title="YouTube video player"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowFullScreen
+            ></iframe>
+
+            <div className="container mx-auto p-6 ">
+
+              <h2 className="text-3xl font-bold mb-4 text-center text-wrap">{currentExercise.name}</h2>
+              <p className="text-center font-bold text-lg">x {currentExercise.recommended_reps}</p>
+              <p className="mt-3 font-bold">Tips on form</p>
+              
+              <ul className="list-disc ml-4">
+                {currentExercise.form_tips.map((instructions, index) => {
+                  if (index !== currentExercise.form_tips.length-1) {
+                    return (<li key={index}>{instructions}</li>)
+                  }
+                })}
+              </ul>
+
+              {currentExercise.progressions !== "" && (
+                <div>
+                <p className="mt-3 font-bold">Progression tips</p>
+                <ul className="list-disc ml-4">
+                {currentExercise.progressions.map((instructions, index) => {
+                  if (index !== currentExercise.progressions.length && instructions !== "") {
+                    return (<li key={index}>{instructions}</li>)
+                  }
+                })}
+              </ul>
+                </div>
+              )}
+
+              <p className="mt-3 font-bold">Focus areas</p>
+              <div className="flex flex-row gap-3 mt-3">
+                {currentExercise.muscle_groups.map((muscleGroup) => {
+                  return(
+                      <div className="badge badge-outline">{muscleGroup}</div>
+                  )
+                })}
+              </div>
+
+              <div >
+                {/* Finish Exercise Button */}
+                <button className="btn btn-primary w-full mt-4 rounded-full" onClick={finishExercise}>
+                  Finish Exercise
+                </button>
+                {/* Finish Exercise Button */}
+                <button className="btn btn-outline w-full mt-4 rounded-full" onClick={closeModal}>
+                  Exit
+                </button>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      )}
       </div>
     </div>
 
