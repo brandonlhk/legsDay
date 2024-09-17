@@ -9,6 +9,7 @@ from werkzeug.security import check_password_hash, generate_password_hash
 from pymongo import MongoClient
 from recommendation import Recommender
 from userdbManager import User
+from bson.objectid import ObjectId
 
 app = FastAPI()
 app.add_middleware(
@@ -32,6 +33,9 @@ class UserIDRequest(BaseModel):
 class LoginRequest(BaseModel):
     username: str
     password: str
+
+class FrequencyRequest(BaseModel):
+    userid: str
 
 class CreateAccountRequest(BaseModel):
     email: EmailStr
@@ -135,3 +139,19 @@ async def login(request_data: LoginRequest):
         }
     else:
         raise HTTPException(status_code=401, detail="Invalid username or password")
+
+@app.post("/frequency")
+async def frequency(request_data: FrequencyRequest):
+    userid = request_data.userid
+
+    # Find the user in the database
+    user = user_collection.find_one(ObjectId(userid))
+
+    # Check if user exists and password is correct
+    if user:
+        return {
+            "message": "Retrieval successful",
+            "frequency": str(user['frequency'])
+        }
+    else:
+        raise HTTPException(status_code=401, detail="UserID does not exist")
