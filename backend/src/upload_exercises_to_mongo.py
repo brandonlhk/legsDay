@@ -21,6 +21,7 @@ def upload_test_record(test_col):
 
 def upload_exercise_csv(path, mydb):
     df = pd.read_csv(path)
+    df = df.fillna('')
 
     upper_body = df[df["body part"]=='upper body']
     # print(upper_body.columns)
@@ -111,7 +112,7 @@ def upload_exercise_csv(path, mydb):
 
 if __name__ == "__main__":
     client, ex_db = connect_exercise_db()
-    ex_db.users.remove({})
+    # ex_db.users.remove({})
     p = 'Exercise DB - no equipment.csv'
     # test_col = upload_test_collection(ex_db)
     # x = upload_test_record(test_col)

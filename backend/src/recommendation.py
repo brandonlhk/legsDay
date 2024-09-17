@@ -1,6 +1,7 @@
 import random
 import numpy as np
 from pymongo import MongoClient
+from bson.objectid import ObjectId
 
 class Recommender:
     def __init__(self):
@@ -10,7 +11,8 @@ class Recommender:
         self.upper_body = self.exercise_db['upper_body']
         self.lower_body = self.exercise_db['lower_body']
         self.abs = self.exercise_db['abs']
-        self.user_db = self.client['user_db']
+        self.user_db = self.client['user']
+        self.user = self.user_db['users']
 
     def softmax(self, weights):
         # Use numpy's softmax to normalize the weights
@@ -18,7 +20,9 @@ class Recommender:
         return exp_weights / exp_weights.sum()
 
     def fetch_user_file(self, userid):
-        user_file = self.user_db.find_one(userid)
+        # print(userid)
+        user_file = self.user.find_one(ObjectId(userid))
+        # print(user_file)
         # Simulate a hard-coded user file for local testing
         # user_file = {'status': 'advanced'}
         status = 'advanced'
@@ -30,6 +34,8 @@ class Recommender:
         
         # Store preferences back into the user_file
         user_file['preferences'] = {'upper_body': upper, 'lower_body': lower, 'abs': abdominals}
+
+        # print(user_file)
 
         return user_file
 
@@ -49,8 +55,11 @@ class Recommender:
             ex_id = random.choices(exercises, weights=normalized_weights, k=1)[0]
 
             # Fetch the full exercise document from the database for each chosen ID
-            exercise = self.exercise_db[body_part].find_one({"_id": ex_id})
-            recommended[body_part] = exercise
+            exercise = self.exercise_db[body_part].find_one({"_id": ObjectId(ex_id)})
+            if exercise:
+                # Convert _id to string in the resulting exercise document
+                exercise['_id'] = str(exercise['_id'])
+            recommended[body_part] = exercise if exercise else None
 
         return recommended
 

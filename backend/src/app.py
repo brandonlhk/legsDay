@@ -62,8 +62,9 @@ async def recommend_program(request_data: UserIDRequest):
     # Fetch user data and recommend a program
     try:
         user_file = recommender.fetch_user_file(userid)
+        # print(user_file)
         program = recommender.recommend_program(user_file)
-
+        # print(program)
         response = {'message': 'program recommended successfully', 'data': program}
 
         return response
