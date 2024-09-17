@@ -49,7 +49,7 @@ export default function Loading() {
             const sendData = async () => {
                 
                 try {
-                    const response = await fetch('http://localhost:5000/register', {
+                    const response = await fetch('https://bfg-backend-gcp-image-719982789123.us-central1.run.app/register', {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
@@ -77,7 +77,7 @@ export default function Loading() {
                     localStorage.setItem("userid", userid)
 
                     try {
-                        const response = await fetch('http://localhost:5000/recommend', {
+                        const response = await fetch('https://bfg-backend-gcp-image-719982789123.us-central1.run.app/recommend', {
                             method: 'POST',
                             headers: {
                                 'Content-Type': 'application/json',
@@ -94,8 +94,9 @@ export default function Loading() {
             
                         const result = await response.json();
                         const program = result.data
-                        localStorage.setItem("program", JSON.stringify(program))
-                        navigate("/home")
+    
+                        const data = [days, program]
+                        navigate("/home", {state: {data: data}})
                     } catch (error) {
                         console.error("Error sending data to recommend program", error)
                     }

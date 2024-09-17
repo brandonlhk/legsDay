@@ -1,17 +1,26 @@
-import {useState} from "react"
+import {useState, useEffect} from "react"
+import {useLocation} from "react-router-dom"
+import JSConfetti from 'js-confetti'
 
 export default function Homepage() {
-  
-  const userID = localStorage.getItem("userid")
-  const currProgram = JSON.parse(localStorage.getItem("program"))
-  const [completedExercises, setCompletedExercises] = useState([]);
 
+  const location = useLocation()
+  const receivedData = location.state?.data
+  const [freq, setFreq] = useState("")
+  const [exercisesDone, setExercisesDone] = useState(0)
+  const [daysDone, setDaysDone] = useState(0)
+  const [isLoading, setIsLoading] = useState(false)
+
+  const userID = localStorage.getItem("userid")
+  const [currProgram, setCurrProgram] = useState("")
+
+  const [completedExercises, setCompletedExercises] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [currentExercise, setCurrentExercise] = useState(null);
   const [progress, setProgress] = useState(0)
 
   const calculateProgress = () => {
-    const freq = 2
+
     const toAdd = 100/freq/3
     setProgress((prevProgress) => prevProgress + toAdd)
   }
@@ -31,28 +40,96 @@ export default function Homepage() {
     const newWord = words.split(".")
     return newWord
   }
+  
+  const processExercise = (exercise) => {
+    return {
+      ...exercise,
+      youtube_link: embed(exercise.youtube_link),
+      muscle_groups: seperateMuscleGroups(exercise.muscle_groups),
+      form_tips: intoOL(exercise.form_tips),
+      progressions: exercise.progression !== "" ? intoOL(exercise.progressions) : []
+    }
+  }
 
   const openModal = (exercise) => {
-    exercise.youtube_link = embed(exercise.youtube_link)
-    exercise.muscle_groups = seperateMuscleGroups(exercise.muscle_groups)
-    exercise.form_tips = intoOL(exercise.form_tips)
-    if (exercise.progressions !== "") {
-      exercise.progressions = intoOL(exercise.progressions)
-    }
     setCurrentExercise(exercise);
     setIsModalOpen(true);
-  };
+  }
 
   const closeModal = () => {
     setIsModalOpen(false);
     setCurrentExercise(null);
-  };
+  }
 
   const finishExercise = () => {
     setCompletedExercises((prevCompleted) => [...prevCompleted, currentExercise._id]);
     calculateProgress()
+    setExercisesDone((prevExercisesDone) => prevExercisesDone + 1)
     closeModal();
-  };
+  }
+
+  //refresh the exercises
+  const refreshExercises = async () => {
+    setIsLoading(true)
+    try {
+      const response = await fetch('https://bfg-backend-gcp-image-719982789123.us-central1.run.app/recommend', {
+          method: 'POST',
+          headers: {
+              'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+              "userid": userID
+          }),
+      });
+
+              
+      if (!response.ok) {
+          throw new Error('Failed to send data to recommend new info');
+      }
+
+      const result = await response.json();
+      const program = result.data
+      // console.log(Object.values(program))
+      const processedProgram = Object.values(program).map((exercise) => processExercise(exercise))
+      // console.log(processedProgram)
+    
+      setCurrProgram(processedProgram)
+      
+  } catch (error) {
+      console.error("Error sending data to recommend program", error)
+  } finally {
+    setIsLoading(false)
+  }
+  }
+
+
+  // receive from prev page
+  useEffect(() => {
+    if (receivedData) {
+        setFreq(receivedData[0])
+
+        const processedProgram = Object.values(receivedData[1]).map((exercise) => processExercise(exercise))
+        // console.log(processedProgram)
+        setCurrProgram(processedProgram)
+    }
+}, [receivedData])
+  
+  // if every exercise done, can increase by 1, if all exercises done, refresh exercises
+  useEffect(() => {
+
+    if (exercisesDone === 3 && daysDone !== freq-1) {
+      setDaysDone((prevDays) => prevDays + 1)
+      refreshExercises()
+      setExercisesDone(0)
+    } else if (exercisesDone === 3 && daysDone === freq-1) {
+      setDaysDone((prevDays) => prevDays + 1)
+      setExercisesDone(0)
+      const jsConfetti = new JSConfetti()
+      jsConfetti.addConfetti()
+    }
+  }, [exercisesDone])
+
+  
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -77,10 +154,10 @@ export default function Homepage() {
 
             {/* havent implement the logic for the progress */}
             <div className="w-full">
-              <p className="font-bold">Complete the full program for X days</p>
+              <p className="font-bold">Complete the full program for {freq} days</p>
               <div className="flex items-center">
                 <progress className="progress progress-error" value={progress} max="100"></progress>
-                <span className="ml-2">0/X</span>
+                <span className="ml-2">{daysDone}/{freq}</span>
               </div>
             </div>
 
@@ -103,8 +180,8 @@ export default function Homepage() {
                 <div key={exercise.id} className="card card-side bg-white w-full shadow-xl h-48" 
                 onClick={() => openModal(exercise)}>
                   <figure className="w-1/3">
-                    <img className="w-full h-full object-cover"
-                      src = ""
+                    <img className="w-full h-full"
+                      src = {exercise.image_binary}
                       alt="hehe"
                     />
                   </figure>
@@ -158,7 +235,7 @@ export default function Homepage() {
               
               <ul className="list-disc ml-4">
                 {currentExercise.form_tips.map((instructions, index) => {
-                  if (index !== currentExercise.form_tips.length-1) {
+                  if (instructions !== "") {
                     return (<li key={index}>{instructions}</li>)
                   }
                 })}
@@ -200,7 +277,15 @@ export default function Homepage() {
 
           </div>
         </div>
-      )}
+        )}
+
+        {/* Loading overlay */}
+        {isLoading && (
+          <div className="fixed inset-0 bg-gray-500 bg-opacity-75 flex flex-col justify-center items-center z-50">
+            <span className="loading loading-spinner text-primary loading-lg"></span>
+            <p className="text-4xl font-bold text-center mt-4 text-white">Creating your customised program</p>
+          </div>
+        )}
       </div>
     </div>
 

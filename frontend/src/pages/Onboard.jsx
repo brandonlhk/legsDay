@@ -19,7 +19,7 @@ export default function Onboard() {
   
   const decision = () => {
     if (page === 0) {
-        return navigate("/login")
+        return navigate("/")
     }
     else {
         setPage((pageIndex) => pageIndex - 1)
