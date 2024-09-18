@@ -15,8 +15,15 @@ export default function Onboard() {
   const [gender, setGender] = useState("")
   const [days, setDays] = useState("")
   const [duration, setDuration] = useState("")
+  const [error, setError] = useState("")
 
   
+    // Email validation function using regex
+    const validateEmail = (email) => {
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        return emailRegex.test(email);
+    };
+
   const decision = () => {
     if (page === 0) {
         return navigate("/")
@@ -28,8 +35,13 @@ export default function Onboard() {
   }
 
   const nextPage = () => {
-    setPage((pageIndex) => pageIndex + 1)
-    setProgressVal((prevProgress) => prevProgress + 20)
+    if (validateEmail(emailAddress)) {
+        setError("")
+        setPage((pageIndex) => pageIndex + 1)
+        setProgressVal((prevProgress) => prevProgress + 20)
+    } else {
+        setError("Please enter a valid email address")
+    }
   }
 
   useEffect(() => {
@@ -78,6 +90,9 @@ export default function Onboard() {
                                 <span className="label-text font-bold text-xl">Enter email address</span>
                             </div>
                             <input type="email" placeholder="Type here" className="input input-bordered w-full" value={emailAddress} onChange={(event) => setEmailAddress(event.target.value)}/>
+                            {error && <div className="label">
+                                <span className="label-text font-bold text-md text-red-500">{error}</span>
+                            </div>}
                         </label>
 
                         {/* password */}

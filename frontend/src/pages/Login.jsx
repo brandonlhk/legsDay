@@ -1,43 +1,9 @@
-// import { useState } from 'react'
-// import { signInWithEmailAndPassword } from "firebase/auth";
-// import { auth } from "../firebase"
 import { useNavigate } from 'react-router-dom';
 import workoutImg from "../images/workout_icon.png"
 
 export default function Login() {
 
-  // const [userValue, setUserValue] = useState({
-  //   emailAddress: "",
-  //   password : ""
-  // })
-  const navigate = useNavigate();
-
-  // const handleChange = (event) => {
-  //   const { name, value } = event.target;
-  //   setUserValue({
-  //     ...userValue,
-  //     [name]: value
-  //   });
-  // }
-
-  // const login = (event) => {
-  //   event.preventDefault()
-  //   signInWithEmailAndPassword(auth, userValue.emailAddress, userValue.password)
-  //   .then((userCredential) => {
-
-  //       const user = userCredential.user;
-  //       console.log(user)
-  //       navigate("/onboard")
-        
-  //   })
-  //   .catch((error) => {
-        
-  //       const errorCode = error.code;
-  //       const errorMessage = error.message;
-  //       alert(errorCode, errorMessage)
-
-  //   });
-  // }
+  const navigate = useNavigate()
 
   return (
     <div className="min-h-screen">
