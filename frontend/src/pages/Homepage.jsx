@@ -43,6 +43,14 @@ export default function Homepage() {
     setProgress((prevProgress) => prevProgress + toAdd)
   }
 
+  const addWord = (exercise) => {
+    if (!exercise.includes("seconds") && !exercise.includes("metres")) {
+      exercise = exercise + " reps" 
+    }
+
+    return exercise
+  }
+
   const embed = (link) => {
     const videoID = link.split("v=")[1]
     const newLink = `https://www.youtube.com/embed/${videoID}?autoplay=1`
@@ -65,7 +73,8 @@ export default function Homepage() {
       youtube_link: embed(exercise.youtube_link),
       muscle_groups: seperateMuscleGroups(exercise.muscle_groups),
       form_tips: intoOL(exercise.form_tips),
-      progressions: exercise.progression !== "" ? intoOL(exercise.progressions) : []
+      progressions: exercise.progression !== "" ? intoOL(exercise.progressions) : [],
+      recommended_reps: addWord(exercise.recommended_reps)
     }
   }
 
@@ -108,6 +117,7 @@ export default function Homepage() {
       const result = await response.json();
       const program = result.data
       // console.log(Object.values(program))
+      setCompletedExercises([])
       const processedProgram = Object.values(program).map((exercise) => processExercise(exercise))
       // console.log(processedProgram)
     
