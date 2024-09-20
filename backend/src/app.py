@@ -6,7 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, EmailStr, Field
 from typing import Dict, Optional
 from werkzeug.security import check_password_hash, generate_password_hash
-from pymongo import MongoClient
+from pymongo import MongoClient, ReturnDocument
 from recommendation import Recommender
 from userdbManager import User
 from bson.objectid import ObjectId
@@ -37,6 +37,14 @@ class LoginRequest(BaseModel):
 class FrequencyRequest(BaseModel):
     userid: str
 
+class SettingsRequest(BaseModel):
+    userid: str
+    frequency: Optional[str] = Field("", description="Optional workout frequency")
+    duration: Optional[str] = Field("", description="Optional workout duration")
+    weight: Optional[float] = Field(0.0, description="Optional weight")
+    status: Optional[str] = Field("", description="Optional status")
+    injury: Optional[str] = Field("", description="Optional injury")
+
 class CreateAccountRequest(BaseModel):
     email: EmailStr
     username: str
@@ -47,6 +55,8 @@ class CreateAccountRequest(BaseModel):
     gender: Optional[str] = Field("", description="Optional gender")
     frequency: Optional[str] = Field("", description="Optional workout frequency")
     duration: Optional[str] = Field("", description="Optional workout duration")
+    status: Optional[str] = Field("", description="Optional status")
+    injury: Optional[str] = Field("", description="Optional injury")
 
 # function to check if email input is valid 
 def is_email_valid(email: str):
@@ -86,6 +96,8 @@ async def register(request_data: CreateAccountRequest):
     gender = request_data.gender
     frequency = request_data.frequency
     duration = request_data.duration
+    status = request_data.status
+    injury = request_data.injury
 
     # Check if email, username, and password are provided (redundant due to Pydantic validation)
     if not username or not email or not password:
@@ -112,7 +124,9 @@ async def register(request_data: CreateAccountRequest):
         "weight": weight,
         "gender": gender,
         "frequency": frequency,
-        "duration": duration
+        "duration": duration,
+        "status": status,
+        "injury": injury
     }
 
     # Insert the new user into the database
@@ -152,6 +166,49 @@ async def frequency(request_data: FrequencyRequest):
         return {
             "message": "Retrieval successful",
             "frequency": str(user['frequency'])
+        }
+    else:
+        raise HTTPException(status_code=401, detail="UserID does not exist")
+
+@app.post("/settings")
+async def settings(request_data: SettingsRequest):
+    userid = request_data.userid
+    frequency =  request_data.frequency
+    duration = request_data.duration
+    weight = request_data.weight
+    status = request_data.status
+    injury = request_data.injury
+
+    user = user_collection.find_one(ObjectId(userid))
+
+    if user:
+        if frequency:
+            user_collection.find_one_and_update({'_id': ObjectId(userid)},
+                        { '$set': { "frequency" : frequency} }, 
+                        return_document = ReturnDocument.AFTER)
+        if duration:
+            user_collection.find_one_and_update({'_id': ObjectId(userid)},
+                        { '$set': { "duration" : duration} }, 
+                        return_document = ReturnDocument.AFTER)
+        if weight:
+            user_collection.find_one_and_update({'_id': ObjectId(userid)},
+                        { '$set': { "weight" : weight} }, 
+                        return_document = ReturnDocument.AFTER)
+        if status:
+            user_collection.find_one_and_update({'_id': ObjectId(userid)},
+                        { '$set': { "status" : status} }, 
+                        return_document = ReturnDocument.AFTER)
+        if injury:
+            user_collection.find_one_and_update({'_id': ObjectId(userid)},
+                        { '$set': { "injury" : injury} }, 
+                        return_document = ReturnDocument.AFTER)
+        return {
+            "message": "Rewrote to db successsfully",
+            "amended": {'frequency': frequency,
+                        'duration': duration,
+                        'status': status,
+                        'weight': weight,
+                        'injury': injury}
         }
     else:
         raise HTTPException(status_code=401, detail="UserID does not exist")
