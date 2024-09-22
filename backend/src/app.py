@@ -4,7 +4,7 @@ import requests
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, EmailStr, Field
-from typing import Dict, Optional
+from typing import Dict, Optional, List
 from werkzeug.security import check_password_hash, generate_password_hash
 from pymongo import MongoClient, ReturnDocument
 from recommendation import Recommender
@@ -26,10 +26,16 @@ client.server_info()
 user_db = client.user
 user_collection = user_db.users
 
-# Pydantic model for request body validation
-class UserIDRequest(BaseModel):
-    userid: str
+class SubstitutionData(BaseModel):
+    _id: str
+    name: str
+    body_part: str
 
+class SubstitutionRequest(BaseModel):
+    userid: str
+    substitution: Optional[SubstitutionData] = Field(
+        None, description="Optional substitution data, left blank if it's the first recommendation and not a substitution"
+    )
 class LoginRequest(BaseModel):
     username: str
     password: str
@@ -43,7 +49,7 @@ class SettingsRequest(BaseModel):
     duration: Optional[str] = Field("", description="Optional workout duration")
     weight: Optional[float] = Field(0.0, description="Optional weight")
     status: Optional[str] = Field("", description="Optional status")
-    injury: Optional[str] = Field("", description="Optional injury")
+    injury: Optional[List[str]] = Field([], description="Optional injury")
 
 class CreateAccountRequest(BaseModel):
     email: EmailStr
@@ -56,7 +62,7 @@ class CreateAccountRequest(BaseModel):
     frequency: Optional[str] = Field("", description="Optional workout frequency")
     duration: Optional[str] = Field("", description="Optional workout duration")
     status: Optional[str] = Field("", description="Optional status")
-    injury: Optional[str] = Field("", description="Optional injury")
+    injury: Optional[List[str]] = Field([], description="Optional injury")
 
 # function to check if email input is valid 
 def is_email_valid(email: str):
@@ -66,9 +72,13 @@ def is_email_valid(email: str):
     else:
         return False
 
+def initialize_weights(ids: list):
+    return {id: float(1) for id in ids}
+
 @app.post("/recommend")
-async def recommend_program(request_data: UserIDRequest):
+async def recommend_program(request_data: SubstitutionRequest):
     userid = request_data.userid
+    substitution = request_data.substitution
 
     # Initialize the recommender
     recommender = Recommender()
@@ -77,8 +87,10 @@ async def recommend_program(request_data: UserIDRequest):
     try:
         user_file = recommender.fetch_user_file(userid)
         # print(user_file)
-        program = recommender.recommend_program(user_file)
-        # print(program)
+        if substitution:
+            program = recommender.substitute(substitution['body_part'], substitution['_id'], user_file)
+        else:
+            program = recommender.recommend_program(user_file)
         response = {'message': 'program recommended successfully', 'data': program}
 
         return response
@@ -99,6 +111,11 @@ async def register(request_data: CreateAccountRequest):
     status = request_data.status
     injury = request_data.injury
 
+    recommender = Recommender()
+    upper_body = recommender.upper_body
+    lower_body = recommender.lower_body
+    abdominals = recommender.abs
+
     # Check if email, username, and password are provided (redundant due to Pydantic validation)
     if not username or not email or not password:
         raise HTTPException(status_code=400, detail="Email, username, and password are required")
@@ -114,6 +131,11 @@ async def register(request_data: CreateAccountRequest):
     # Hash the password
     hashed_password = generate_password_hash(password)
 
+    # Initialize preference weights
+    preferences = {}
+    for col, body_part in zip([upper_body, lower_body, abdominals], ['upper_body', 'lower_body', 'abs']):
+        preferences[body_part] = initialize_weights([str(i['_id']) for i in col.find({})])
+
     # Create the user object
     new_user = {
         "email": email,
@@ -126,7 +148,8 @@ async def register(request_data: CreateAccountRequest):
         "frequency": frequency,
         "duration": duration,
         "status": status,
-        "injury": injury
+        "injury": injury,
+        "preferences": preferences
     }
 
     # Insert the new user into the database

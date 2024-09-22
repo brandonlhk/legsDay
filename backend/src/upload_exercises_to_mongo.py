@@ -40,9 +40,9 @@ def upload_exercise_csv(path, mydb):
              'form_tips': ft, 
              'progressions': pt, 
              'regressions': rt, 
-             'easy_status': bool(e), 
-             'beginner_status': bool(b), 
-             'advanced_status': bool(a)}
+             'beginner': bool(e), 
+             'intermediate': bool(b), 
+             'advanced': bool(a)}
             for name, mg, yt, img, reps, inst, ft, pt, rt, e, b, a 
             in zip(upper_body['exercise name'], 
                    upper_body['muscle groups'], 
@@ -66,9 +66,9 @@ def upload_exercise_csv(path, mydb):
              'form_tips': ft, 
              'progressions': pt, 
              'regressions': rt, 
-             'easy_status': bool(e), 
-             'beginner_status': bool(b), 
-             'advanced_status': bool(a)}
+             'beginner': bool(e), 
+             'intermediate': bool(b), 
+             'advanced': bool(a)}
             for name, mg, yt, img, reps, inst, ft, pt, rt, e, b, a 
             in zip(lower_body['exercise name'], 
                    lower_body['muscle groups'], 
@@ -92,9 +92,9 @@ def upload_exercise_csv(path, mydb):
            'form_tips': ft, 
            'progressions': pt, 
            'regressions': rt, 
-           'easy_status': bool(e), 
-           'beginner_status': bool(b), 
-           'advanced_status': bool(a)}
+           'beginner': bool(e), 
+           'intermediate': bool(b), 
+           'advanced': bool(a)}
           for name, mg, yt, img, reps, inst, ft, pt, rt, e, b, a 
           in zip(abdominals['exercise name'], 
                  abdominals['muscle groups'], 
