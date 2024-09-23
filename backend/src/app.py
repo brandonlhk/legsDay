@@ -27,7 +27,7 @@ user_db = client.user
 user_collection = user_db.users
 
 class SubstitutionData(BaseModel):
-    _id: str
+    exercise_id: str
     name: str
     body_part: str
 
@@ -86,9 +86,8 @@ async def recommend_program(request_data: SubstitutionRequest):
     # Fetch user data and recommend a program
     try:
         user_file = recommender.fetch_user_file(userid)
-        # print(user_file)
         if substitution:
-            program = recommender.substitute(substitution['body_part'], substitution['_id'], user_file)
+            program = recommender.substitute(substitution.body_part, substitution.exercise_id, user_file)
         else:
             program = recommender.recommend_program(user_file)
         response = {'message': 'program recommended successfully', 'data': program}

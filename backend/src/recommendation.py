@@ -42,18 +42,30 @@ class Recommender:
         preferences = user_file['preferences']
         weight = preferences[body_part][substitution_id]
         preferences[body_part][substitution_id] = 0
+        self.user.update_one(
+            {"_id": ObjectId(user_file['_id'])},
+            {"$set": {f"preferences.{body_part}.{substitution_id}": 0}}
+        )
+
         return weight
 
 
     def restore_and_update_weight(self, body_part, substitution_id, user_file, restored_weight, decay=0.25):
         preferences = user_file['preferences']
-        preferences[body_part][substitution_id] = (1-decay)*restored_weight
+        new_weight = (1-decay) * restored_weight
+        preferences[body_part][substitution_id] = new_weight
+        self.user.update_one(
+            {"_id": ObjectId(user_file['_id'])},
+            {"$set": {f"preferences.{body_part}.{substitution_id}": new_weight}}
+        )
+
 
 
     def substitute(self, body_part, substitution_id, user_file):
         previous_weight = self.zero_weight(body_part, substitution_id, user_file)
-        self.recommend_program(user_file)
+        recommended = self.recommend_program(user_file)
         self.restore_and_update_weight(body_part, substitution_id, user_file, previous_weight)
+        return recommended
 
 
     def recommend_program(self, user_file):
@@ -80,7 +92,7 @@ class Recommender:
                 db_exercise_ids = {str(ex['_id']) for ex in db_exercises}
 
                 # Filter preferences to only include exercises that exist in the database query results
-                filtered_pref = [(ex_id, weight) for ex_id, weight in pref if ex_id in db_exercise_ids]
+                filtered_pref = [(ex_id, weight) for ex_id, weight in pref.items() if ex_id in db_exercise_ids]
 
                 if not filtered_pref:
                     recommended[body_part] = None
