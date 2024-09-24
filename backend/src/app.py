@@ -48,7 +48,6 @@ class SettingsRequest(BaseModel):
     frequency: Optional[str] = Field("", description="Optional workout frequency")
     duration: Optional[str] = Field("", description="Optional workout duration")
     weight: Optional[float] = Field(0.0, description="Optional weight")
-    status: Optional[str] = Field("", description="Optional status")
     injury: Optional[List[str]] = Field([], description="Optional injury")
 
 class CreateAccountRequest(BaseModel):
@@ -198,7 +197,6 @@ async def settings(request_data: SettingsRequest):
     frequency =  request_data.frequency
     duration = request_data.duration
     weight = request_data.weight
-    status = request_data.status
     injury = request_data.injury
 
     user = user_collection.find_one(ObjectId(userid))
@@ -215,10 +213,6 @@ async def settings(request_data: SettingsRequest):
         if weight:
             user_collection.find_one_and_update({'_id': ObjectId(userid)},
                         { '$set': { "weight" : weight} }, 
-                        return_document = ReturnDocument.AFTER)
-        if status:
-            user_collection.find_one_and_update({'_id': ObjectId(userid)},
-                        { '$set': { "status" : status} }, 
                         return_document = ReturnDocument.AFTER)
         if injury:
             user_collection.find_one_and_update({'_id': ObjectId(userid)},

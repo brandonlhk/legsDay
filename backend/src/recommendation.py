@@ -13,6 +13,11 @@ class Recommender:
         self.abs = self.exercise_db['abs']
         self.user_db = self.client['user']
         self.user = self.user_db['users']
+        self.mapping = {'Shoulder': 'upper_body',
+                        'Wrist': 'upper_body',
+                        'Knee': 'lower_body',
+                        'Ankle': 'lower_body',
+                        'Lower back': 'back'}
 
     def softmax(self, weights):
         # Use numpy's softmax to normalize the weights
@@ -77,12 +82,12 @@ class Recommender:
         recommended = {'upper_body': None, 'lower_body': None, 'abs': None}
 
         for body_part, pref in preferences.items():
-            if body_part == 'lower_body' and 'legs' in injury_status:
+            if self.mapping[injury_status]==body_part:
                 continue
 
             else:
                 # Query to exclude exercises based on injury status
-                query = {"muscle_groups": {"$not": {"$regex": "|".join(injury_status), "$options": "i"}},
+                query = {"muscle_groups": {"$not": {"$regex": "|".join(self.mapping[injury_status]), "$options": "i"}},
                 status: True}
 
                 # Fetch exercises matching the query
