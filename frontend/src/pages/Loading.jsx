@@ -15,30 +15,29 @@ export default function Loading() {
     const navigate = useNavigate()
     const receivedData = location.state?.data
 
-    
-    const [username, setUsername] = useState("")
-    const [emailAddress, setEmailAddress] = useState("")
-    const [password, setPassword] = useState("")
-    const [height, setHeight] = useState("")
-    const [weight, setWeight] = useState("")
-    const [age, setAge] = useState("")
-    const [gender, setGender] = useState("")
-    const [days, setDays] = useState("")
-    const [duration, setDuration] = useState("")
+    const [age, setAge] = useState("") //page 1
+    const [gender, setGender] = useState("") //page 1
+    const [level, setLevel] = useState("") //page 2
+    const [days, setDays] = useState("") //page 3
+    const [duration, setDuration] = useState("") //page 4
+    const [injuries, setInjuries] = useState([]) //page 5
+    const [core, setCore] = useState([]) //page 6
+    const [lowerBody, setLowerBody] = useState([]) //page 7
+    const [upperBody, setUpperBody] = useState([]) // page 8
     const [isDataInitialized, setIsDataInitialized] = useState(false);
     
     // receive from prev page
     useEffect(() => {
         if (receivedData) {
-            setUsername(receivedData[0])
-            setEmailAddress(receivedData[1])
-            setPassword(receivedData[2])
-            setHeight(receivedData[3])
-            setWeight(receivedData[4])
-            setAge(receivedData[5])
-            setGender(receivedData[6])
-            setDays(receivedData[7])
-            setDuration(receivedData[8])
+            setAge(receivedData[0])
+            setGender(receivedData[1])
+            setLevel(receivedData[2])
+            setDays(receivedData[3])
+            setDuration(receivedData[4])
+            setInjuries(receivedData[5])
+            setCore(receivedData[6])
+            setLowerBody(receivedData[7])
+            setUpperBody(receivedData[8])
             setIsDataInitialized(true)
         }
     }, [receivedData])
@@ -55,15 +54,15 @@ export default function Loading() {
                             'Content-Type': 'application/json',
                         },
                         body: JSON.stringify({
-                            "username": username,
-                            "email": emailAddress,
-                            "password": password,
-                            "height": height,
-                            "weight": weight,
-                            "age": age,
+                            "age" : age,
                             "gender": gender,
-                            "frequency": days,
+                            "level": level,
+                            "days": days,
                             "duration": duration,
+                            "injuries": injuries,
+                            "core_strength" : core,
+                            "lower_body_strength": lowerBody,
+                            "upper_body_strength": upperBody
                         }),
                     });
         
@@ -87,7 +86,6 @@ export default function Loading() {
                             }),
                         });
 
-                                
                         if (!response.ok) {
                             throw new Error('Failed to send data to recommend new info');
                         }
@@ -95,7 +93,7 @@ export default function Loading() {
                         const result = await response.json();
                         const program = result.data
     
-                        const data = [days, program]
+                        const data = [days, core, lowerBody, upperBody, program]
                         navigate("/home", {state: {data: data}})
                     } catch (error) {
                         console.error("Error sending data to recommend program", error)
@@ -108,7 +106,7 @@ export default function Loading() {
                     console.log("Request to userdbmanager complete")
                 }
             }
-            sendData()
+            // sendData()
         }
     }, [isDataInitialized])
 
@@ -116,6 +114,10 @@ export default function Loading() {
         <div className="min-h-screen flex flex-col justify-center items-center">
             <span className="loading loading-spinner text-primary loading-lg"></span>
             <p className="text-4xl font-bold text-center mt-4">Creating your customised program</p>
+            
+            <div className="px-4">
+                <p className="mt-12 p-2 border-2 border-purple rounded-lg text-balance text-dark-purple"> <span className="font-bold text-dark-purple">Did you know:</span> 30 to 60 minutes of strength training a week reduces the risk of mortality, cardiovascular disease and cancer <span className="font-bold text-dark-purple">by 10 to 20%!</span></p>
+            </div>
         </div>
     )
 }
