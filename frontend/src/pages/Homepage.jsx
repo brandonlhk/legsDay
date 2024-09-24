@@ -1,5 +1,4 @@
 import {useState, useEffect, useRef} from "react"
-import useSound from 'use-sound'
 import {useLocation} from "react-router-dom"
 import JSConfetti from 'js-confetti'
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
