@@ -93,7 +93,7 @@ export default function Loading() {
                         const result = await response.json();
                         const program = result.data
     
-                        const data = [days, core, lowerBody, upperBody, program]
+                        const data = [days, core, lowerBody, upperBody, duration, program]
                         navigate("/home", {state: {data: data}})
                     } catch (error) {
                         console.error("Error sending data to recommend program", error)

@@ -145,7 +145,7 @@ export default function Onboard() {
                             <div className="label">
                                 <span className="label-text font-bold text-xl">Gender</span>
                             </div>
-                            <select className="select select-bordered" value={gender} onChange={(event) => setGender(event.target.value)}>
+                            <select className="select select-bordered relative" value={gender} onChange={(event) => setGender(event.target.value)}>
                                 <option disabled selected value="">Pick one option</option>
                                 <option value="M">Male</option>
                                 <option value="F">Female</option>

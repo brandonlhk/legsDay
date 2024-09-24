@@ -1,6 +1,9 @@
-import {useState, useEffect} from "react"
+import {useState, useEffect, useRef} from "react"
+import useSound from 'use-sound'
 import {useLocation} from "react-router-dom"
 import JSConfetti from 'js-confetti'
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faVolumeUp, faVolumeMute, faPause, faPlay, faUndoAlt, faArrowLeft, faArrowUp } from "@fortawesome/free-solid-svg-icons";
 import CountdownModal from '../components/CountdownModal';
 
 export default function Homepage() {
@@ -13,6 +16,7 @@ export default function Homepage() {
   const [exercisesDone, setExercisesDone] = useState(0)
   const [daysDone, setDaysDone] = useState(0)
   const [isLoading, setIsLoading] = useState(false)
+  const [duration, setDuration] = useState('')
   const [core, setCore] = useState(["None"])
   const [lowerBody, setLowerbody] = useState(["None"])
   const [upperBody, setUpperBody] = useState(["None"])
@@ -20,7 +24,7 @@ export default function Homepage() {
   // check if user finish the exercise for that day
   const [finishExerciseCheck, setFinishExerciseCheck] = useState(false)
   const [countdown, setCountdown] = useState(5)
-  const [currProgram, setCurrProgram] = useState("")
+  const [currProgram, setCurrProgram] = useState([{"_id": "1", "name": "test", "recommended_reps" : "10", "image_binary": "123", "youtube_link": "https://www.youtube.com/watch?v=IT94xC35u6k", "form_tips": ["Don't arch your back"], "progressions": "", "muscle_groups": ["quads", "knee"]}])
 
   // check if user start exercise, true -> open modal
   const [startExercise, setStartExercise] = useState(false)
@@ -29,12 +33,61 @@ export default function Homepage() {
   // onboarding modal (show difficulties)
   const [difficultyModal, setDifficultyModal] = useState(true)
 
+  // audio related
+  const [isMuted, setIsMuted] = useState(false)
+  const [isPaused, setIsPaused] = useState(false)
+  const [audioFilePath, setAudioFilePath] = useState("")
+  const audioRef =  useRef(null)
+  const [audioCountDown, setAudioCountDown] = useState(5)
 
   // others
   const [completedExercises, setCompletedExercises] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [currentExercise, setCurrentExercise] = useState(null);
   const [progress, setProgress] = useState(0)
+
+  //post progression index
+  const [postIndex, setPostIndex] = useState(0)
+  const slides = [
+    {
+      title: 'Congrats on completing! 🥳',
+      description: 'You have completed all the exercises in this today’s program! Well done! \n\n Tap on the right to see a summary of your achievements so far.',
+      img: '/images/post_1.png'
+    },
+    {
+      title: "Let's recap",
+      description: "You have spent this amount of time doing strength training today. \n\n Keep Going, each workout is making you stronger and healthier :)",
+      stat: "30 mins"
+    },
+    {
+      title: "What today's workout did for your health",
+      description: "You have increased your overall fitness by this much after today's program!",
+      icon: faArrowUp,
+      stat: "14%",
+      footer: "References: \n 1. Evaluation of the '15 Minute Challenge': A Workplace Health and Wellbeing Program doi: 10.3390/healthcare12131255"
+    },
+    {
+      title: "Your hard work is paying off!",
+      description: "Keep going - your progress is impressive and just the beginning.",
+      img: "/images/post_2.png",
+      button: "yes"
+    }
+
+  ]
+
+  const [postModal, setPostModal] = useState(false)
+  
+    //ig story kinda feel
+  const handleTap = (e) => {
+    const width = e.target.offsetWidth; // Get the width of the carousel
+    const clickX = e.clientX; // Get the X position of the click
+
+    if (clickX < width / 2) {
+      setPostIndex((prevIndex) => (prevIndex - 1) % slides.length) ; // If clicked on the left half, go to the previous slide
+    } else {
+      setPostIndex((prevIndex) => (prevIndex + 1) % slides.length); // If clicked on the right half, go to the next slide
+    }
+  };
 
   const handleStartOpen = () => {
     setCountdown(5)
@@ -43,6 +96,8 @@ export default function Homepage() {
 
     //open the new workout modal
     setOpenStartExercise(true)
+    setAudioFilePath("/audio/audio1.mp3");
+    setAudioCountDown(5);
   }
 
   const handleStartClose = () => {
@@ -90,6 +145,34 @@ export default function Homepage() {
     }
   }
 
+  // audio
+  const handleMute = () => {
+    setIsMuted(!isMuted);
+    if (audioRef.current) {
+      audioRef.current.muted = !isMuted;
+    }
+  };
+
+  const handlePause = () => {
+    setIsPaused(!isPaused);
+    if (audioRef.current) {
+      if (isPaused) {
+        audioRef.current.play();
+      } else {
+        audioRef.current.pause();
+      }
+    }
+  };
+
+  const handleRestart = () => {
+    if (audioRef.current) {
+      audioRef.current.currentTime = 0;
+      audioRef.current.play();
+      setIsPaused(false);
+    }
+  };
+  //end audio
+
   const openModal = (exercise) => {
     setCurrentExercise(exercise);
     setIsModalOpen(true);
@@ -100,11 +183,17 @@ export default function Homepage() {
     setCurrentExercise(null);
   }
 
+  const goBack = () => {
+    setIsModalOpen(true)
+    setOpenStartExercise(false)
+  }
+
   const finishExercise = () => {
     setFinishExerciseCheck(true)
     setCompletedExercises((prevCompleted) => [...prevCompleted, currentExercise._id]);
     calculateProgress()
     setExercisesDone((prevExercisesDone) => prevExercisesDone + 1)
+    setOpenStartExercise(false)
   }
 
   //refresh the exercises
@@ -150,8 +239,9 @@ export default function Homepage() {
         setCore(receivedData[1])
         setLowerbody(receivedData[2])
         setUpperBody(receivedData[3])
+        setDuration(receivedData[4])
         
-        const processedProgram = Object.values(receivedData[4]).map((exercise) => processExercise(exercise))
+        const processedProgram = Object.values(receivedData[5]).map((exercise) => processExercise(exercise))
         // console.log(processedProgram)
         setCurrProgram(processedProgram)
     }
@@ -160,19 +250,16 @@ export default function Homepage() {
   // if every exercise done, can increase by 1, if all exercises done, refresh exercises
   useEffect(() => {
 
-    if (exercisesDone === 3 && daysDone !== freq-1) {
-      setDaysDone((prevDays) => prevDays + 1)
-      refreshExercises()
-      setExercisesDone(0)
-    } else if (exercisesDone === 3 && daysDone === freq-1) {
+    if (exercisesDone === 3) {
       setDaysDone((prevDays) => prevDays + 1)
       setExercisesDone(0)
+      //add the post workout modal here
+      setPostModal(true)
       const jsConfetti = new JSConfetti()
       jsConfetti.addConfetti()
     }
   }, [exercisesDone])
 
-  
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -211,7 +298,7 @@ export default function Homepage() {
         {/* today program */}
         <div className="bg-red-400 mt-6 text-center text-white rounded-lg">
           <p className="text-2xl p-6">Today's program</p>
-          <p className="text-lg">Est time to complete: 15 mins</p>
+          <p className="text-lg">Est time to complete: {duration} mins</p>
 
           {/* Exercises */}
           <div className="flex-col flex gap-6 p-2 mt-3 mb-20">
@@ -229,7 +316,7 @@ export default function Homepage() {
                     />
                   </figure>
                   <div className="card-body text-black text-left w-2/3">
-                    <p className="text-lg text-clip font-bold">{exercise.name}</p>
+                    <p className="text-lg truncate font-bold">{exercise.name}</p>
                     <p>{exercise.recommended_reps}</p>
                     <div className={`${isCompleted ? 'bg-myYellow' : 'bg-gray-300'} rounded-lg p-3 text-center`}>
                         {isCompleted ? 'Completed' : 'Not completed'}
@@ -296,14 +383,13 @@ export default function Homepage() {
           </div>
         )}
 
-
         {/* Exercise information modal */}
         {isModalOpen && currentExercise && (
           <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex justify-center items-center">
-            <div className="bg-gray-50 rounded-lg shadow-lg w-full max-w-sm max-h-[50vh] overflow-auto relative">
+            <div className="bg-gray-50 rounded-lg shadow-lg w-full max-w-sm max-h-[70vh] overflow-auto ">
               {/* Close Button */}
               <button
-                className="absolute top-4 right-4 text-gray-600 hover:text-gray-800 text-6xl p-2 rounded-full transition duration-200 ease-in-out font-bold"
+                className="top-0 right-0 text-gray-600 text-4xl font-bold w-full flex justify-end px-3 py-2"
                 onClick={closeModal}
                 aria-label="Close modal"
               >
@@ -359,8 +445,8 @@ export default function Homepage() {
 
                 <div>
                   {/* Start Exercise Button */}
-                  <button className="btn btn-primary w-full mt-6 rounded-full text-lg" onClick={handleStartOpen}>
-                    Start
+                  <button className="btn btn-lg bg-purple text-white w-full mt-6 rounded-lg text-lg" onClick={handleStartOpen}>
+                    Start this exercise
                   </button>
                 </div>
               </div>
@@ -377,24 +463,22 @@ export default function Homepage() {
         )}
 
         {/* Countdown */}
-        {startExercise && <CountdownModal isOpen={startExercise} onClose={handleStartClose} countdown={countdown}/>}
+        {startExercise && <CountdownModal isOpen={startExercise} onClose={handleStartClose} countdown={countdown} audioRef={audioRef}/>}
         
         {/* Start exercise modal -> actual workout page */}
-        {startExercise && currentExercise && ( 
-          <div className="fixed inset-0 bg-black bg-opacity-50 z-25 flex justify-center items-center">
-            <div className="bg-gray-50 rounded-lg shadow-lg w-full min-h-screen overflow-auto relative">
+        {openStartExercise && currentExercise && ( 
+          <div className="absolute inset-0 bg-black bg-opacity-50 z-25 flex justify-center items-center">
+            <div className="bg-[#f5f5f5] rounded-lg shadow-lg w-full overflow-visible">
               {/* Close Button */}
-              <button
-                className="absolute top-4 right-4 text-gray-600 hover:text-gray-800 text-6xl p-2 rounded-full transition duration-200 ease-in-out font-bold"
-                onClick={closeModal}
-                aria-label="Close modal"
-              >
-                &times; {/* Close icon */}
-              </button>
-
+              <FontAwesomeIcon
+                icon={faArrowLeft}
+                className="absolute top-4 left-4 w-5 h-5 bg-white rounded-full p-4 z-1000"
+                onClick={goBack}
+              />
+              
               {/* YouTube Video */}
               <iframe
-                className="w-full rounded-t-lg"
+                className="w-full"
                 width="100%"
                 height="300"
                 src={currentExercise.youtube_link}
@@ -403,14 +487,50 @@ export default function Homepage() {
                 allowFullScreen
               ></iframe>
 
-              <div className="container mx-auto p-6">
+              {/* content of the exercise page */}
+              <div className="container mx-auto p-6 text-dark-purple text-center">
                 <h2 className="text-3xl font-bold mb-4 text-center text-wrap">{currentExercise.name}</h2>
-                <p className="text-center font-bold text-lg">x {currentExercise.recommended_reps}</p>
+                <p className="text-center font-bold text-5xl">x {currentExercise.recommended_reps}</p>
+
+                <div className="divider before:bg-purple after:bg-purple"></div>
 
                 <div>
+                  <p className="text-pretty font-semibold">Make sure your volume is turned on to hear the audio instructions.</p>
+
+                  {/* audio stuff */}
+                  <div className="text-center">
+                    <div className="flex justify-center space-x-8 mt-4">
+
+                      {/* mute */}
+                      <button onClick={handleMute} className="flex flex-col items-center">
+                        <FontAwesomeIcon
+                          icon={isMuted ? faVolumeMute : faVolumeUp}
+                          className="flex flex-col items-center justify-center w-8 h-8 bg-white rounded-full p-6 text-dark-purple"
+                        />
+                        <p className="mt-2 font-semibold text-wrap max-w-14">{isMuted ? "Unmute audio": "Mute audio"}</p>
+                      </button>
+
+                      {/* pause */}
+                      <button onClick={handlePause} className="flex flex-col items-center">
+                        <FontAwesomeIcon
+                          icon={isPaused ? faPlay : faPause}
+                          className="flex flex-col items-center justify-center w-8 h-8 bg-white rounded-full p-6 text-dark-purple"
+                        />
+                        <p className="mt-2 font-semibold text-wrap max-w-14">{isPaused ? "Unpause audio": "Pause audio"}</p>
+                      </button>
+
+                      {/* restart */}
+                      <button onClick={handleRestart} className="flex flex-col items-center">
+                        <FontAwesomeIcon icon={faUndoAlt} className="flex flex-col items-center justify-center w-8 h-8 bg-white rounded-full p-6 text-dark-purple" />
+                        <p className="mt-2 font-semibold text-wrap max-w-14">Restart audio</p>
+                      </button>
+                    </div>
+                    <audio ref={audioRef} src={audioFilePath} preload="auto"></audio>
+                  </div>
+
                   {/* Start Exercise Button */}
-                  <button className="btn btn-primary w-full mt-6 rounded-full text-lg">
-                    Finish
+                  <button className="btn btn-lg bg-purple text-white w-full mt-6 rounded-lg text-lg" onClick={finishExercise}>
+                    Finish Exercise
                   </button>
                 </div>
               </div>
@@ -418,8 +538,63 @@ export default function Homepage() {
           </div>
         )}
 
-        {/* Actual workout modal */}
 
+        {/* Completion */}
+        {postModal &&
+          <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex justify-center items-center">
+            <div className="carousel bg-white rounded-lg shadow-lg w-full max-w-sm min-h-[50vh] max-h-[80vh] overflow-auto relative" onClick={handleTap}>
+                {/* Progress bar at the top like Instagram Stories */}
+                <div className="absolute top-2 left-0 right-0 flex justify-around px-2 z-10">
+                  {slides.map((slide, index) => (
+                    <div
+                      key={index}
+                      className={`h-1 flex-1 mx-1 rounded-lg bg-gray-300 ${index === postIndex ? 'bg-purple' : ''}`}
+                    >
+                      {/* Animated progress for the current slide */}
+                      {index === postIndex && (
+                        <div
+                          className="h-full bg-purple rounded-lg"
+                          style={{ width: `${((postIndex + 1) / slides.length) * 100}%`, transition: 'width 0.3s ease-in-out' }}
+                        ></div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+
+                {/* Carousel items */}
+                <div className="carousel-item relative w-full flex items-center justify-center">
+                  {slides[postIndex] && (
+                    <div className="flex flex-col items-center justify-start bg-white p-6 h-full mt-6">
+                      <h3 className="text-2xl font-bold mb-2">{slides[postIndex].title}</h3>
+                      {slides[postIndex].img && (<img
+                        src={slides[postIndex].img}
+                        alt="completion"
+                        className="h-60 mb-4"
+                      />)}
+
+                        {slides[postIndex].stat &&
+                          <div className="my-14 flex items-center">
+                            {slides[postIndex].icon && (<FontAwesomeIcon icon={slides[postIndex].icon} className="text-[80px] text-purple"/>)}
+                            {slides[postIndex].stat && (
+                              <p className="text-[80px] font-bold">{slides[postIndex].stat}</p>
+                            )}
+                          </div>
+                        }
+
+                      <p className="text-center text-md text-black whitespace-pre-line text-pretty">
+                        {slides[postIndex].description}
+                      </p>
+
+                      {slides[postIndex].footer && (<p className="text-gray-400 text-[10px] text-balance mt-6 whitespace-pre-line">{slides[postIndex].footer}</p>)}
+
+                      {slides[postIndex].button && (<button className="btn btn-outline border-purple border-2 text-purple w-full mt-6 font-bold" onClick={() => setPostModal(false)}>Close</button>)}
+                    </div>
+                  )}
+                </div>
+  
+            </div>
+          </div>
+        }
 
       </div>
 
