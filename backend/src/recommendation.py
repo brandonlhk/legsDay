@@ -8,15 +8,15 @@ class Recommender:
         self.mongo_uri = 'mongodb+srv://a9542152:qBieNIqZZsRhEzDr@legsday.69mgs.mongodb.net/?retryWrites=true&w=majority&appName=legsDay'
         self.client = MongoClient(self.mongo_uri)
         self.exercise_db = self.client['exercise_database']
-        self.upper_body = self.exercise_db['upper_body']
-        self.lower_body = self.exercise_db['lower_body']
+        self.upper_body = self.exercise_db['upper']
+        self.lower_body = self.exercise_db['lower']
         self.abs = self.exercise_db['abs']
         self.user_db = self.client['user']
         self.user = self.user_db['users']
-        self.mapping = {'Shoulder': 'upper_body',
-                        'Wrist': 'upper_body',
-                        'Knee': 'lower_body',
-                        'Ankle': 'lower_body',
+        self.mapping = {'Shoulder': 'upper',
+                        'Wrist': 'upper',
+                        'Knee': 'lower',
+                        'Ankle': 'lower',
                         'Lower back': 'back'}
 
     def softmax(self, weights):
@@ -73,11 +73,12 @@ class Recommender:
 
     def recommend_program(self, user_file):
         # Fetch user's preferences for the given body part
-        status = user_file['status']
         preferences = user_file['preferences']
         injury_status = user_file['injury']
 
-        recommended = {'upper_body': None, 'lower_body': None, 'abs': None}
+        recommended = {'upper': {'exercise': None, 'reps': None}, 'lower': {'exercise': None, 'reps': None}, 'abs': {'exercise': None, 'reps': None}}
+        exercise = None
+        reps = None
 
         for body_part, pref in preferences.items():
             if self.mapping[injury_status]==body_part:
@@ -85,8 +86,7 @@ class Recommender:
 
             else:
                 # Query to exclude exercises based on injury status
-                query = {"muscle_groups": {"$not": {"$regex": "|".join(self.mapping[injury_status]), "$options": "i"}},
-                status: True}
+                query = {"muscle_groups": {"$not": {"$regex": "|".join(self.mapping[injury_status]), "$options": "i"}}}
 
                 # Fetch exercises matching the query
                 db_exercises = list(self.exercise_db[body_part].find(query))
@@ -116,36 +116,37 @@ class Recommender:
                 if exercise:
                     # Convert _id to string in the resulting exercise document
                     exercise['_id'] = str(exercise['_id'])
+
+                reps = user_file['reps'][ex_id]
                 
-                recommended[body_part] = exercise if exercise else None
+                recommended[body_part]['exercise'] = exercise if exercise else None
+                recommended[body_part]['reps'] = reps if reps else None
 
         return recommended
     
     def calculate_reps_and_sets(self, user_file):
         preferences = user_file['preferences']
-        recommended_reps_and_sets = {'upper_body': {}, 'lower_body': {}, 'core': {}}
+        recommended_reps_and_sets = {'upper': defaultdict(str), 'lower': defaultdict(str), 'abs': defaultdict(str)}
 
-        core_strength = user_file.get('core_strength', None)
-        upper_body_strength = user_file.get('upper_body_strength', None)
-        lower_body_strength = user_file.get('lower_body_strength', None)
+        core_strength = len(user_file.get('core_strength', []))
+        upper_body_strength = len(user_file.get('upper_body_strength', []))
+        lower_body_strength = len(user_file.get('lower_body_strength', []))
         
-        # Core strength answers determine which columns of reps to use for core exercises
-        strength_level_column_mapping = {
-        'None': 'beginner',
-        'Sitting up after lying down': 'beginner',
-        'Balancing on uneven ground': 'intermediate',
-        'Sitting up straight': 'advanced'
-        }
-
-        core_strength_level = strength_level_column_mapping.get(core_strength, 'beginner')
+        strength_mapping = {0: 'advanced', 1: 'intermediate', 2: 'beginner', 3: 'beginner'}
          
         for body_part, exercises in preferences.items():
             if body_part == 'upper':
-                strength_level = upper_body_strength
+                strength_level = strength_mapping[upper_body_strength]
+                for exercise in exercises:
+                    recommended_reps_and_sets[body_part][exercise] = self.exercise_db[exercise][f'recommended_reps_{strength_level}']
             elif body_part == 'lower':
-                strength_level = lower_body_strength
+                strength_level = strength_mapping[lower_body_strength]
+                for exercise in exercises:
+                    recommended_reps_and_sets[body_part][exercise] = self.exercise_db[exercise][f'recommended_reps_{strength_level}']
             elif body_part == 'abs':
-                strength_level = core_strength
+                strength_level = strength_mapping[core_strength]
+                for exercise in exercises:
+                    recommended_reps_and_sets[body_part][exercise] = self.exercise_db[exercise][f'recommended_reps_{strength_level}']
             else:
                 strength_level = 'beginner'
             

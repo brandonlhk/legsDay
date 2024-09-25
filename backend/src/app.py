@@ -1,5 +1,6 @@
 import os
 import re
+import uuid
 import requests
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
@@ -51,16 +52,10 @@ class SettingsRequest(BaseModel):
     userid: str
     frequency: Optional[str] = Field("", description="Optional workout frequency")
     duration: Optional[str] = Field("", description="Optional workout duration")
-    weight: Optional[float] = Field(0.0, description="Optional weight")
     injury: Optional[List[str]] = Field([], description="Optional injury")
 
 class CreateAccountRequest(BaseModel):
-    email: EmailStr
-    username: str
-    password: str
     age: Optional[float] = Field(0.0, description="Optional age")
-    height: Optional[float] = Field(0.0, description="Optional height")
-    weight: Optional[float] = Field(0.0, description="Optional weight")
     gender: Optional[str] = Field("", description="Optional gender")
     frequency: Optional[str] = Field("", description="Optional workout frequency")
     duration: Optional[str] = Field("", description="Optional workout duration")
@@ -101,37 +96,33 @@ async def recommend_program(request_data: SubstitutionRequest):
 
 @app.post('/register')
 async def register(request_data: CreateAccountRequest):
-    email = request_data.email
-    username = request_data.username
-    password = request_data.password
     age = request_data.age
-    height = request_data.height
-    weight = request_data.weight
     gender = request_data.gender
     frequency = request_data.frequency
     duration = request_data.duration
     status = request_data.status
     injury = request_data.injury
+    user_id = uuid.uuid4().hex
 
     recommender = Recommender()
     upper_body = recommender.upper_body
     lower_body = recommender.lower_body
     abdominals = recommender.abs
 
-    # Check if email, username, and password are provided (redundant due to Pydantic validation)
-    if not username or not email or not password:
-        raise HTTPException(status_code=400, detail="Email, username, and password are required")
+    # # Check if email, username, and password are provided (redundant due to Pydantic validation)
+    # if not username or not email or not password:
+    #     raise HTTPException(status_code=400, detail="Email, username, and password are required")
 
-    # Check if email is valid
-    if not is_email_valid(email):
-        raise HTTPException(status_code=400, detail="Invalid email")
+    # # Check if email is valid
+    # if not is_email_valid(email):
+    #     raise HTTPException(status_code=400, detail="Invalid email")
 
-    # Check if the email already exists in the database
-    if user_collection.find_one({"email": email}):
-        raise HTTPException(status_code=400, detail="Email already exists")
+    # # Check if the email already exists in the database
+    # if user_collection.find_one({"email": email}):
+    #     raise HTTPException(status_code=400, detail="Email already exists")
 
-    # Hash the password
-    hashed_password = generate_password_hash(password)
+    # # Hash the password
+    # hashed_password = generate_password_hash(password)
 
     # Initialize preference weights
     preferences = {}
@@ -140,12 +131,8 @@ async def register(request_data: CreateAccountRequest):
 
     # Create the user object
     new_user = {
-        "email": email,
-        "username": username,
-        "password": hashed_password,  # Store hashed password
+        "username": user_id,
         "age": age,
-        "height": height,
-        "weight": weight,
         "gender": gender,
         "frequency": frequency,
         "duration": duration,
@@ -200,7 +187,6 @@ async def settings(request_data: SettingsRequest):
     userid = request_data.userid
     frequency =  request_data.frequency
     duration = request_data.duration
-    weight = request_data.weight
     injury = request_data.injury
 
     user = user_collection.find_one(ObjectId(userid))

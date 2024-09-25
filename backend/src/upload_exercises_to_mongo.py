@@ -13,118 +13,109 @@ def upload_test_collection(mydb):
     return test_col
 
 def upload_test_record(test_col):
-    mydict = [{ "name": "pushups", "demo_link": "http://youtube.com/pushup_video" }]
-
+    mydict = [{"name": "pushups", "demo_link": "http://youtube.com/pushup_video"}]
     x = test_col.insert_many(mydict)
-
     return x
 
 def upload_exercise_csv(path, mydb):
     df = pd.read_csv(path)
-    df = df.fillna('')
+    df = df.fillna('')  # Fill NaN values with an empty string
 
-    upper_body = df[df["body part"]=='upper body']
-    # print(upper_body.columns)
+    # Filter by body part
+    upper_body = df[df["body part"] == 'upper']
+    lower_body = df[df["body part"] == 'lower']
+    abdominals = df[df["body part"] == 'abs']
+
+    # Remove 'body part' column, as it's redundant now
     upper_body.drop(columns=["body part"], inplace=True)
-    lower_body = df[df["body part"]=='lower body']
     lower_body.drop(columns=["body part"], inplace=True)
-    abdominals = df[df["body part"]=='abdominals']
     abdominals.drop(columns=["body part"], inplace=True)
-    # exercise name	body part	muscle groups	youtube link	recommended reps	full instructions	form tips	progression tips	regression tips	easy	beginner	advanced
-    upper_ld = [{'name': name, 
-             'muscle_groups': mg, 
-             'youtube_link': yt, 
-             'image_binary': img,
-             'recommended_reps': reps, 
-             'full_instructions': inst, 
-             'form_tips': ft, 
-             'progressions': pt, 
-             'regressions': rt, 
-             'beginner': bool(e), 
-             'intermediate': bool(b), 
-             'advanced': bool(a)}
-            for name, mg, yt, img, reps, inst, ft, pt, rt, e, b, a 
-            in zip(upper_body['exercise name'], 
-                   upper_body['muscle groups'], 
-                   upper_body['youtube link'], 
-                   upper_body['image binary'],
-                   upper_body['recommended reps'], 
-                   upper_body['full instructions'], 
-                   upper_body['form tips'], 
-                   upper_body['progression tips'], 
-                   upper_body['regression tips'], 
-                   upper_body['easy'], 
-                   upper_body['beginner'], 
-                   upper_body['advanced'])]
 
-    lower_ld = [{'name': name, 
-             'muscle_groups': mg, 
-             'youtube_link': yt, 
-             'image_binary': img,
-             'recommended_reps': reps, 
-             'full_instructions': inst, 
-             'form_tips': ft, 
-             'progressions': pt, 
-             'regressions': rt, 
-             'beginner': bool(e), 
-             'intermediate': bool(b), 
-             'advanced': bool(a)}
-            for name, mg, yt, img, reps, inst, ft, pt, rt, e, b, a 
-            in zip(lower_body['exercise name'], 
-                   lower_body['muscle groups'], 
-                   lower_body['youtube link'], 
-                   lower_body['image binary'],
-                   lower_body['recommended reps'], 
-                   lower_body['full instructions'], 
-                   lower_body['form tips'], 
-                   lower_body['progression tips'], 
-                   lower_body['regression tips'], 
-                   lower_body['easy'], 
-                   lower_body['beginner'], 
-                   lower_body['advanced'])]
+    # Process each section (upper body, lower body, abs)
+    upper_ld = [
+        {
+            'name': name, 
+            'muscle_groups': mg, 
+            'link': link, 
+            'image_binary': img,
+            'recommended_reps_beginner': reps_beg, 
+            'recommended_reps_intermediate': reps_int, 
+            'recommended_reps_advanced': reps_adv,
+            'full_instructions': inst, 
+            'form_tips': ft
+        }
+        for name, mg, link, img, reps_beg, reps_int, reps_adv, inst, ft 
+        in zip(upper_body['exercise name'], 
+               upper_body['muscle groups'], 
+               upper_body['link'], 
+               upper_body['image binary'],
+               upper_body['recommended_reps_beginner'], 
+               upper_body['recommended_reps_intermediate'], 
+               upper_body['recommended_reps_advanced'], 
+               upper_body['full instructions'], 
+               upper_body['form tips'])
+    ]
 
-    abs_ld = [{'name': name, 
-           'muscle_groups': mg, 
-           'youtube_link': yt, 
-           'image_binary': img,
-           'recommended_reps': reps, 
-           'full_instructions': inst, 
-           'form_tips': ft, 
-           'progressions': pt, 
-           'regressions': rt, 
-           'beginner': bool(e), 
-           'intermediate': bool(b), 
-           'advanced': bool(a)}
-          for name, mg, yt, img, reps, inst, ft, pt, rt, e, b, a 
-          in zip(abdominals['exercise name'], 
-                 abdominals['muscle groups'], 
-                 abdominals['youtube link'], 
-                 abdominals['image binary'],
-                 abdominals['recommended reps'], 
-                 abdominals['full instructions'], 
-                 abdominals['form tips'], 
-                 abdominals['progression tips'], 
-                 abdominals['regression tips'], 
-                 abdominals['easy'], 
-                 abdominals['beginner'], 
-                 abdominals['advanced'])]
+    lower_ld = [
+        {
+            'name': name, 
+            'muscle_groups': mg, 
+            'link': link, 
+            'image_binary': img,
+            'recommended_reps_beginner': reps_beg, 
+            'recommended_reps_intermediate': reps_int, 
+            'recommended_reps_advanced': reps_adv,
+            'full_instructions': inst, 
+            'form_tips': ft
+        }
+        for name, mg, link, img, reps_beg, reps_int, reps_adv, inst, ft
+        in zip(lower_body['exercise name'], 
+               lower_body['muscle groups'], 
+               lower_body['link'], 
+               lower_body['image binary'],
+               lower_body['recommended_reps_beginner'], 
+               lower_body['recommended_reps_intermediate'], 
+               lower_body['recommended_reps_advanced'], 
+               lower_body['full instructions'], 
+               lower_body['form tips'])
+    ]
 
-    for col, ld in zip(['upper_body', 'lower_body', 'abs'], [upper_ld, lower_ld, abs_ld]):
+    abs_ld = [
+        {
+            'name': name, 
+            'muscle_groups': mg, 
+            'link': link, 
+            'image_binary': img,
+            'recommended_reps_beginner': reps_beg, 
+            'recommended_reps_intermediate': reps_int, 
+            'recommended_reps_advanced': reps_adv,
+            'full_instructions': inst, 
+            'form_tips': ft
+        }
+        for name, mg, link, img, reps_beg, reps_int, reps_adv, inst, ft
+        in zip(abdominals['exercise name'], 
+               abdominals['muscle groups'], 
+               abdominals['link'], 
+               abdominals['image binary'],
+               abdominals['recommended_reps_beginner'], 
+               abdominals['recommended_reps_intermediate'], 
+               abdominals['recommended_reps_advanced'], 
+               abdominals['full instructions'], 
+               abdominals['form tips'])
+    ]
+
+    # Insert the processed records into the MongoDB collections
+    for col, ld in zip(['upper', 'lower', 'abs'], [upper_ld, lower_ld, abs_ld]):
         mycol = mydb[col]
         x = mycol.insert_many(ld)
-        print(x.inserted_ids)
-    
+        print(f"Inserted into {col} collection: {x.inserted_ids}")
 
 
 if __name__ == "__main__":
     client, ex_db = connect_exercise_db()
-    # ex_db.users.remove({})
-    p = 'Exercise DB - no equipment.csv'
-    # test_col = upload_test_collection(ex_db)
-    # x = upload_test_record(test_col)
+    p = 'Exercise DB - Sheet5.csv'
 
     upload_exercise_csv(p, ex_db)
 
     print(client.list_database_names())
     print(ex_db.list_collection_names())
-    # print(x.inserted_ids)
