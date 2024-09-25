@@ -64,8 +64,6 @@ class Recommender:
             {"$set": {f"preferences.{body_part}.{substitution_id}": new_weight}}
         )
 
-
-
     def substitute(self, body_part, substitution_id, user_file):
         previous_weight = self.zero_weight(body_part, substitution_id, user_file)
         recommended = self.recommend_program(user_file)
@@ -122,8 +120,52 @@ class Recommender:
                 recommended[body_part] = exercise if exercise else None
 
         return recommended
+    
+    def calculate_reps_and_sets(self, user_file):
+        preferences = user_file['preferences']
+        recommended_reps_and_sets = {'upper_body': {}, 'lower_body': {}, 'core': {}}
 
+        core_strength = user_file.get('core_strength', None)
+        upper_body_strength = user_file.get('upper_body_strength', None)
+        lower_body_strength = user_file.get('lower_body_strength', None)
+        
+        # Core strength answers determine which columns of reps to use for core exercises
+        strength_level_column_mapping = {
+        'None': 'beginner',
+        'Sitting up after lying down': 'beginner',
+        'Balancing on uneven ground': 'intermediate',
+        'Sitting up straight': 'advanced'
+        }
 
+        core_strength_level = strength_level_column_mapping.get(core_strength, 'beginner')
+         
+        for body_part, exercises in preferences.items():
+            if body_part == 'upper':
+                strength_level = upper_body_strength
+            elif body_part == 'lower':
+                strength_level = lower_body_strength
+            elif body_part == 'abs':
+                strength_level = core_strength
+            else:
+                strength_level = 'beginner'
+            
+
+        return recommended_reps_and_sets
+    
+    def recommend_reps_and_sets(self, userid):
+        user_file = self.fetch_user_file(userid)
+        reps_and_sets = self.calculate_reps_and_sets(user_file)
+
+        self.store_reps_and_sets(user_file, reps_and_sets)
+
+        return reps_and_sets
+    
+    def store_reps_and_sets(self, user_file, reps_and_sets_data):
+        self.user.update_one(
+            {"_id": ObjectId(user_file['_id'])},
+            {"$set": {"reps_and_sets": reps_and_sets_data}}
+        )
+    
 if __name__ == "__main__":
     recommender = Recommender()
     user_file = recommender.fetch_user_file('238hwbus324')

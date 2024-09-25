@@ -36,6 +36,10 @@ class SubstitutionRequest(BaseModel):
     substitution: Optional[SubstitutionData] = Field(
         None, description="Optional substitution data, left blank if it's the first recommendation and not a substitution"
     )
+    
+class RecommendationRequest(BaseModel):
+    userid: str
+    
 class LoginRequest(BaseModel):
     username: str
     password: str
@@ -222,9 +226,11 @@ async def settings(request_data: SettingsRequest):
             "message": "Rewrote to db successsfully",
             "amended": {'frequency': frequency,
                         'duration': duration,
-                        'status': status,
                         'weight': weight,
                         'injury': injury}
         }
     else:
         raise HTTPException(status_code=401, detail="UserID does not exist")
+    
+
+    
