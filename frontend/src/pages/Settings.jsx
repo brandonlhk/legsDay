@@ -123,7 +123,7 @@ export default function Settings() {
     return (
 
         <div className="bg-[#F5F5F5] min-h-screen">
-            <p className="text-center text-dark-purple fond-bold text-3xl pt-6">Settings</p>
+            <p className="text-center text-dark-purple font-bold text-3xl pt-6">Settings</p>
 
             
             <div className="container mx-auto p-6">
