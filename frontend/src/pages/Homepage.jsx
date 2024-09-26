@@ -1,24 +1,27 @@
 import {useState, useEffect, useRef} from "react"
-import {useLocation} from "react-router-dom"
+import {useLocation, useNavigate} from "react-router-dom"
 import JSConfetti from 'js-confetti'
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faVolumeUp, faVolumeMute, faPause, faPlay, faUndoAlt, faArrowLeft, faArrowUp } from "@fortawesome/free-solid-svg-icons";
 import CountdownModal from '../components/CountdownModal';
 
 export default function Homepage() {
-
+  const navigate = useNavigate()
   const location = useLocation()
-  const receivedData = location.state?.data
+  
+  // data receive from localStorage
   const userID = localStorage.getItem("userid")
-  // data receive from prev page
-  const [freq, setFreq] = useState("")
+  const [days, setDays] = useState(localStorage.getItem("days"))
+  const [duration, setDuration] = useState(localStorage.getItem("duration"))
+  const [core, setCore] = useState(JSON.parse(localStorage.getItem("core")))
+  const [lowerBody, setLowerbody] = useState(JSON.parse(localStorage.getItem("lowerbody")))
+  const [upperBody, setUpperBody] = useState(JSON.parse(localStorage.getItem("upperbody")))
+
+  // count current days and exercises
   const [exercisesDone, setExercisesDone] = useState(0)
   const [daysDone, setDaysDone] = useState(0)
   const [isLoading, setIsLoading] = useState(false)
-  const [duration, setDuration] = useState('')
-  const [core, setCore] = useState(["None"])
-  const [lowerBody, setLowerbody] = useState(["None"])
-  const [upperBody, setUpperBody] = useState(["None"])
+
   
   // check if user finish the exercise for that day
   const [finishExerciseCheck, setFinishExerciseCheck] = useState(false)
@@ -76,7 +79,7 @@ export default function Homepage() {
 
   const [postModal, setPostModal] = useState(false)
   
-    //ig story kinda feel
+  //ig story kinda feel
   const handleTap = (e) => {
     const width = e.target.offsetWidth; // Get the width of the carousel
     const clickX = e.clientX; // Get the X position of the click
@@ -105,11 +108,12 @@ export default function Homepage() {
 
   const calculateProgress = () => {
 
-    const toAdd = 100/freq/3
+    const toAdd = 100/days/3
     setProgress((prevProgress) => prevProgress + toAdd)
   }
 
   const addWord = (exercise) => {
+    console.log(exercise)
     if (!exercise.includes("seconds") && !exercise.includes("metres")) {
       exercise = exercise + " reps" 
     }
@@ -195,7 +199,7 @@ export default function Homepage() {
     setOpenStartExercise(false)
   }
 
-  //refresh the exercises
+  //refresh the exercises || uncoment when backend up
   const refreshExercises = async () => {
     setIsLoading(true)
     try {
@@ -229,22 +233,6 @@ export default function Homepage() {
     setIsLoading(false)
   }
   }
-
-
-  // receive from prev page
-  useEffect(() => {
-    if (receivedData) {
-        setFreq(receivedData[0])
-        setCore(receivedData[1])
-        setLowerbody(receivedData[2])
-        setUpperBody(receivedData[3])
-        setDuration(receivedData[4])
-        
-        const processedProgram = Object.values(receivedData[5]).map((exercise) => processExercise(exercise))
-        // console.log(processedProgram)
-        setCurrProgram(processedProgram)
-    }
-}, [receivedData])
   
   // if every exercise done, can increase by 1, if all exercises done, refresh exercises
   useEffect(() => {
@@ -283,10 +271,10 @@ export default function Homepage() {
 
             {/* havent implement the logic for the progress */}
             <div className="w-full">
-              <p className="font-bold">Complete the full program for {freq} days</p>
+              <p className="font-bold">Complete the full program for {days} days</p>
               <div className="flex items-center">
                 <progress className="progress progress-error" value={progress} max="100"></progress>
-                <span className="ml-2">{daysDone}/{freq}</span>
+                <span className="ml-2">{daysDone}/{days}</span>
               </div>
             </div>
 
@@ -333,10 +321,10 @@ export default function Homepage() {
             <button className="active">
               Workout
             </button>
-            <button>
+            <button onClick={() => navigate("/library")}>
               Library
             </button>
-            <button>
+            <button onClick={() => navigate("/settings")}>
               Settings
             </button>
 

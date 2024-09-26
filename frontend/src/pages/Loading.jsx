@@ -107,6 +107,22 @@ export default function Loading() {
                 }
             }
             // sendData()
+            // navigate("/home", {state: {data: data}})
+
+
+            // send to homepage first
+            localStorage.setItem("age", age)
+            localStorage.setItem("gender", gender)
+            localStorage.setItem("level", level)
+            localStorage.setItem("days", days)
+            localStorage.setItem("duration", duration)
+            localStorage.setItem("injuries", JSON.stringify(injuries))
+            localStorage.setItem("core", JSON.stringify(core))
+            localStorage.setItem("lowerbody", JSON.stringify(lowerBody))
+            localStorage.setItem("upperbody", JSON.stringify(upperBody))
+            
+
+            navigate("/home")
         }
     }, [isDataInitialized])
 

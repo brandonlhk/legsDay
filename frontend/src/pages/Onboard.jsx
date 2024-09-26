@@ -175,7 +175,7 @@ export default function Onboard() {
                         <div className="card-body h-24 flex justify-center">
                             <div className="form-control">
                                 <label className="label cursor-pointer flex justify-start">
-                                 <input type="radio" name="days" className="radio" value={index+2} checked={days === index+2} hidden/>
+                                 <input type="radio" name="days" className="radio" value={part.level} checked={level === part.level} hidden/>
                                  <div>
                                     <p className="label-text font-bold text-lg">{part.level}</p>
                                     <span className="label-text font-bold text-gray-400 text-md">{part.info}</span>
@@ -284,7 +284,7 @@ export default function Onboard() {
                             "Ankle",
                             "Lower back"
                             ].map((data, index) => (
-                        <div key={index} className={`card w-full shadow-md ${injuries.includes(data) ? "border-purple border-2": "border-slate-300 border"}`} onClick={() => setDuration(data)}>
+                        <div key={index} className={`card w-full shadow-md ${injuries.includes(data) ? "border-purple border-2": "border-slate-300 border"}`}>
                         <div className="card-body h-20 flex justify-center">
                             <div className="form-control">
                                 <label className="label cursor-pointer flex justify-start">
