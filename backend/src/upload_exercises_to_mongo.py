@@ -42,18 +42,20 @@ def upload_exercise_csv(path, mydb):
             'recommended_reps_intermediate': reps_int, 
             'recommended_reps_advanced': reps_adv,
             'full_instructions': inst, 
-            'form_tips': ft
+            'form_tips': ft,
+            'injury_flag': [i.strip() for i in i_f.split(";")]
         }
-        for name, mg, link, img, reps_beg, reps_int, reps_adv, inst, ft 
+        for name, mg, link, img, reps_beg, reps_int, reps_adv, inst, ft, i_f 
         in zip(upper_body['exercise name'], 
                upper_body['muscle groups'], 
                upper_body['link'], 
                upper_body['image binary'],
-               upper_body['recommended_reps_beginner'], 
-               upper_body['recommended_reps_intermediate'], 
-               upper_body['recommended_reps_advanced'], 
+               upper_body['beginner'], 
+               upper_body['intermediate'], 
+               upper_body['advanced'], 
                upper_body['full instructions'], 
-               upper_body['form tips'])
+               upper_body['form tips'],
+               upper_body['injury flag'])
     ]
 
     lower_ld = [
@@ -66,18 +68,20 @@ def upload_exercise_csv(path, mydb):
             'recommended_reps_intermediate': reps_int, 
             'recommended_reps_advanced': reps_adv,
             'full_instructions': inst, 
-            'form_tips': ft
+            'form_tips': ft,
+            'injury_flag': [i.strip() for i in i_f.split(";")]
         }
-        for name, mg, link, img, reps_beg, reps_int, reps_adv, inst, ft
+        for name, mg, link, img, reps_beg, reps_int, reps_adv, inst, ft, i_f
         in zip(lower_body['exercise name'], 
                lower_body['muscle groups'], 
                lower_body['link'], 
                lower_body['image binary'],
-               lower_body['recommended_reps_beginner'], 
-               lower_body['recommended_reps_intermediate'], 
-               lower_body['recommended_reps_advanced'], 
+               lower_body['beginner'], 
+               lower_body['intermediate'], 
+               lower_body['advanced'], 
                lower_body['full instructions'], 
-               lower_body['form tips'])
+               lower_body['form tips'],
+               lower_body['injury flag'])
     ]
 
     abs_ld = [
@@ -90,18 +94,20 @@ def upload_exercise_csv(path, mydb):
             'recommended_reps_intermediate': reps_int, 
             'recommended_reps_advanced': reps_adv,
             'full_instructions': inst, 
-            'form_tips': ft
+            'form_tips': ft,
+            'injury_flag': [i.strip() for i in i_f.split(";")]
         }
-        for name, mg, link, img, reps_beg, reps_int, reps_adv, inst, ft
+        for name, mg, link, img, reps_beg, reps_int, reps_adv, inst, ft, i_f
         in zip(abdominals['exercise name'], 
                abdominals['muscle groups'], 
                abdominals['link'], 
                abdominals['image binary'],
-               abdominals['recommended_reps_beginner'], 
-               abdominals['recommended_reps_intermediate'], 
-               abdominals['recommended_reps_advanced'], 
+               abdominals['beginner'], 
+               abdominals['intermediate'], 
+               abdominals['advanced'], 
                abdominals['full instructions'], 
-               abdominals['form tips'])
+               abdominals['form tips'],
+               abdominals['injury flag'])
     ]
 
     # Insert the processed records into the MongoDB collections

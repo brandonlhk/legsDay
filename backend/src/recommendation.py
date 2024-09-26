@@ -2,6 +2,7 @@ import random
 import numpy as np
 from pymongo import MongoClient
 from bson.objectid import ObjectId
+from collections import defaultdict
 
 class Recommender:
     def __init__(self):
@@ -13,11 +14,6 @@ class Recommender:
         self.abs = self.exercise_db['abs']
         self.user_db = self.client['user']
         self.user = self.user_db['users']
-        self.mapping = {'Shoulder': 'upper',
-                        'Wrist': 'upper',
-                        'Knee': 'lower',
-                        'Ankle': 'lower',
-                        'Lower back': 'back'}
 
     def softmax(self, weights):
         # Use numpy's softmax to normalize the weights
@@ -81,46 +77,51 @@ class Recommender:
         reps = None
 
         for body_part, pref in preferences.items():
-            if self.mapping[injury_status]==body_part:
+            # Query to exclude exercises based on injury status
+            keywords_to_exclude = set(injury_status)
+
+            query = {
+                    "$nor": [
+                        {"injury_flag": {"$in": list(keywords_to_exclude)}}
+                    ]
+                }
+
+            # Fetch exercises matching the query
+            db_exercises = list(self.exercise_db[body_part].find(query))
+
+            # Create a set of exercise IDs from the query results
+            db_exercise_ids = {str(ex['_id']) for ex in db_exercises}
+
+            # Filter preferences to only include exercises that exist in the database query results
+            filtered_pref = [(ex_id, weight) for ex_id, weight in pref.items() if ex_id in db_exercise_ids]
+
+            if not filtered_pref:
+                # no exercises for this body part are suitable. Recommend standing or bicycle crunches as they are the lowest impact
+                choice = random.choice(["66f525a765e560e315b1b747", "66f525a765e560e315b1b74a"])
+                recommended[body_part]['exercise'] = self.exercise_db["abs"].find_one(ObjectId(choice))
+                recommended[body_part]['reps'] = user_file['reps']["abs"][choice]
                 continue
 
-            else:
-                # Query to exclude exercises based on injury status
-                query = {"muscle_groups": {"$not": {"$regex": "|".join(self.mapping[injury_status]), "$options": "i"}}}
+            # Unzip the filtered preferences into exercises and weights
+            exercises, weights = zip(*filtered_pref)
 
-                # Fetch exercises matching the query
-                db_exercises = list(self.exercise_db[body_part].find(query))
+            # Softmax the weights
+            normalized_weights = self.softmax(weights)
 
-                # Create a set of exercise IDs from the query results
-                db_exercise_ids = {str(ex['_id']) for ex in db_exercises}
+            # Randomly choose 1 exercise ID based on weights
+            ex_id = random.choices(exercises, weights=normalized_weights, k=1)[0]
 
-                # Filter preferences to only include exercises that exist in the database query results
-                filtered_pref = [(ex_id, weight) for ex_id, weight in pref.items() if ex_id in db_exercise_ids]
+            # Fetch the full exercise document from the database for the chosen ID
+            exercise = self.exercise_db[body_part].find_one({"_id": ObjectId(ex_id)})
 
-                if not filtered_pref:
-                    recommended[body_part] = None
-                    continue
+            if exercise:
+                # Convert _id to string in the resulting exercise document
+                exercise['_id'] = str(exercise['_id'])
 
-                # Unzip the filtered preferences into exercises and weights
-                exercises, weights = zip(*filtered_pref)
-
-                # Softmax the weights
-                normalized_weights = self.softmax(weights)
-
-                # Randomly choose 1 exercise ID based on weights
-                ex_id = random.choices(exercises, weights=normalized_weights, k=1)[0]
-
-                # Fetch the full exercise document from the database for the chosen ID
-                exercise = self.exercise_db[body_part].find_one({"_id": ObjectId(ex_id)})
-
-                if exercise:
-                    # Convert _id to string in the resulting exercise document
-                    exercise['_id'] = str(exercise['_id'])
-
-                reps = user_file['reps'][ex_id]
-                
-                recommended[body_part]['exercise'] = exercise if exercise else None
-                recommended[body_part]['reps'] = reps if reps else None
+            reps = user_file['reps'][body_part][ex_id]
+            
+            recommended[body_part]['exercise'] = exercise
+            recommended[body_part]['reps'] = reps
 
         return recommended
     

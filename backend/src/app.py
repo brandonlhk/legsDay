@@ -1,6 +1,7 @@
 import os
 import re
 import uuid
+from collections import defaultdict
 import requests
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
@@ -26,6 +27,7 @@ client = MongoClient(mongo_uri)
 client.server_info()
 user_db = client.user
 user_collection = user_db.users
+exercise_db = client['exercise_database']
 
 class SubstitutionData(BaseModel):
     exercise_id: str
@@ -34,9 +36,7 @@ class SubstitutionData(BaseModel):
 
 class SubstitutionRequest(BaseModel):
     userid: str
-    substitution: Optional[SubstitutionData] = Field(
-        None, description="Optional substitution data, left blank if it's the first recommendation and not a substitution"
-    )
+    substitution: SubstitutionData
     
 class RecommendationRequest(BaseModel):
     userid: str
@@ -61,6 +61,10 @@ class CreateAccountRequest(BaseModel):
     duration: Optional[str] = Field("", description="Optional workout duration")
     status: Optional[str] = Field("", description="Optional status")
     injury: Optional[List[str]] = Field([], description="Optional injury")
+    level: Optional[str] = Field("", description="Optional exercise experience")
+    core_strength: Optional[List[str]] = Field([], description="Optional responses for core strength")
+    upper_body_strength: Optional[List[str]] = Field([], description="Optional responses for upp body strength")
+    lower_body_strength: Optional[List[str]] = Field([], description="Optional responses for lower body strength")
 
 # function to check if email input is valid 
 def is_email_valid(email: str):
@@ -73,8 +77,55 @@ def is_email_valid(email: str):
 def initialize_weights(ids: list):
     return {id: float(1) for id in ids}
 
+def calculate_reps_and_sets(preferences, core_strength, upper_body_strength, lower_body_strength):
+        recommended_reps_and_sets = {'upper': defaultdict(str), 'lower': defaultdict(str), 'abs': defaultdict(str)}
+
+        core_strength = len(core_strength)
+        upper_body_strength = len(upper_body_strength)
+        lower_body_strength = len(lower_body_strength)
+        
+        strength_mapping = {0: 'advanced', 1: 'intermediate', 2: 'beginner', 3: 'beginner'}
+         
+        for body_part, exercises in preferences.items():
+            if body_part == 'upper':
+                strength_level = strength_mapping[upper_body_strength]
+            elif body_part == 'lower':
+                strength_level = strength_mapping[lower_body_strength]
+            else:
+                strength_level = strength_mapping[core_strength]
+
+            for exercise in exercises:
+                # Fetch the exercise document
+                exercise_data = exercise_db[body_part].find_one(ObjectId(exercise))  # Adjust the query as needed
+                
+                # Create reps_and_sets dictionary
+                recommended_reps = exercise_data[f'recommended_reps_{strength_level}']
+
+                recommended_reps_and_sets[body_part][exercise] = recommended_reps
+            
+        # print(recommended_reps_and_sets)
+        return recommended_reps_and_sets
+
+
 @app.post("/recommend")
-async def recommend_program(request_data: SubstitutionRequest):
+async def recommend_program(request_data: RecommendationRequest):
+    userid = request_data.userid
+
+    # Initialize the recommender
+    recommender = Recommender()
+
+    # Fetch user data and recommend a program
+    # try:
+    user_file = recommender.fetch_user_file(userid)
+    program = recommender.recommend_program(user_file)
+    response = {'message': 'program recommended successfully', 'data': program}
+
+    return response
+    # except Exception as e:
+    #     raise HTTPException(status_code=500, detail=f"An error occurred: {str(e)}")
+
+@app.post("/substitute")
+async def substitute_program(request_data: SubstitutionRequest):
     userid = request_data.userid
     substitution = request_data.substitution
 
@@ -84,10 +135,7 @@ async def recommend_program(request_data: SubstitutionRequest):
     # Fetch user data and recommend a program
     try:
         user_file = recommender.fetch_user_file(userid)
-        if substitution:
-            program = recommender.substitute(substitution.body_part, substitution.exercise_id, user_file)
-        else:
-            program = recommender.recommend_program(user_file)
+        program = recommender.substitute(substitution.body_part, substitution.exercise_id, user_file)
         response = {'message': 'program recommended successfully', 'data': program}
 
         return response
@@ -102,6 +150,10 @@ async def register(request_data: CreateAccountRequest):
     duration = request_data.duration
     status = request_data.status
     injury = request_data.injury
+    level = request_data.level
+    core_strength = request_data.core_strength
+    upper_body_strength = request_data.upper_body_strength
+    lower_body_strength = request_data.lower_body_strength
     user_id = uuid.uuid4().hex
 
     recommender = Recommender()
@@ -126,8 +178,11 @@ async def register(request_data: CreateAccountRequest):
 
     # Initialize preference weights
     preferences = {}
-    for col, body_part in zip([upper_body, lower_body, abdominals], ['upper_body', 'lower_body', 'abs']):
+    for col, body_part in zip([upper_body, lower_body, abdominals], ['upper', 'lower', 'abs']):
         preferences[body_part] = initialize_weights([str(i['_id']) for i in col.find({})])
+
+    recommender = Recommender()
+    reps_n_sets = calculate_reps_and_sets(preferences, core_strength, upper_body_strength, lower_body_strength)
 
     # Create the user object
     new_user = {
@@ -138,7 +193,12 @@ async def register(request_data: CreateAccountRequest):
         "duration": duration,
         "status": status,
         "injury": injury,
-        "preferences": preferences
+        "level": level,
+        "upper_body_strength": upper_body_strength,
+        "lower_body_strength": lower_body_strength,
+        "core_strength": core_strength,
+        "preferences": preferences,
+        "reps": reps_n_sets
     }
 
     # Insert the new user into the database
