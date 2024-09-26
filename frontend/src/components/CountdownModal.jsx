@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 
-const CountdownModal = ({ isOpen, countdown, onClose, audioRef }) => {
+const CountdownModal = ({ isOpen, countdown, onClose, audioRef, setIsWorkoutPaused }) => {
   const [currentCountdown, setCurrentCountdown] = useState(countdown);
   const [radialProgress, setRadialProgress] = useState(100); // Start at 100%
 
@@ -25,7 +25,12 @@ const CountdownModal = ({ isOpen, countdown, onClose, audioRef }) => {
               });
             }
 
-            setTimeout(() => onClose(), 500); // Automatically close after delay (optional, for a smooth exit)
+            // Delay state updates to avoid triggering render-phase updates
+            setTimeout(() => {
+              setIsWorkoutPaused(true); // Set workout paused after countdown
+            }, 0); // Use setTimeout(0) to allow the render phase to complete first
+
+            onClose(); // Close modal
             return 0; // Ensure it doesn't go below zero
           }
           return prev - 1;

@@ -2,7 +2,7 @@ import {useState, useEffect, useRef} from "react"
 import {useLocation, useNavigate} from "react-router-dom"
 import JSConfetti from 'js-confetti'
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faVolumeUp, faVolumeMute, faPause, faPlay, faUndoAlt, faArrowLeft, faArrowUp } from "@fortawesome/free-solid-svg-icons";
+import { faVolumeUp, faVolumeMute, faPause, faPlay, faUndoAlt, faArrowLeft, faArrowUp, faArrowsRotate } from "@fortawesome/free-solid-svg-icons";
 import CountdownModal from '../components/CountdownModal';
 
 export default function Homepage() {
@@ -20,13 +20,14 @@ export default function Homepage() {
   // count current days and exercises
   const [exercisesDone, setExercisesDone] = useState(0)
   const [daysDone, setDaysDone] = useState(0)
-  const [isLoading, setIsLoading] = useState(false)
-
   
   // check if user finish the exercise for that day
   const [finishExerciseCheck, setFinishExerciseCheck] = useState(false)
   const [countdown, setCountdown] = useState(5)
-  const [currProgram, setCurrProgram] = useState([{"_id": "1", "name": "test", "recommended_reps" : "10", "image_binary": "123", "youtube_link": "https://www.youtube.com/watch?v=IT94xC35u6k", "form_tips": ["Don't arch your back"], "progressions": "", "muscle_groups": ["quads", "knee"]}])
+  const [currProgram, setCurrProgram] = useState([
+    {"_id": "2", "name": "Mountain Climbers", "recommended_reps" : "10 reps", "image_binary": "123", "youtube_link": "https://www.youtube.com/watch?v=IT94xC35u6k", "form_tips": ["Don't arch your back"], "progressions": "", "muscle_groups": ["quads", "knee"], "audio": "mountain_climbers", "gif": "https://media2.giphy.com/media/v1.Y2lkPTc5MGI3NjExZTkzZTdjZHdnaDFkZWdrZWszOWFjMDZxajZiYWkwZXR4ejYxMHl4aiZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/1fXlBlPARN32xb4sSi/giphy.gif"}
+    ,{"_id": "1", "name": "Superman holds", "recommended_reps" : "30 secs", "image_binary": "123", "youtube_link": "https://www.youtube.com/watch?v=IT94xC35u6k",  "form_tips": ["Don't arch your back"], "progressions": "", "muscle_groups": ["quads", "knee"], "audio":"superman_holds", "gif": "https://media3.giphy.com/media/v1.Y2lkPTc5MGI3NjExMGl2d215OXowbmlzbWFteXowZW9nc3RsbXlheGs0aWwzbXl5Ynl0aCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/buywrRydhE3G3ZiAJY/giphy.gif"}
+  ])
 
   // check if user start exercise, true -> open modal
   const [startExercise, setStartExercise] = useState(false)
@@ -50,6 +51,7 @@ export default function Homepage() {
 
   //post progression index
   const [postIndex, setPostIndex] = useState(0)
+  const [postModal, setPostModal] = useState(false)
   const slides = [
     {
       title: 'Congrats on completing! 🥳',
@@ -76,9 +78,32 @@ export default function Homepage() {
     }
 
   ]
-
-  const [postModal, setPostModal] = useState(false)
   
+  //countdown for exercises
+  const [timeLeft, setTimeLeft] = useState(60); // 1 minute in seconds
+  const [isWorkoutPaused, setIsWorkoutPaused] = useState(false)
+  const intervalRef = useRef(null);
+ 
+  const toggleCountdown = () => {
+    setIsWorkoutPaused(!isWorkoutPaused);
+  };
+
+  //refreshing exercise
+  const [loadingExercises, setLoadingExercises] = useState({});
+
+  const handleRefreshExercise = (exerciseId) => {
+    // Set the specific exercise to loading state
+    setLoadingExercises((prev) => ({ ...prev, [exerciseId]: true }));
+
+    // simulate loading time
+    setTimeout(() => {
+      refreshExercise(exerciseId); // Your existing refresh logic
+      // Remove the loading state after refreshing
+      setLoadingExercises((prev) => ({ ...prev, [exerciseId]: false }));
+    }, 2000); 
+  }
+
+
   //ig story kinda feel
   const handleTap = (e) => {
     const width = e.target.offsetWidth; // Get the width of the carousel
@@ -91,15 +116,17 @@ export default function Homepage() {
     }
   };
 
-  const handleStartOpen = () => {
+  const handleStartOpen = (exercise) => {
     setCountdown(5)
     setStartExercise(true)
     setIsModalOpen(false);
 
     //open the new workout modal
+    console.log(exercise)
     setOpenStartExercise(true)
-    setAudioFilePath("/audio/audio1.mp3");
+    setAudioFilePath(`/audio/${exercise}.mp3`);
     setAudioCountDown(5);
+    setTimeLeft(60)
   }
 
   const handleStartClose = () => {
@@ -137,6 +164,7 @@ export default function Homepage() {
     return newWord
   }
   
+  // process from backend
   const processExercise = (exercise) => {
     return {
       ...exercise,
@@ -144,7 +172,8 @@ export default function Homepage() {
       muscle_groups: seperateMuscleGroups(exercise.muscle_groups),
       form_tips: intoOL(exercise.form_tips),
       progressions: exercise.progression !== "" ? intoOL(exercise.progressions) : [],
-      recommended_reps: addWord(exercise.recommended_reps)
+      recommended_reps: addWord(exercise.recommended_reps),
+      name: exercise.name.charAt(0).toUpperCase() + exercise.name.slice(1)
     }
   }
 
@@ -189,6 +218,8 @@ export default function Homepage() {
   const goBack = () => {
     setIsModalOpen(true)
     setOpenStartExercise(false)
+    setIsWorkoutPaused(false)
+    setTimeLeft(60)
   }
 
   const finishExercise = () => {
@@ -197,41 +228,48 @@ export default function Homepage() {
     calculateProgress()
     setExercisesDone((prevExercisesDone) => prevExercisesDone + 1)
     setOpenStartExercise(false)
+    setIsWorkoutPaused(false)
+    setTimeLeft(60)
+    setIsMuted(false)
+    setIsPaused(false)
   }
 
   //refresh the exercises || uncoment when backend up
-  const refreshExercises = async () => {
-    setIsLoading(true)
-    try {
-      const response = await fetch('https://bfg-backend-gcp-image-719982789123.us-central1.run.app/recommend', {
-          method: 'POST',
-          headers: {
-              'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-              "userid": userID
-          }),
-      });
+  // const refreshExercises = async () => {
+  //   try {
+  //     const response = await fetch('https://bfg-backend-gcp-image-719982789123.us-central1.run.app/recommend', {
+  //         method: 'POST',
+  //         headers: {
+  //             'Content-Type': 'application/json',
+  //         },
+  //         body: JSON.stringify({
+  //             "userid": userID
+  //         }),
+  //     });
 
               
-      if (!response.ok) {
-          throw new Error('Failed to send data to recommend new info');
-      }
+  //     if (!response.ok) {
+  //         throw new Error('Failed to send data to recommend new info');
+  //     }
 
-      const result = await response.json();
-      const program = result.data
-      // console.log(Object.values(program))
-      setCompletedExercises([])
-      const processedProgram = Object.values(program).map((exercise) => processExercise(exercise))
-      // console.log(processedProgram)
+  //     const result = await response.json();
+  //     const program = result.data
+  //     // console.log(Object.values(program))
+  //     setCompletedExercises([])
+  //     const processedProgram = Object.values(program).map((exercise) => processExercise(exercise))
+  //     // console.log(processedProgram)
     
-      setCurrProgram(processedProgram)
+  //     setCurrProgram(processedProgram)
       
-  } catch (error) {
-      console.error("Error sending data to recommend program", error)
-  } finally {
-    setIsLoading(false)
-  }
+  // } catch (error) {
+  //     console.error("Error sending data to recommend program", error)
+  // } finally {
+  //   setIsLoading(false)
+  // }
+  // }
+
+  const refreshExercise = () => {
+    console.log("Hello")
   }
   
   // if every exercise done, can increase by 1, if all exercises done, refresh exercises
@@ -246,6 +284,20 @@ export default function Homepage() {
       jsConfetti.addConfetti()
     }
   }, [exercisesDone])
+
+  //check if pausing workout
+  useEffect(() => {
+    if (isWorkoutPaused && timeLeft > 0) {
+      intervalRef.current = setInterval(() => {
+        setTimeLeft(prevTime => prevTime - 1);
+      }, 1000);
+    } else if (timeLeft === 0 || !isWorkoutPaused) {
+      clearInterval(intervalRef.current);
+    }
+
+    // Cleanup function to clear interval on unmount
+    return () => clearInterval(intervalRef.current);
+  }, [isWorkoutPaused, timeLeft]);
 
 
   return (
@@ -268,8 +320,6 @@ export default function Homepage() {
               </svg>
             </div>
 
-
-            {/* havent implement the logic for the progress */}
             <div className="w-full">
               <p className="font-bold">Complete the full program for {days} days</p>
               <div className="flex items-center">
@@ -292,25 +342,54 @@ export default function Homepage() {
             {Object.keys(currProgram).map((program)=> {
               const exercise = currProgram[program]
               const isCompleted = completedExercises.includes(exercise._id)
+              const isLoading = loadingExercises[exercise._id]
 
               return (
-                <div key={exercise.id} className="card card-side bg-white w-full shadow-xl h-48" 
-                onClick={() => openModal(exercise)}>
-                  <figure className="w-1/3">
-                    <img className=""
-                      src = {exercise.image_binary}
-                      alt="hehe"
-                    />
-                  </figure>
-                  <div className="card-body text-black text-left w-2/3">
-                    <p className="text-lg truncate font-bold">{exercise.name}</p>
-                    <p>{exercise.recommended_reps}</p>
-                    <div className={`${isCompleted ? 'bg-myYellow' : 'bg-gray-300'} rounded-lg p-3 text-center`}>
-                        {isCompleted ? 'Completed' : 'Not completed'}
+                <div
+                  key={exercise._id}
+                  className="card card-side bg-white w-full shadow-xl h-48"
+                  onClick={() => !isLoading && openModal(exercise)} // Prevent modal open if loading
+                >
+                  {/* Conditionally show the entire card as loading spinner */}
+                  {isLoading ? (
+                    <div className="flex items-center justify-center w-full h-full">
+                      <div className="text-center">
+                        <span className="loading loading-spinner loading-md text-black"></span>
+                        <p className="text-black">Loading new exercise...</p>
                       </div>
-                  </div>
+                    </div>
+                  ) : (
+                    <>
+                      <figure className="w-1/3">
+                        <img className="w-full" src={exercise.image_binary} alt={exercise.name} />
+                      </figure>
+                      <div className="card-body text-black text-left w-2/3">
+                        <p className="text-sm truncate font-bold">{exercise.name}</p>
+                        <p className="text-sm">{exercise.recommended_reps}</p>
+              
+                        {/* Show Completed if done, else show Change Exercise button */}
+                        {isCompleted ? (
+                          <div className="bg-myYellow rounded-lg p-3 text-center">
+                            Completed
+                          </div>
+                        ) : (
+                          <button
+                            className="bg-[#f5f5f5] rounded-md p-2 mt-3 text-black text-sm"
+                            onClick={(e) => {
+                              e.stopPropagation(); // Prevent parent click event
+                              handleRefreshExercise(exercise._id); // Set loading and refresh
+                            }}
+                          >
+                            <FontAwesomeIcon icon={faArrowsRotate} className="mr-2"/>
+                            Change exercise
+                          </button>
+                        )}
+                      </div>
+                    </>
+                  )}
                 </div>
-              )
+              );
+              
             })}
           </div>
         </div>
@@ -383,16 +462,10 @@ export default function Homepage() {
                 &times; {/* Close icon */}
               </button>
 
-              {/* YouTube Video */}
-              <iframe
-                className="w-full rounded-t-lg"
-                width="100%"
-                height="300"
-                src={currentExercise.youtube_link}
-                title="YouTube video player"
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                allowFullScreen
-              ></iframe>
+              {/* gif */}
+              <div className="flex justify-center">
+                <img className="object-cover h-[390px] w-full" src={currentExercise.gif} alt="exercise gif"/>
+              </div>
 
               <div className="container mx-auto p-6">
                 <h2 className="text-3xl font-bold mb-4 text-center text-wrap">{currentExercise.name}</h2>
@@ -432,7 +505,7 @@ export default function Homepage() {
 
                 <div>
                   {/* Start Exercise Button */}
-                  <button className="btn btn-lg bg-purple text-white w-full mt-6 rounded-lg text-lg" onClick={handleStartOpen}>
+                  <button className="btn btn-lg bg-purple text-white w-full mt-6 rounded-lg text-lg" onClick={() => handleStartOpen(currentExercise.audio)}>
                     Start this exercise
                   </button>
                 </div>
@@ -441,16 +514,8 @@ export default function Homepage() {
           </div>
         )}
 
-        {/* Loading overlay */}
-        {isLoading && (
-          <div className="fixed inset-0 bg-gray-500 bg-opacity-75 flex flex-col justify-center items-center z-50">
-            <span className="loading loading-spinner text-primary loading-lg"></span>
-            <p className="text-4xl font-bold text-center mt-4 text-white">Creating your customised program</p>
-          </div>
-        )}
-
-        {/* Countdown */}
-        {startExercise && <CountdownModal isOpen={startExercise} onClose={handleStartClose} countdown={countdown} audioRef={audioRef}/>}
+        {/* Countdown to start working out*/}
+        {startExercise && <CountdownModal isOpen={startExercise} onClose={handleStartClose} countdown={countdown} audioRef={audioRef} setIsWorkoutPaused={setIsWorkoutPaused}/>}
         
         {/* Start exercise modal -> actual workout page */}
         {openStartExercise && currentExercise && ( 
@@ -463,22 +528,24 @@ export default function Homepage() {
                 onClick={goBack}
               />
               
-              {/* YouTube Video */}
-              <iframe
-                className="w-full"
-                width="100%"
-                height="300"
-                src={currentExercise.youtube_link}
-                title="YouTube video player"
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                allowFullScreen
-              ></iframe>
+              {/* gif */}
+              <div className="flex justify-center">
+                <img className="rounded-lg object-cover h-[390px] w-full" src={currentExercise.gif} alt="exercise gif"/>
+              </div>
 
               {/* content of the exercise page */}
               <div className="container mx-auto p-6 text-dark-purple text-center">
                 <h2 className="text-3xl font-bold mb-4 text-center text-wrap">{currentExercise.name}</h2>
-                <p className="text-center font-bold text-5xl">x {currentExercise.recommended_reps}</p>
-
+                {currentExercise.recommended_reps.includes("reps") && <p className="text-center font-bold text-5xl">2 sets x ({currentExercise.recommended_reps})</p>}
+                {currentExercise.recommended_reps.includes("secs") && 
+                (<div>
+                  <p className="text-center font-bold text-5xl">{timeLeft}</p>
+                  <button className="btn bg-white text-dark-purple my-4 w-36" onClick={toggleCountdown}
+                  >
+                    {isWorkoutPaused ? <FontAwesomeIcon icon={faPause} /> : <FontAwesomeIcon icon={faPlay} /> }
+                    {isWorkoutPaused ? 'Pause Timer' : 'Resume Timer'}
+                </button>
+                  </div>)}
                 <div className="divider before:bg-purple after:bg-purple"></div>
 
                 <div>
