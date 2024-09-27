@@ -62,7 +62,62 @@ class Recommender:
 
     def substitute(self, body_part, substitution_id, user_file):
         previous_weight = self.zero_weight(body_part, substitution_id, user_file)
-        recommended = self.recommend_program(user_file)
+        preferences = user_file['preferences']
+        pref = preferences[body_part]
+        injury_status = user_file['injury']
+
+        recommended = {body_part: {'exercise': None, 'reps': None}}
+        exercise = None
+        reps = None
+        keywords_to_exclude = set(injury_status)
+
+        query = {
+                "$nor": [
+                    {"injury_flag": {"$in": list(keywords_to_exclude)}}
+                ]
+            }
+
+        # Fetch exercises matching the query
+        db_exercises = list(self.exercise_db[body_part].find(query))
+
+        # Create a set of exercise IDs from the query results
+        db_exercise_ids = {str(ex['_id']) for ex in db_exercises}
+
+        # Filter preferences to only include exercises that exist in the database query results
+        filtered_pref = [(ex_id, weight) for ex_id, weight in pref.items() if ex_id in db_exercise_ids]
+
+        if not filtered_pref or (len(filtered_pref)==1 and filtered_pref[0][1]==0):
+            # no exercises for this body part are suitable. Recommend standing or bicycle crunches as they are the lowest impact
+            choice = random.choice(["66f61f138c5653b5862fcf13", "66f61f138c5653b5862fcf16"])
+            exercise = self.exercise_db["abs"].find_one(ObjectId(choice))
+            if exercise:
+                # Convert _id to string in the resulting exercise document
+                exercise['_id'] = str(exercise['_id'])
+            recommended[body_part]['exercise'] = exercise
+            recommended[body_part]['reps'] = user_file['reps']["abs"][choice]
+            print(recommended)
+            return recommended
+
+        # Unzip the filtered preferences into exercises and weights
+        exercises, weights = zip(*filtered_pref)
+
+        # Softmax the weights
+        normalized_weights = self.softmax(weights)
+
+        # Randomly choose 1 exercise ID based on weights
+        ex_id = random.choices(exercises, weights=normalized_weights, k=1)[0]
+
+        # Fetch the full exercise document from the database for the chosen ID
+        exercise = self.exercise_db[body_part].find_one({"_id": ObjectId(ex_id)})
+
+        if exercise:
+            # Convert _id to string in the resulting exercise document
+            exercise['_id'] = str(exercise['_id'])
+
+        reps = user_file['reps'][body_part][ex_id]
+        
+        recommended[body_part]['exercise'] = exercise
+        recommended[body_part]['reps'] = reps
         self.restore_and_update_weight(body_part, substitution_id, user_file, previous_weight)
         return recommended
 
@@ -98,7 +153,11 @@ class Recommender:
             if not filtered_pref:
                 # no exercises for this body part are suitable. Recommend standing or bicycle crunches as they are the lowest impact
                 choice = random.choice(["66f61f138c5653b5862fcf13", "66f61f138c5653b5862fcf16"])
-                recommended[body_part]['exercise'] = self.exercise_db["abs"].find_one(ObjectId(choice))
+                exercise = self.exercise_db["abs"].find_one(ObjectId(choice))
+                if exercise:
+                    # Convert _id to string in the resulting exercise document
+                    exercise['_id'] = str(exercise['_id'])
+                recommended[body_part]['exercise'] = exercise
                 recommended[body_part]['reps'] = user_file['reps']["abs"][choice]
                 continue
 
