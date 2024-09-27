@@ -15,6 +15,7 @@ export default function Homepage() {
   const [core, setCore] = useState(JSON.parse(localStorage.getItem("core")))
   const [lowerBody, setLowerbody] = useState(JSON.parse(localStorage.getItem("lowerbody")))
   const [upperBody, setUpperBody] = useState(JSON.parse(localStorage.getItem("upperbody")))
+  const [seenOnboard, setSeenOnboard] = useState(localStorage.getItem("seenOnboard"))
 
   // count current days and exercises
   const [exercisesDone, setExercisesDone] = useState(0)
@@ -28,9 +29,8 @@ export default function Homepage() {
   // check if user start exercise, true -> open modal
   const [startExercise, setStartExercise] = useState(false)
   const [openStartExercise, setOpenStartExercise] = useState(false)
-
   // onboarding modal (show difficulties)
-  const [difficultyModal, setDifficultyModal] = useState(true)
+  const [difficultyModal, setDifficultyModal] = useState(localStorage.getItem("seenOnboard"))
 
   // audio related
   const [isMuted, setIsMuted] = useState(false)
@@ -114,9 +114,8 @@ export default function Homepage() {
     
           const result = await response.json();
           const program = result.data
-          console.log(exercise.bodyPart)
+
           updateCurrProgram(program, exercise.bodyPart)
-          console.log(currProgram)
     } catch (error) {
       console.log(error)
     } finally {
@@ -128,8 +127,6 @@ export default function Homepage() {
   const updateCurrProgram = (newExercise, bodyPart) => {
     setCurrProgram(prevProgram => {
       const updatedProgram ={...prevProgram}
-      console.log(newExercise[bodyPart])
-      console.log(updatedProgram.abs)
 
       if (bodyPart === "abs") {
         updatedProgram.abs = newExercise[bodyPart];
@@ -158,19 +155,32 @@ export default function Homepage() {
   };
 
   const handleStartOpen = (exercise) => {
-    setCountdown(5)
-    setStartExercise(true)
+    setCountdown(5);
+    setStartExercise(true);
     setIsModalOpen(false);
-
-    //open the new workout modal
-    console.log(exercise)
-    setOpenStartExercise(true)
-    setAudioFilePath(`/audio/${exercise}.mp3`);
+  
+    // Open the new workout modal
+    setOpenStartExercise(true);
+    
+    // Set the audio file path and play the audio
+    const newAudioFilePath = `/audio/${exercise}.mp3`;
+    setAudioFilePath(newAudioFilePath);
+    
+    // Wait for the audio file to be set and then play
+    setTimeout(() => {
+      if (audioRef.current) {
+        audioRef.current.play().catch((error) => {
+          console.error("Error playing audio:", error);
+        });
+      }
+    }, 0);  // Delay the play call just enough to ensure the audio file is loaded
+    
     setAudioCountDown(5);
-    setTimeLeft(60)
-    setIsPaused(false)
-    setIsMuted(false)
-  }
+    setTimeLeft(60);
+    setIsPaused(false);
+    setIsMuted(false);
+    setIsWorkoutPaused(true);
+  };
 
   const handleStartClose = () => {
     setStartExercise(false)
@@ -416,7 +426,7 @@ export default function Homepage() {
         </div>
 
         {/* Onboarding modal */}
-        {difficultyModal && (
+        {difficultyModal === "true" && (
           <div id="onboardModal" className="fixed inset-0 bg-black bg-opacity-50 z-50 flex justify-center items-center">
             <div className="bg-white rounded-lg shadow-lg w-full max-w-sm max-h-[80vh] overflow-auto relative">
 
@@ -429,7 +439,10 @@ export default function Homepage() {
                   <p className="font-bold">You’re doing an amazing job with your health and taking care of your body strength — keep it up!</p>
                   <p>Complete the recommended exercises to maintain your strength and carry out daily activities with ease~ 💪🏻</p>
 
-                  <button className="w-full btn btn-outline border-purple border-2" onClick={() => setDifficultyModal(false)}><p className="text-purple font-bold">Let's go!</p></button>
+                  <button className="w-full btn btn-outline border-purple border-2" onClick={() => {
+                    setDifficultyModal(false)
+                    localStorage.setItem("seenOnboard", false)
+                    }}><p className="text-purple font-bold">Let's go!</p></button>
 
               </div>)}
               
@@ -447,7 +460,10 @@ export default function Homepage() {
                   </ul>
                   <p>Complete the recommended exercises to maintain your strength and carry out daily activities with ease~ 💪🏻</p>
 
-                  <button className="w-full btn btn-outline border-purple border-2" onClick={() => setDifficultyModal(false)}><p className="text-purple font-bold">Let's go!</p></button>
+                  <button className="w-full btn btn-outline border-purple border-2" onClick={() => {
+                    setDifficultyModal(false)
+                    localStorage.setItem("seenOnboard", false)
+                    }}><p className="text-purple font-bold">Let's go!</p></button>
 
               </div>)}
             </div>
@@ -498,9 +514,6 @@ export default function Homepage() {
             </div>
           </div>
         )}
-
-        {/* Countdown to start working out*/}
-        {startExercise && <CountdownModal isOpen={startExercise} onClose={handleStartClose} countdown={countdown} audioRef={audioRef} setIsWorkoutPaused={setIsWorkoutPaused}/>}
         
         {/* Start exercise modal -> actual workout page */}
         {openStartExercise && currentExercise && ( 

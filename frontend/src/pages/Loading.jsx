@@ -84,7 +84,7 @@ export default function Loading() {
                     const userid = result.userid
                     console.log(userid)
                     localStorage.setItem("userid", userid)
-
+                    localStorage.setItem("seenOnboard", true)
                     try {
                         const response = await fetch('https://bfg-backend-gcp-image-719982789123.us-central1.run.app/recommend', {
                             method: 'POST',
