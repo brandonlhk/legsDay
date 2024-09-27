@@ -3,53 +3,109 @@ import { useNavigate } from 'react-router-dom';
 
 
 export default function Onboard() {
-  const navigate = useNavigate();
-  const [page, setPage] = useState(0)
-  const [progressVal, setProgressVal] = useState(20) 
-  const [username, setUsername] = useState("")
-  const [emailAddress, setEmailAddress] = useState("")
-  const [password, setPassword] = useState("")
-  const [height, setHeight] = useState("")
-  const [weight, setWeight] = useState("")
-  const [age, setAge] = useState("")
-  const [gender, setGender] = useState("")
-  const [days, setDays] = useState("")
-  const [duration, setDuration] = useState("")
-  const [error, setError] = useState("")
+    const navigate = useNavigate();
+    const [page, setPage] = useState(0)
+    const [progressVal, setProgressVal] = useState(11.1) 
 
-  
-    // Email validation function using regex
-    const validateEmail = (email) => {
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        return emailRegex.test(email);
-    };
+    const [age, setAge] = useState("") //page 1
+    const [gender, setGender] = useState("") //page 1
+    const [level, setLevel] = useState("") //page 2
+    const [days, setDays] = useState("") //page 3
+    const [duration, setDuration] = useState("") //page 4
+    const [injuries, setInjuries] = useState([]) //page 5
+    const [core, setCore] = useState([]) //page 6
+    const [lowerBody, setLowerBody] = useState([]) //page 7
+    const [upperBody, setUpperBody] = useState([]) // page 8
 
-  const decision = () => {
+    const decision = () => {
     if (page === 0) {
         return navigate("/")
     }
     else {
         setPage((pageIndex) => pageIndex - 1)
-        setProgressVal((prevProgress) => prevProgress - 20)
+        setProgressVal((prevProgress) => prevProgress - 11.11)
     }
-  }
+    }
 
-  const nextPage = () => {
-    if (validateEmail(emailAddress)) {
-        setError("")
+    const nextPage = () => {
         setPage((pageIndex) => pageIndex + 1)
-        setProgressVal((prevProgress) => prevProgress + 20)
-    } else {
-        setError("Please enter a valid email address")
+        setProgressVal((prevProgress) => prevProgress + 11.11)
     }
-  }
 
-  useEffect(() => {
-    if (page === 4) {
-        const data = [username, emailAddress, password, height, weight, age, gender, days, duration]
+    const handleCheckboxChange = (event, from) => {
+        const { value } = event.target;
+
+        if (value === "None") {
+            //if none is seleceted, removes all other stuff
+            switch (from) {
+                case "injuries":
+                    setInjuries(["None"])
+                    break
+
+                case "core":
+                    setCore(["None"])
+                    break
+
+                case "lowerBody":
+                    setLowerBody(["None"])
+                    break
+
+                case "upperBody":
+                    setUpperBody(["None"])
+                    break
+
+                default:
+            }
+                
+        } 
+        else {
+            // if none is already inside, it removes it and set whatever value is pressed
+
+                switch (from) {
+                    case "injuries":
+                        if (injuries.includes("None")){
+                            setInjuries([value])
+                        } else {
+                            setInjuries((prevSelected) => prevSelected.includes(value) ? prevSelected.filter((item) => item !== value) : [...prevSelected, value])
+                        }
+                        break
+    
+                    case "core":
+                        if (core.includes("None")) {
+                            setCore([value])
+                        } else {
+                            setCore((prevSelected) => prevSelected.includes(value) ? prevSelected.filter((item) => item !== value) : [...prevSelected, value]);
+                        }
+                        break
+    
+                    case "lowerBody":
+                        if (lowerBody.includes("None")) {
+                            setLowerBody([value])
+                        } else {
+                            setLowerBody((prevSelected) => prevSelected.includes(value) ? prevSelected.filter((item) => item !== value) : [...prevSelected, value])                 
+                        }
+                        break
+    
+                    case "upperBody":
+                        if (upperBody.includes("None")) {
+                            setUpperBody([value])
+                        } else {
+                            setUpperBody((prevSelected) => prevSelected.includes(value) ? prevSelected.filter((item) => item !== value) : [...prevSelected, value]);
+                        }
+                            break
+
+                    default:
+            }
+        }
+    };
+
+    // send data to next page
+    useEffect(() => {
+    if (page === 8) {
+        const data = [age, gender, level, days, duration, injuries, core, lowerBody, upperBody]
         return navigate("/loading", {state: {data: data}})
     }
-  }, [page, navigate, username, emailAddress, password, height, weight, age, gender, days, duration])
+    }, [page, navigate, age, gender, level, days, duration, injuries, core, lowerBody, upperBody])
 
     return (
         <div className="min-h-screen bg-gray-50">
@@ -72,62 +128,10 @@ export default function Onboard() {
                 {/* First page */}
                 {page === 0 && <div>
                     {/* Header */}
-                    <p className="text-3xl font-bold mt-3">Create Account</p>
+                    <p className="text-3xl font-bold mt-3">Enter your profile details</p>
                 
                     {/* Inputs */}
                     <div className="flex flex-col mt-12 gap-4">
-                        {/* username */}
-                        <label className="form-control w-full">
-                            <div className="label">
-                                <span className="label-text font-bold text-xl">Enter username</span>
-                            </div>
-                            <input type="text" placeholder="Type here" className="input input-bordered w-full" value={username} onChange={(event) => setUsername(event.target.value)}/>
-                        </label>
-
-                        {/* email address */}
-                        <label className="form-control w-full">
-                            <div className="label">
-                                <span className="label-text font-bold text-xl">Enter email address</span>
-                            </div>
-                            <input type="email" placeholder="Type here" className="input input-bordered w-full" value={emailAddress} onChange={(event) => setEmailAddress(event.target.value)}/>
-                            {error && <div className="label">
-                                <span className="label-text font-bold text-md text-red-500">{error}</span>
-                            </div>}
-                        </label>
-
-                        {/* password */}
-                        <label className="form-control w-full">
-                            <div className="label">
-                                <span className="label-text font-bold text-xl">Enter password</span>
-                            </div>
-                            <input type="password" placeholder="Type here" className="input input-bordered w-full" value={password} onChange={(event) => setPassword(event.target.value)}/>
-                        </label>
-                    </div>
-                </div>}
-
-                {/* Second page */}
-                {page === 1 && <div>
-                    {/* Header */}
-                    <p className="text-3xl font-bold mt-3">Enter your details</p>
-                
-                    {/* Inputs */}
-                    <div className="flex flex-col mt-12 gap-4">
-                        {/* Height */}
-                        <label className="form-control w-full">
-                            <div className="label">
-                                <span className="label-text font-bold text-xl">Height (in cm)</span>
-                            </div>
-                            <input type="text" placeholder="Type here" className="input input-bordered w-full" value={height} onChange={(event) => setHeight(event.target.value)}/>
-                        </label>
-
-                        {/* weight */}
-                        <label className="form-control w-full">
-                            <div className="label">
-                                <span className="label-text font-bold text-xl">Weight (in kg)</span>
-                            </div>
-                            <input type="email" placeholder="Type here" className="input input-bordered w-full" value={weight} onChange={(event) => setWeight(event.target.value)}/>
-                        </label>
-
                         {/* age */}
                         <label className="form-control w-full">
                             <div className="label">
@@ -141,12 +145,47 @@ export default function Onboard() {
                             <div className="label">
                                 <span className="label-text font-bold text-xl">Gender</span>
                             </div>
-                            <select className="select select-bordered" value={gender} onChange={(event) => setGender(event.target.value)}>
+                            <select className="select select-bordered relative" value={gender} onChange={(event) => setGender(event.target.value)}>
                                 <option disabled selected value="">Pick one option</option>
                                 <option value="M">Male</option>
                                 <option value="F">Female</option>
+                                <option value="O">Others / I'd rather not say</option>
                             </select>
                         </label>
+                    </div>
+                </div>}
+
+                {/* Second page */}
+                {page === 1 && <div>
+                    {/* Header */}
+                    <p className="text-3xl font-bold mt-3">How would you describe your fitness experience?</p>
+                
+                    {/* Inputs */}
+                    <div className="flex flex-col mt-12 gap-4 mb-6" >
+                        {/* 2 days */}
+                        {[
+                            {"level" : "Beginner", "info" : "Little to no engagement with exercises"},
+                            {"level" : "Intermediate", "info" : "Regularly exercises (1-2 times a week)"},
+                            {"level" : "Advanced", "info" : "Frequently exercises (3 times or more a week)"}
+                        ].map((part, index) => (
+
+                        <div key={index} className={`card w-full shadow-md ${level === part.level ? "border-purple border-2": "border-slate-300 border"}`} 
+                        onClick={() => setLevel(part.level)}>
+
+                        <div className="card-body h-24 flex justify-center">
+                            <div className="form-control">
+                                <label className="label cursor-pointer flex justify-start">
+                                 <input type="radio" name="days" className="radio" value={part.level} checked={level === part.level} hidden/>
+                                 <div>
+                                    <p className="label-text font-bold text-lg">{part.level}</p>
+                                    <span className="label-text font-bold text-gray-400 text-md">{part.info}</span>
+                                 </div>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                        ))}
+
                     </div>
                 </div>}
 
@@ -158,13 +197,23 @@ export default function Onboard() {
                     {/* Inputs */}
                     <div className="flex flex-col mt-12 gap-4 mb-6" >
                         {/* 2 days */}
-                        {["2 days", "3 days", "4 days", "5 days", "6 days", "7 days"].map((day, index) => (
-                        <div key={day} className="card border border-slate-300 w-full shadow-md" onClick={() => setDays(index+2)}>
-                        <div className="card-body">
+                        {["2 days", 
+                        "3 days (recommended)", 
+                        "4 days",
+                        "5 days",
+                        "6 days",
+                        "7 days"].map((day, index) => (
+
+                        <div key={day} className={`card w-full shadow-md ${index+2 === days ? "border-purple border-2": "border-slate-300 border"}`} onClick={() => setDays(index+2)}>
+
+                        <div className="card-body h-16 flex justify-center">
                             <div className="form-control">
                                 <label className="label cursor-pointer flex justify-start">
-                                <input type="radio" name="days" className="radio" value={index+2} checked={days === index+2}/>
-                                <span className="label-text ml-2">{day}</span>
+                                <input type="radio" name="days" className="radio" value={index+2} checked={days === index+2} hidden/>
+                                <div className="flex items-center">
+                                    <span className="label-text font-bold text-lg">{day}</span>
+                                    {index+2 === 3 && (<span><img src="https://seeklogo.com/images/H/health-promotion-board-logo-EB6810BFC8-seeklogo.com.png" alt="logo" className="ml-2 w-16"/></span>)}
+                                </div>
                                 </label>
                             </div>
                         </div>
@@ -177,7 +226,7 @@ export default function Onboard() {
                 {/* Fourth page */}
                 {page === 3 && <div>
                     {/* Header */}
-                    <p className="text-3xl font-bold mt-3">How many long do you plan to work out each day?</p>
+                    <p className="text-3xl font-bold mt-3">How long do you plan to work out each day?</p>
                 
                     {/* Inputs */}
                     <div className="flex flex-col mt-12 gap-4 mb-6" >
@@ -185,34 +234,30 @@ export default function Onboard() {
                         {[
                         {
                             "day" : "15 min / day",
-                            "info": "(for sedentary beginners)",
                             "value": "15"
                         },
                         {
-                            "day" : "20 min / day",
-                            "info": "(for active beginners)",
-                            "value": "20"
-                        },
-                        {
-                            "day" : "25 min / day",
-                            "info": "(for more active beginners)",
-                            "value": "25"
-                        },
-                        {
-                            "day" : "30 min / day",
-                            "info": "(for super active beginners)",
+                            "day" : "30 min / day (recommended)",
+                            "picture": "https://seeklogo.com/images/H/health-promotion-board-logo-EB6810BFC8-seeklogo.com.png",
                             "value": "30"
                         },
+                        {
+                            "day" : "45 min / day",
+                            "value": "45"
+                        },
+                        {
+                            "day" : "60 min / day",
+                            "value": "60"
+                        },
                             ].map((data, index) => (
-                        <div key={index} className="card border border-slate-300 w-full shadow-md" onClick={() => setDuration(data.value)}>
-                        <div className="card-body">
+                        <div key={index} className={`card w-full shadow-md ${duration === data.value ? "border-purple border-2": "border-slate-300 border"}`} onClick={() => setDuration(data.value)}>
+                        <div className="card-body h-20 flex justify-center">
                             <div className="form-control">
                                 <label className="label cursor-pointer flex justify-start">
-                                <input type="radio" name="freq" className="radio" value={data.value} checked={duration === data.value}/>
-                                <div className="ml-3">
-                                    <span className="label-text">{data.day}</span>
-                                    <p className="label-text text-gray-500">{data.info}</p>
-
+                                <input type="radio" name="freq" className="radio" value={data.value} checked={duration === data.value} hidden/>
+                                <div className="flex items-center">
+                                    <span className="label-text font-bold text-lg">{data.day}</span>
+                                    {data.picture && (<span><img src={data.picture} alt="logo" className="ml-2 w-16"/></span>)}
                                 </div>
                                 </label>
                             </div>
@@ -222,6 +267,134 @@ export default function Onboard() {
 
                     </div>
                 </div>}
+
+                {/* Fifth page */}
+                {page === 4 && <div>
+                    {/* Header */}
+                    <p className="text-3xl font-bold mt-3">Do you have any past or existing injuries?</p>
+                    <p className="text-md text-gray-400 mt-3">If you have any significant injuries or medical conditions. Please consult a professional before using this app</p>
+                
+                    {/* Inputs */}
+                    <div className="flex flex-col mt-12 gap-4 mb-6" >
+                        {/* 2 days */}
+                        {[
+                            "None", 
+                            "Shoulder",
+                            "Wrist",
+                            "Knee",
+                            "Ankle",
+                            "Lower back"
+                            ].map((data, index) => (
+                        <div key={index} className={`card w-full shadow-md ${injuries.includes(data) ? "border-purple border-2": "border-slate-300 border"}`}>
+                        <div className="card-body h-20 flex justify-center">
+                            <div className="form-control">
+                                <label className="label cursor-pointer flex justify-start">
+                                <input type="checkbox" name="freq" className="checkbox" value={data} checked={injuries.includes(data)} onChange={(event) => handleCheckboxChange(event, "injuries")}/>
+                                <div className="flex items-center ml-2">
+                                    <span className="label-text font-bold text-lg">{data}</span>
+                                </div>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                        ))}
+
+                    </div>
+                </div>}
+
+                {/* Sixth page */}
+                {page === 5 && <div>
+                    {/* Header */}
+                    <p className="text-3xl font-bold mt-3">Assessing core strength:</p>
+                    <p className="text-3xl font-bold mt-3">Do you face difficulties</p>
+                
+                    {/* Inputs */}
+                    <div className="flex flex-col mt-12 gap-4 mb-6" >
+                        {[
+                            "None",
+                            "Sitting up after lying down",
+                            "Balancing on uneven ground",
+                            "Sitting up straight",
+                            ].map((data, index) => (
+                        <div key={index} className={`card w-full shadow-md ${core.includes(data) ? "border-purple border-2": "border-slate-300 border"}`}>
+                        <div className="card-body h-20 flex justify-center">
+                            <div className="form-control">
+                                <label className="label cursor-pointer flex justify-start">
+                                <input type="checkbox" name="freq" className="checkbox" value={data} checked={core.includes(data)} onChange={(event) => handleCheckboxChange(event, "core")}/>
+                                <div className="flex items-center ml-2">
+                                    <span className="label-text font-bold text-lg">{data}</span>
+                                </div>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                        ))}
+
+                    </div>
+                </div>}
+
+                {/* Seventh page */}
+                {page === 6 && <div>
+                    {/* Header */}
+                    <p className="text-3xl font-bold mt-3">Assessing lower body strength:</p>
+                    <p className="text-3xl font-bold mt-3">Do you face difficulties</p>
+                
+                    {/* Inputs */}
+                    <div className="flex flex-col mt-12 gap-4 mb-6" >
+                        {[
+                            "None",
+                            "Standing up from sitting on the floor or squatting",
+                            "Getting out of a car or vehicle",
+                            "Walking up or down stairs",
+                            ].map((data, index) => (
+                        <div key={index} className={`card w-full shadow-md ${lowerBody.includes(data) ? "border-purple border-2": "border-slate-300 border"}`}>
+                        <div className="card-body h-20 flex justify-center">
+                            <div className="form-control">
+                                <label className="label cursor-pointer flex justify-start">
+                                <input type="checkbox" name="freq" className="checkbox" value={data} checked={lowerBody.includes(data)} onChange={(event) => handleCheckboxChange(event, "lowerBody")}/>
+                                <div className="flex items-center ml-2">
+                                    <span className="label-text font-bold text-lg">{data}</span>
+                                </div>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                        ))}
+
+                    </div>
+                </div>}
+
+                {/* Eighth page */}
+                {page === 7 && <div>
+                    {/* Header */}
+                    <p className="text-3xl font-bold mt-3">Assessing upper body strength:</p>
+                    <p className="text-3xl font-bold mt-3">Do you face difficulties</p>
+                
+                    {/* Inputs */}
+                    <div className="flex flex-col mt-12 gap-4 mb-6" >
+                        {[
+                            "None",
+                            "Carrying groceries",
+                            "Pushing a pram or wheelchair",
+                            "Lifting heavy objects",
+                            ].map((data, index) => (
+                        <div key={index} className={`card w-full shadow-md ${upperBody.includes(data) ? "border-purple border-2": "border-slate-300 border"}`}>
+                        <div className="card-body h-20 flex justify-center">
+                            <div className="form-control">
+                                <label className="label cursor-pointer flex justify-start">
+                                <input type="checkbox" name="freq" className="checkbox" value={data} checked={upperBody.includes(data)} onChange={(event) => handleCheckboxChange(event, "upperBody")}/>
+                                <div className="flex items-center ml-2">
+                                    <span className="label-text font-bold text-lg">{data}</span>
+                                </div>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                        ))}
+
+                    </div>
+                </div>}
+
                 
                 
                 {/* Next page */}

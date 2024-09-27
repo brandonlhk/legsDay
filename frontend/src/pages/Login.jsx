@@ -1,5 +1,4 @@
 import { useNavigate } from 'react-router-dom';
-import workoutImg from "../images/workout_icon.png"
 
 export default function Login() {
 
@@ -11,7 +10,7 @@ export default function Login() {
       {/* Container */}
       <div className="container mx-auto p-12">
         <div className="flex flex-col items-center">
-            <img src={workoutImg} alt="workout icon" className="object-contain"/>
+            <img src="images/workout_icon.png" alt="workout icon" className="object-contain"/>
 
             <div className="mt-12 text-center">
               <p className="font-bold text-4xl">Own Time</p>
