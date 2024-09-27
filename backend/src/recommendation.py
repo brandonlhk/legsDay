@@ -97,7 +97,7 @@ class Recommender:
 
             if not filtered_pref:
                 # no exercises for this body part are suitable. Recommend standing or bicycle crunches as they are the lowest impact
-                choice = random.choice(["66f525a765e560e315b1b747", "66f525a765e560e315b1b74a"])
+                choice = random.choice(["66f61f138c5653b5862fcf13", "66f61f138c5653b5862fcf16"])
                 recommended[body_part]['exercise'] = self.exercise_db["abs"].find_one(ObjectId(choice))
                 recommended[body_part]['reps'] = user_file['reps']["abs"][choice]
                 continue
