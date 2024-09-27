@@ -88,7 +88,7 @@ class Recommender:
 
         if not filtered_pref or (len(filtered_pref)==1 and filtered_pref[0][1]==0):
             # no exercises for this body part are suitable. Recommend standing or bicycle crunches as they are the lowest impact
-            choice = random.choice(["66f61f138c5653b5862fcf13", "66f61f138c5653b5862fcf16"])
+            choice = random.choice(["66f6a421102aaccf74ae2124", "66f6a421102aaccf74ae2127"])
             exercise = self.exercise_db["abs"].find_one(ObjectId(choice))
             if exercise:
                 # Convert _id to string in the resulting exercise document
@@ -152,7 +152,7 @@ class Recommender:
 
             if not filtered_pref:
                 # no exercises for this body part are suitable. Recommend standing or bicycle crunches as they are the lowest impact
-                choice = random.choice(["66f61f138c5653b5862fcf13", "66f61f138c5653b5862fcf16"])
+                choice = random.choice(["66f6a421102aaccf74ae2124", "66f6a421102aaccf74ae2127"])
                 exercise = self.exercise_db["abs"].find_one(ObjectId(choice))
                 if exercise:
                     # Convert _id to string in the resulting exercise document

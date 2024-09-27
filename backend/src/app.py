@@ -260,10 +260,6 @@ async def settings(request_data: SettingsRequest):
             user_collection.find_one_and_update({'_id': ObjectId(userid)},
                         { '$set': { "duration" : duration} }, 
                         return_document = ReturnDocument.AFTER)
-        if weight:
-            user_collection.find_one_and_update({'_id': ObjectId(userid)},
-                        { '$set': { "weight" : weight} }, 
-                        return_document = ReturnDocument.AFTER)
         if injury:
             user_collection.find_one_and_update({'_id': ObjectId(userid)},
                         { '$set': { "injury" : injury} }, 

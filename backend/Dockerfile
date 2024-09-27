@@ -23,6 +23,7 @@ COPY /src /src
 WORKDIR /src
 
 # Expose port 5000 for the FastAPI app
-EXPOSE 5000
+EXPOSE 8080
 
-CMD [ "uvicorn", "app:app", "--reload", "--host", "0.0.0.0", "--port", "5000" ]
+CMD [ "uvicorn", "app:app", "--reload", "--host", "0.0.0.0", "--port", "8080" ]
+
