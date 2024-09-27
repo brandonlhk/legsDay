@@ -118,7 +118,7 @@ export default function Loading() {
                 }
             }
             
-            // sendData()
+            sendData()
         }
     }, [age, core, days, duration, gender, injuries, isDataInitialized, level, lowerBody, navigate, upperBody])
 
