@@ -118,7 +118,7 @@ export default function Loading() {
                 }
             }
             
-            sendData()
+            // sendData()
         }
     }, [age, core, days, duration, gender, injuries, isDataInitialized, level, lowerBody, navigate, upperBody])
 
@@ -128,7 +128,9 @@ export default function Loading() {
             <p className="text-4xl font-bold text-center mt-4">Creating your customised program</p>
             
             <div className="px-4">
-                <p className="mt-12 p-2 border-2 border-purple rounded-lg text-balance text-dark-purple"> <span className="font-bold text-dark-purple">Did you know:</span> 30 to 60 minutes of strength training a week reduces the risk of mortality, cardiovascular disease and cancer <span className="font-bold text-dark-purple">by 10 to 20%!</span></p>
+                <p className="mt-12 p-2 border-2 border-purple rounded-lg text-pretty text-dark-purple"> 
+                    <span className="font-bold text-dark-purple text-wrap">Did you know:</span> 30 to 60 minutes of strength training a week reduces the risk of mortality, cardiovascular disease and cancer <span className="font-bold text-dark-purple">by 10 to 20%!</span>
+                </p>
             </div>
         </div>
     )
