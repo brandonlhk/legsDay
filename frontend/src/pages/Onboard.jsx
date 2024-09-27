@@ -272,6 +272,7 @@ export default function Onboard() {
                 {page === 4 && <div>
                     {/* Header */}
                     <p className="text-3xl font-bold mt-3">Do you have any past or existing injuries?</p>
+                    <p className="text-md text-gray-400 mt-3">If you have any significant injuries or medical conditions. Please consult a professional before using this app</p>
                 
                     {/* Inputs */}
                     <div className="flex flex-col mt-12 gap-4 mb-6" >

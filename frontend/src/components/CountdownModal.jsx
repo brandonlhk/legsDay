@@ -14,27 +14,7 @@ const CountdownModal = ({ isOpen, countdown, onClose, audioRef, setIsWorkoutPaus
 
       // Countdown timer
       timer = setInterval(() => {
-        setCurrentCountdown(prev => {
-          if (prev <= 1) {
-            clearInterval(timer); // Clear countdown timer
-            
-            // Play audio when countdown reaches 0
-            if (audioRef.current) {
-              audioRef.current.play().catch((error) => {
-                console.error("Error playing audio:", error);
-              });
-            }
-
-            // Delay state updates to avoid triggering render-phase updates
-            setTimeout(() => {
-              setIsWorkoutPaused(true); // Set workout paused after countdown
-            }, 0); // Use setTimeout(0) to allow the render phase to complete first
-
-            onClose(); // Close modal
-            return 0; // Ensure it doesn't go below zero
-          }
-          return prev - 1;
-        });
+        setCurrentCountdown(prev => prev - 1);
       }, 1000); // Update countdown every second
 
       // Radial progress timer
@@ -58,7 +38,23 @@ const CountdownModal = ({ isOpen, countdown, onClose, audioRef, setIsWorkoutPaus
       clearInterval(timer); // Cleanup countdown timer on unmount or when dependencies change
       clearInterval(progressTimer); // Cleanup radial progress timer
     };
-  }, [isOpen, countdown, onClose, audioRef]);
+  }, [isOpen, countdown]);
+
+  // Effect to handle when countdown reaches 0
+  useEffect(() => {
+    if (currentCountdown === 0) {
+      // Play audio when countdown reaches 0
+      if (audioRef.current) {
+        audioRef.current.play().catch((error) => {
+          console.error("Error playing audio:", error);
+        });
+      }
+
+      // Update state in the parent component and close the modal
+      setIsWorkoutPaused(true); // Set workout paused after countdown
+      onClose(); // Close modal
+    }
+  }, [currentCountdown, setIsWorkoutPaused, onClose, audioRef]);
 
   if (!isOpen) return null; // Don't render anything if not open
 

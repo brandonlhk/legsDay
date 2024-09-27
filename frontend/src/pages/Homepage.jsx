@@ -7,7 +7,6 @@ import CountdownModal from '../components/CountdownModal';
 
 export default function Homepage() {
   const navigate = useNavigate()
-  const location = useLocation()
   
   // data receive from localStorage
   const userID = localStorage.getItem("userid")
@@ -24,10 +23,7 @@ export default function Homepage() {
   // check if user finish the exercise for that day
   const [finishExerciseCheck, setFinishExerciseCheck] = useState(false)
   const [countdown, setCountdown] = useState(5)
-  const [currProgram, setCurrProgram] = useState([
-    {"_id": "2", "name": "Mountain Climbers", "recommended_reps" : "10 reps", "image_binary": "123", "youtube_link": "https://www.youtube.com/watch?v=IT94xC35u6k", "form_tips": ["Don't arch your back"], "progressions": "", "muscle_groups": ["quads", "knee"], "audio": "mountain_climbers", "gif": "https://media2.giphy.com/media/v1.Y2lkPTc5MGI3NjExZTkzZTdjZHdnaDFkZWdrZWszOWFjMDZxajZiYWkwZXR4ejYxMHl4aiZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/1fXlBlPARN32xb4sSi/giphy.gif"}
-    ,{"_id": "1", "name": "Superman holds", "recommended_reps" : "30 secs", "image_binary": "123", "youtube_link": "https://www.youtube.com/watch?v=IT94xC35u6k",  "form_tips": ["Don't arch your back"], "progressions": "", "muscle_groups": ["quads", "knee"], "audio":"superman_holds", "gif": "https://media3.giphy.com/media/v1.Y2lkPTc5MGI3NjExMGl2d215OXowbmlzbWFteXowZW9nc3RsbXlheGs0aWwzbXl5Ynl0aCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/buywrRydhE3G3ZiAJY/giphy.gif"}
-  ])
+  const [currProgram, setCurrProgram] = useState(JSON.parse(localStorage.getItem("program")))
 
   // check if user start exercise, true -> open modal
   const [startExercise, setStartExercise] = useState(false)
@@ -91,16 +87,61 @@ export default function Homepage() {
   //refreshing exercise
   const [loadingExercises, setLoadingExercises] = useState({});
 
-  const handleRefreshExercise = (exerciseId) => {
+  const handleRefreshExercise = async (exercise) => {
     // Set the specific exercise to loading state
-    setLoadingExercises((prev) => ({ ...prev, [exerciseId]: true }));
+    setLoadingExercises((prev) => ({ ...prev, [exercise.exercise._id]: true }));
 
-    // simulate loading time
-    setTimeout(() => {
-      refreshExercise(exerciseId); // Your existing refresh logic
-      // Remove the loading state after refreshing
-      setLoadingExercises((prev) => ({ ...prev, [exerciseId]: false }));
-    }, 2000); 
+    const body = {
+      "userid" : userID,
+      "substitution" : {
+        "exercise_id" : exercise.exercise._id,
+        "name" : exercise.exercise.name,
+        "body_part" : exercise.bodyPart
+      }
+    }
+    try {
+          const response = await fetch('https://bfg-backend-gcp-image-719982789123.us-central1.run.app/substitute', {
+              method: 'POST',
+              headers: {
+                  'Content-Type': 'application/json',
+              },
+              body: JSON.stringify(body),
+          })
+                  
+          if (!response.ok) {
+              throw new Error('Failed to send data to recommend new info');
+          }
+    
+          const result = await response.json();
+          const program = result.data
+          console.log(exercise.bodyPart)
+          updateCurrProgram(program, exercise.bodyPart)
+          console.log(currProgram)
+    } catch (error) {
+      console.log(error)
+    } finally {
+      setLoadingExercises((prev) => ({ ...prev, [exercise.exercise._id]: false }));
+    }
+   
+  }
+
+  const updateCurrProgram = (newExercise, bodyPart) => {
+    setCurrProgram(prevProgram => {
+      const updatedProgram ={...prevProgram}
+      console.log(newExercise[bodyPart])
+      console.log(updatedProgram.abs)
+
+      if (bodyPart === "abs") {
+        updatedProgram.abs = newExercise[bodyPart];
+      } else if (bodyPart === "lower") {
+        updatedProgram.lower = newExercise[bodyPart];
+      } else if (bodyPart === "upper") {
+        updatedProgram.upper = newExercise[bodyPart];
+      }
+      
+      localStorage.setItem("program", JSON.stringify(updatedProgram))
+      return updatedProgram;
+    })
   }
 
 
@@ -127,6 +168,8 @@ export default function Homepage() {
     setAudioFilePath(`/audio/${exercise}.mp3`);
     setAudioCountDown(5);
     setTimeLeft(60)
+    setIsPaused(false)
+    setIsMuted(false)
   }
 
   const handleStartClose = () => {
@@ -137,44 +180,6 @@ export default function Homepage() {
 
     const toAdd = 100/days/3
     setProgress((prevProgress) => prevProgress + toAdd)
-  }
-
-  const addWord = (exercise) => {
-    console.log(exercise)
-    if (!exercise.includes("seconds") && !exercise.includes("metres")) {
-      exercise = exercise + " reps" 
-    }
-
-    return exercise
-  }
-
-  const embed = (link) => {
-    const videoID = link.split("v=")[1]
-    const newLink = `https://www.youtube.com/embed/${videoID}?autoplay=1`
-    return newLink
-  }
-
-  const seperateMuscleGroups = (groups) => {
-    const muscleGroups = groups.split(";")
-    return muscleGroups
-  }
-
-  const intoOL = (words) => {
-    const newWord = words.split(".")
-    return newWord
-  }
-  
-  // process from backend
-  const processExercise = (exercise) => {
-    return {
-      ...exercise,
-      youtube_link: embed(exercise.youtube_link),
-      muscle_groups: seperateMuscleGroups(exercise.muscle_groups),
-      form_tips: intoOL(exercise.form_tips),
-      progressions: exercise.progression !== "" ? intoOL(exercise.progressions) : [],
-      recommended_reps: addWord(exercise.recommended_reps),
-      name: exercise.name.charAt(0).toUpperCase() + exercise.name.slice(1)
-    }
   }
 
   // audio
@@ -224,7 +229,7 @@ export default function Homepage() {
 
   const finishExercise = () => {
     setFinishExerciseCheck(true)
-    setCompletedExercises((prevCompleted) => [...prevCompleted, currentExercise._id]);
+    setCompletedExercises((prevCompleted) => [...prevCompleted, currentExercise.exercise._id]);
     calculateProgress()
     setExercisesDone((prevExercisesDone) => prevExercisesDone + 1)
     setOpenStartExercise(false)
@@ -234,43 +239,6 @@ export default function Homepage() {
     setIsPaused(false)
   }
 
-  //refresh the exercises || uncoment when backend up
-  // const refreshExercises = async () => {
-  //   try {
-  //     const response = await fetch('https://bfg-backend-gcp-image-719982789123.us-central1.run.app/recommend', {
-  //         method: 'POST',
-  //         headers: {
-  //             'Content-Type': 'application/json',
-  //         },
-  //         body: JSON.stringify({
-  //             "userid": userID
-  //         }),
-  //     });
-
-              
-  //     if (!response.ok) {
-  //         throw new Error('Failed to send data to recommend new info');
-  //     }
-
-  //     const result = await response.json();
-  //     const program = result.data
-  //     // console.log(Object.values(program))
-  //     setCompletedExercises([])
-  //     const processedProgram = Object.values(program).map((exercise) => processExercise(exercise))
-  //     // console.log(processedProgram)
-    
-  //     setCurrProgram(processedProgram)
-      
-  // } catch (error) {
-  //     console.error("Error sending data to recommend program", error)
-  // } finally {
-  //   setIsLoading(false)
-  // }
-  // }
-
-  const refreshExercise = () => {
-    console.log("Hello")
-  }
   
   // if every exercise done, can increase by 1, if all exercises done, refresh exercises
   useEffect(() => {
@@ -297,8 +265,44 @@ export default function Homepage() {
 
     // Cleanup function to clear interval on unmount
     return () => clearInterval(intervalRef.current);
-  }, [isWorkoutPaused, timeLeft]);
+  }, [isWorkoutPaused, timeLeft])
 
+  // make modal scroll better 
+  useEffect(() => {
+    if (postModal) {
+      const modalElement = document.getElementById('completionModal')
+      if (modalElement) {
+        modalElement.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      }
+    }
+  }, [postModal])
+
+  useEffect(() => {
+    if (openStartExercise) {
+      const modalElement = document.getElementById('startExerciseModal')
+      if (modalElement) {
+        modalElement.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      }
+    }
+  }, [openStartExercise]);
+
+  useEffect(() => {
+    if (difficultyModal) {
+      const modalElement = document.getElementById('onboardModal')
+      if (modalElement) {
+        modalElement.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      }
+    }
+  }, [difficultyModal]);
+
+  useEffect(() => {
+    if (isModalOpen) {
+      const modalElement = document.getElementById('infoModal')
+      if (modalElement) {
+        modalElement.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      }
+    }
+  }, [isModalOpen]);
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -321,7 +325,7 @@ export default function Homepage() {
             </div>
 
             <div className="w-full">
-              <p className="font-bold">Complete the full program for {days} days</p>
+              <p className="font-bold text-[13px]">Complete the full program for {days} days</p>
               <div className="flex items-center">
                 <progress className="progress progress-error" value={progress} max="100"></progress>
                 <span className="ml-2">{daysDone}/{days}</span>
@@ -340,13 +344,14 @@ export default function Homepage() {
           {/* Exercises */}
           <div className="flex-col flex gap-6 p-2 mt-3 mb-20">
             {Object.keys(currProgram).map((program)=> {
-              const exercise = currProgram[program]
-              const isCompleted = completedExercises.includes(exercise._id)
-              const isLoading = loadingExercises[exercise._id]
+              let exercise = currProgram[program]
+              exercise = {...exercise, "bodyPart": program}
+              const isCompleted = completedExercises.includes(exercise.exercise._id)
+              const isLoading = loadingExercises[exercise.exercise._id]
 
               return (
                 <div
-                  key={exercise._id}
+                  key={exercise.exercise._id}
                   className="card card-side bg-white w-full shadow-xl h-48"
                   onClick={() => !isLoading && openModal(exercise)} // Prevent modal open if loading
                 >
@@ -361,11 +366,11 @@ export default function Homepage() {
                   ) : (
                     <>
                       <figure className="w-1/3">
-                        <img className="w-full" src={exercise.image_binary} alt={exercise.name} />
+                        <img className="w-full" src={exercise.exercise.image_binary} alt={exercise.exercise.name} />
                       </figure>
                       <div className="card-body text-black text-left w-2/3">
-                        <p className="text-sm truncate font-bold">{exercise.name}</p>
-                        <p className="text-sm">{exercise.recommended_reps}</p>
+                        <p className="text-sm truncate font-bold">{exercise.exercise.name}</p>
+                        <p className="text-sm">{exercise.reps.includes("seconds")  ? `1 min` : `2 sets x (${exercise.reps})`}</p>
               
                         {/* Show Completed if done, else show Change Exercise button */}
                         {isCompleted ? (
@@ -377,7 +382,7 @@ export default function Homepage() {
                             className="bg-[#f5f5f5] rounded-md p-2 mt-3 text-black text-sm"
                             onClick={(e) => {
                               e.stopPropagation(); // Prevent parent click event
-                              handleRefreshExercise(exercise._id); // Set loading and refresh
+                              handleRefreshExercise(exercise); // Set loading and refresh
                             }}
                           >
                             <FontAwesomeIcon icon={faArrowsRotate} className="mr-2"/>
@@ -412,7 +417,7 @@ export default function Homepage() {
 
         {/* Onboarding modal */}
         {difficultyModal && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex justify-center items-center">
+          <div id="onboardModal" className="fixed inset-0 bg-black bg-opacity-50 z-50 flex justify-center items-center">
             <div className="bg-white rounded-lg shadow-lg w-full max-w-sm max-h-[80vh] overflow-auto relative">
 
               {/* Congrats Img */}
@@ -451,7 +456,7 @@ export default function Homepage() {
 
         {/* Exercise information modal */}
         {isModalOpen && currentExercise && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex justify-center items-center">
+          <div id="infoModal" className="fixed inset-0 bg-black bg-opacity-50 z-50 flex justify-center items-center">
             <div className="bg-gray-50 rounded-lg shadow-lg w-full max-w-sm max-h-[70vh] overflow-auto ">
               {/* Close Button */}
               <button
@@ -464,48 +469,28 @@ export default function Homepage() {
 
               {/* gif */}
               <div className="flex justify-center">
-                <img className="object-cover h-[390px] w-full" src={currentExercise.gif} alt="exercise gif"/>
+                <img className="object-cover h-[390px] w-full" src={currentExercise.exercise.gif} alt="exercise gif"/>
               </div>
 
               <div className="container mx-auto p-6">
-                <h2 className="text-3xl font-bold mb-4 text-center text-wrap">{currentExercise.name}</h2>
-                <p className="text-center font-bold text-lg">x {currentExercise.recommended_reps}</p>
+                <h2 className="text-3xl font-bold mb-4 text-center text-wrap">{currentExercise.exercise.name}</h2>
                 <p className="mt-3 font-bold">Tips on form</p>
-                <ul className="list-disc ml-4">
-                  {currentExercise.form_tips.map((instructions, index) => {
-                    if (instructions !== "") {
-                      return <li key={index}>{instructions}</li>;
-                    } else {
-                      return null
-                    }
-                  })}
-                </ul>
-
-                {currentExercise.progressions !== "" && (
-                  <div>
-                    <p className="mt-3 font-bold">Progression tips</p>
-                    <ul className="list-disc ml-4">
-                      {currentExercise.progressions.map((instructions, index) => {
-                        if (index !== currentExercise.progressions.length && instructions !== "") {
-                          return <li key={index}>{instructions}</li>;
-                        } else {
-                          return null
-                        }
-                      })}
-                    </ul>
-                  </div>
-                )}
+                <p className="list-disc ml-4 text-wrap">
+                {currentExercise.exercise.form_tips.split('\n').filter(tip => tip.trim() !== '').map((tip, index) => (
+                    <li key={index}>{tip}</li>
+                  ))}
+                </p>
 
                 <p className="mt-3 font-bold">Focus areas</p>
                 <div className="flex flex-row gap-3 mt-3">
-                  {currentExercise.muscle_groups.map((muscleGroup) => {
-                    return <div className="badge badge-outline">{muscleGroup}</div>;
-                  })}
+                  {currentExercise.exercise.muscle_groups.split('; ').map((group) =>  (
+                      <div className="badge badge-outline" key={group}>{group.charAt(0).toUpperCase() + group.slice(1)}</div>
+                  ))}
                 </div>
 
                 <div>
                   {/* Start Exercise Button */}
-                  <button className="btn btn-lg bg-purple text-white w-full mt-6 rounded-lg text-lg" onClick={() => handleStartOpen(currentExercise.audio)}>
+                  <button className="btn btn-lg bg-purple text-white w-full mt-6 rounded-lg text-lg" onClick={() => handleStartOpen(currentExercise.exercise.audio)} disabled={completedExercises.includes(currentExercise.exercise._id)}>
                     Start this exercise
                   </button>
                 </div>
@@ -519,8 +504,8 @@ export default function Homepage() {
         
         {/* Start exercise modal -> actual workout page */}
         {openStartExercise && currentExercise && ( 
-          <div className="absolute inset-0 bg-black bg-opacity-50 z-25 flex justify-center items-center">
-            <div className="bg-[#f5f5f5] rounded-lg shadow-lg w-full overflow-visible">
+          <div id="startExerciseModal" className="sticky inset-0 bg-black bg-opacity-50 z-25 flex justify-center items-center">
+            <div className="bg-[#f5f5f5] rounded-lg w-full overflow-visible">
               {/* Close Button */}
               <FontAwesomeIcon
                 icon={faArrowLeft}
@@ -530,14 +515,14 @@ export default function Homepage() {
               
               {/* gif */}
               <div className="flex justify-center">
-                <img className="rounded-lg object-cover h-[390px] w-full" src={currentExercise.gif} alt="exercise gif"/>
+                <img className="rounded-lg object-cover h-[390px] w-full" src={currentExercise.exercise.gif} alt="exercise gif"/>
               </div>
 
               {/* content of the exercise page */}
               <div className="container mx-auto p-6 text-dark-purple text-center">
-                <h2 className="text-3xl font-bold mb-4 text-center text-wrap">{currentExercise.name}</h2>
-                {currentExercise.recommended_reps.includes("reps") && <p className="text-center font-bold text-5xl">2 sets x ({currentExercise.recommended_reps})</p>}
-                {currentExercise.recommended_reps.includes("secs") && 
+                <h2 className="text-3xl font-bold mb-4 text-center text-wrap">{currentExercise.exercise.name}</h2>
+                {!currentExercise.reps.includes("seconds") && <p className="text-center font-bold text-5xl">2 sets x ({currentExercise.reps})</p>}
+                {currentExercise.reps.includes("seconds") && 
                 (<div>
                   <p className="text-center font-bold text-5xl">{timeLeft}</p>
                   <button className="btn bg-white text-dark-purple my-4 w-36" onClick={toggleCountdown}
@@ -595,7 +580,7 @@ export default function Homepage() {
 
         {/* Completion */}
         {postModal &&
-          <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex justify-center items-center">
+          <div id="postModal" className="fixed inset-0 bg-black bg-opacity-50 z-50 flex justify-center items-center">
             <div className="carousel bg-white rounded-lg shadow-lg w-full max-w-sm min-h-[50vh] max-h-[80vh] overflow-auto relative" onClick={handleTap}>
                 {/* Progress bar at the top like Instagram Stories */}
                 <div className="absolute top-2 left-0 right-0 flex justify-around px-2 z-10">

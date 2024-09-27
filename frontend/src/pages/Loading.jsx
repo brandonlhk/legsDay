@@ -24,7 +24,17 @@ export default function Loading() {
     const [core, setCore] = useState([]) //page 6
     const [lowerBody, setLowerBody] = useState([]) //page 7
     const [upperBody, setUpperBody] = useState([]) // page 8
-    const [isDataInitialized, setIsDataInitialized] = useState(false);
+    const [isDataInitialized, setIsDataInitialized] = useState(false)
+
+    localStorage.setItem("age", age)
+    localStorage.setItem("gender", gender)
+    localStorage.setItem("level", level)
+    localStorage.setItem("days", days)
+    localStorage.setItem("duration", duration)
+    localStorage.setItem("injuries", JSON.stringify(injuries))
+    localStorage.setItem("core", JSON.stringify(core))
+    localStorage.setItem("lowerbody", JSON.stringify(lowerBody))
+    localStorage.setItem("upperbody", JSON.stringify(upperBody))
     
     // receive from prev page
     useEffect(() => {
@@ -92,9 +102,10 @@ export default function Loading() {
             
                         const result = await response.json();
                         const program = result.data
-    
-                        const data = [days, core, lowerBody, upperBody, duration, program]
-                        navigate("/home", {state: {data: data}})
+                        localStorage.setItem("program", JSON.stringify(program))
+                        console.log("Created your program! Moving you to the homepage!")
+
+                        navigate("/home")
                     } catch (error) {
                         console.error("Error sending data to recommend program", error)
                     }
@@ -106,25 +117,10 @@ export default function Loading() {
                     console.log("Request to userdbmanager complete")
                 }
             }
-            // sendData()
-            // navigate("/home", {state: {data: data}})
-
-
-            // send to homepage first
-            localStorage.setItem("age", age)
-            localStorage.setItem("gender", gender)
-            localStorage.setItem("level", level)
-            localStorage.setItem("days", days)
-            localStorage.setItem("duration", duration)
-            localStorage.setItem("injuries", JSON.stringify(injuries))
-            localStorage.setItem("core", JSON.stringify(core))
-            localStorage.setItem("lowerbody", JSON.stringify(lowerBody))
-            localStorage.setItem("upperbody", JSON.stringify(upperBody))
             
-
-            navigate("/home")
+            sendData()
         }
-    }, [isDataInitialized])
+    }, [age, core, days, duration, gender, injuries, isDataInitialized, level, lowerBody, navigate, upperBody])
 
     return (
         <div className="min-h-screen flex flex-col justify-center items-center">
