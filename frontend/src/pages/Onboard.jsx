@@ -108,9 +108,9 @@ export default function Onboard() {
     }, [page, navigate, age, gender, level, days, duration, injuries, core, lowerBody, upperBody])
 
     return (
-        <div className="min-h-screen bg-gray-50">
+        <div className="bg-gray-50">
             
-            <div className="container mx-auto p-3 flex flex-col min-h-screen">
+            <div className="container mx-auto p-3 flex flex-col">
  
                 {/* back button and progress */}
                 <div className="flex gap-4">
