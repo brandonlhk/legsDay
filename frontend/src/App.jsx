@@ -1,7 +1,10 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import ViewportHeight from './components/ViewportHeight';
-import Login from "./pages/Login"
+import Start from "./pages/Start"
+
 import HealthInfo from "./pages/HealthInfo"
+
+import Login from "./pages/Login"
 import Onboard from "./pages/Onboard"
 import NotFound from "./pages/NotFound"
 import Loading from "./pages/Loading"
@@ -16,8 +19,9 @@ export default function App() {
       <ViewportHeight>
       <Routes>
           <Route path="*" element={<NotFound />}/>
-          <Route path="/" element={<Login />}/>
+          <Route path="/" element={<Start />}/>
 
+          <Route path="/login" element={<Login />}/>
           <Route path="/healthinfo" element={<HealthInfo />}/>
           <Route path="/onboard" element={<Onboard />}/>
           <Route path="/loading" element={<Loading />}/>

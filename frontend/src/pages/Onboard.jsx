@@ -31,14 +31,41 @@ export default function Onboard() {
     }
     }
 
+    const canProceed = () => {
+        switch (page) {
+            case 0:
+                return name && age && gender; // Check if all fields on page 1 are filled
+            case 1:
+                return level; // Check if activity level is selected
+            case 2:
+                return eatingHabits; // Check if eating habits are selected
+            case 3:
+                return duration; // Check if workout duration is selected
+            case 4:
+                return injuries.length > 0; // Check if any injury selection is made
+            case 5:
+                return core.length > 0; // Check if core strength selection is made
+            case 6:
+                return lowerBody.length > 0; // Check if lower body strength selection is made
+            case 7:
+                return upperBody.length > 0; // Check if upper body strength selection is made
+            default:
+                return false;
+        }
+    }
+
     const nextPage = () => {
-        window.scrollTo({
-            top: 0,
-            left: 0,
-            behaviour: 'smooth'
-        })
-        setPage((pageIndex) => pageIndex + 1)
-        setProgressVal((prevProgress) => prevProgress + 11.11)
+        if (canProceed()) {
+            window.scrollTo({
+                top: 0,
+                left: 0,
+                behavior: 'smooth'
+            });
+            setPage((pageIndex) => pageIndex + 1);
+            setProgressVal((prevProgress) => prevProgress + 11.11);
+        } else {
+            alert("Please fill in all required fields before continuing.");
+        }
     }
 
     const handleCheckboxChange = (event, from) => {
