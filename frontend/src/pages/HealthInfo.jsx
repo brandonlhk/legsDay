@@ -1,5 +1,7 @@
-import {useState, useEffect} from "react"
+import {useState} from "react"
 import { useNavigate } from 'react-router-dom';
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faWeightScale, faTape } from "@fortawesome/free-solid-svg-icons";
 
 
 export default function HealthInfo() {
@@ -32,9 +34,9 @@ export default function HealthInfo() {
 
                     {/* progress */}
                     <div className="flex justify-center gap-4 my-12">
-                        <button class="tab tab-bordered tab-active bg-black text-white w-12 h-2 rounded-full"></button>
-                        <button class="tab tab-bordered bg-gray-300 w-12 h-2 rounded-full"></button>
-                        <button class="tab tab-bordered bg-gray-300 w-12 h-2 rounded-full"></button>
+                        <button className="tab tab-bordered tab-active bg-black text-white w-12 h-2 rounded-full"></button>
+                        <button className="tab tab-bordered bg-gray-300 w-12 h-2 rounded-full"></button>
+                        <button className="tab tab-bordered bg-gray-300 w-12 h-2 rounded-full"></button>
                     </div>
      
                 </div>}
@@ -51,9 +53,9 @@ export default function HealthInfo() {
 
                     {/* progress */}
                     <div className="flex justify-center gap-4 my-12">
-                        <button class="tab tab-bordered bg-gray-300 w-12 h-2 rounded-full"></button>
-                        <button class="tab tab-bordered tab-active bg-black text-white w-12 h-2 rounded-full"></button>
-                        <button class="tab tab-bordered bg-gray-300 w-12 h-2 rounded-full"></button>
+                        <button className="tab tab-bordered bg-gray-300 w-12 h-2 rounded-full"></button>
+                        <button className="tab tab-bordered tab-active bg-black text-white w-12 h-2 rounded-full"></button>
+                        <button className="tab tab-bordered bg-gray-300 w-12 h-2 rounded-full"></button>
                     </div>
      
                 </div>}
@@ -70,11 +72,33 @@ export default function HealthInfo() {
 
                     {/* progress */}
                     <div className="flex justify-center gap-4 my-12">
-                        <button class="tab tab-bordered bg-gray-300 w-12 h-2 rounded-full"></button>
-                        <button class="tab tab-bordered bg-gray-300 w-12 h-2 rounded-full"></button>
-                        <button class="tab tab-bordered tab-active bg-black text-white w-12 h-2 rounded-full"></button>
+                        <button className="tab tab-bordered bg-gray-300 w-12 h-2 rounded-full"></button>
+                        <button className="tab tab-bordered bg-gray-300 w-12 h-2 rounded-full"></button>
+                        <button className="tab tab-bordered tab-active bg-black text-white w-12 h-2 rounded-full"></button>
                     </div>
      
+                </div>}
+
+                {/* Last page */}
+                {index === 3 && <div>
+                    {/* Header */}
+                    <p className="text-3xl font-bold my-3">Free Health Assessment</p>
+
+                    <p className="text-lg my-3">Welcome to Own Time Own Target! Please have the equipment following ready before you begin your health assessment.</p>
+                    {/* icons */}
+                    <div className="space-y-3 mb-6">
+                        <div className="flex">
+                            <FontAwesomeIcon icon={faWeightScale} className="w-6 h-6"/>
+                            <p className="ml-4 text-lg font-semibold">Weighing scale</p>
+                        </div>
+
+                        <div className="flex">
+                            <FontAwesomeIcon icon={faTape} className="w-6 h-6"/>
+                            <p className="ml-4 text-lg font-semibold">Body measuring tape</p>
+                        </div>
+                    </div>
+
+
                 </div>}
                 
                 {/* Buttons */}
@@ -87,11 +111,14 @@ export default function HealthInfo() {
 
                     {index === 2 && 
                     <div className="">
-                        <button className="btn bg-black text-center w-full text-white rounded-full" onClick={() => navigate("/onboard")}>Begin Health Assessment</button>
+                        <button className="btn bg-black text-center w-full text-white rounded-full" onClick={nextPage}>Begin Health Assessment</button>
+                    </div>}
+
+                    {index === 3 && 
+                    <div className="">
+                        <button className="btn bg-black text-center w-full text-white rounded-full mt-60" onClick={() => navigate("/onboard")}>Continue</button>
                     </div>}
                 </div>
-                {/* Next page */}
-                {/* <button className="btn bg-purple text-center w-full text-white mt-auto mb-6" onClick={nextPage}>Continue</button> */}
             </div>
         </div>
     )
