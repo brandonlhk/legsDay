@@ -1,3 +1,70 @@
+'''Sample dict:
+{
+    "2024-12-02": {
+        "2024-12-02T00:00:00": {
+            "gym": [
+                {
+                    "5f87d1e3d8f2b1b2b3c4e6f5": {
+                        "general_strength_training_ladies": [],
+                        "general_strength_training_parents": [],
+                        "general_strength_training_seniors": [],
+                        "general_strength_training_general": [],
+                        "powerlifting_ladies": [],
+                        "powerlifting_parents": [],
+                        "powerlifting_seniors": [],
+                        "powerlifting_general": [],
+                        "functional_mobility_training_ladies": [],
+                        "functional_mobility_training_parents": [],
+                        "functional_mobility_training_seniors": [],
+                        "functional_mobility_training_general": []
+                    }
+                }
+            ],
+            "fitness_corner": [
+                {
+                    "5f87d1e3d8f2b1b2b3c4e6f5": {
+                        "calisthenics_cardio_ladies": [],
+                        "calisthenics_cardio_parents": [],
+                        "calisthenics_cardio_seniors": [],
+                        "calisthenics_cardio_general": [],
+                        "calisthenics_strength_ladies": [],
+                        "calisthenics_strength_parents": [],
+                        "calisthenics_strength_seniors": [],
+                        "calisthenics_strength_general": []
+                    }
+                }
+            ],
+            "parks": [
+                {
+                    "5f87d1e3d8f2b1b2b3c4e6f5": {
+                        "calisthenics_ladies": [],
+                        "calisthenics_parents": [],
+                        "calisthenics_seniors": [],
+                        "calisthenics_general": [],
+                        "2.4k_ladies": [],
+                        "2.4k_parents": [],
+                        "2.4k_seniors": [],
+                        "2.4k_general": [],
+                        "5k_ladies": [],
+                        "5k_parents": [],
+                        "5k_seniors": [],
+                        "5k_general": [],
+                        "brisk_walk_ladies": [],
+                        "brisk_walk_parents": [],
+                        "brisk_walk_seniors": [],
+                        "brisk_walk_general": []
+                    }
+                }
+            ]
+        },
+        "2024-12-02T01:00:00": { ... },
+        ...
+    },
+    "2024-12-03": { ... },
+    ...
+}
+'''
+
 import os
 from collections import defaultdict
 from datetime import datetime, timedelta
