@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faEye, faEyeSlash } from "@fortawesome/free-solid-svg-icons";
 
-export default function Login() {
+export default function Signin() {
 
   const navigate = useNavigate()
   const [email, setEmail] = useState("")
@@ -61,7 +61,7 @@ export default function Login() {
 
             </div>
 
-            <button className="btn bg-black btn-lg mt-8 w-full text-white rounded-full" onClick={() => navigate("/home")}>Sign in</button>
+            <button className="btn bg-themeGreen btn-lg mt-8 w-full text-black rounded-full" onClick={() => navigate("/home")}>Sign in</button>
 
         </div>
       </div>

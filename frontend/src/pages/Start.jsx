@@ -17,7 +17,11 @@ export default function Start() {
               <p className="text-content mt-6 text-gray-600 text-xl">Your health, your way</p>
             </div>
 
-            <button className="btn bg-black btn-lg mt-12 w-full text-white rounded-full" onClick={() => navigate("/healthinfo")}>Get started</button>
+            <div className="space-y-3 w-full">
+              <button className="btn bg-themeGreen btn-lg mt-12 w-full text-black rounded-full" onClick={() => navigate("/healthinfo")}>Try now</button>
+
+              <button className="btn btn-outline btn-lg w-full text-black rounded-full border-themeGreen border-2" onClick={() => navigate("/Signin")}>Sign in</button>
+            </div>
 
         </div>
       </div>

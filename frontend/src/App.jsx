@@ -4,7 +4,7 @@ import Start from "./pages/Start"
 
 import HealthInfo from "./pages/HealthInfo"
 
-import Login from "./pages/Login"
+import Signin from "./pages/Signin"
 import Onboard from "./pages/Onboard"
 import NotFound from "./pages/NotFound"
 import Loading from "./pages/Loading"
@@ -21,7 +21,7 @@ export default function App() {
           <Route path="*" element={<NotFound />}/>
           <Route path="/" element={<Start />}/>
 
-          <Route path="/login" element={<Login />}/>
+          <Route path="/signin" element={<Signin />}/>
           <Route path="/healthinfo" element={<HealthInfo />}/>
           <Route path="/onboard" element={<Onboard />}/>
           <Route path="/loading" element={<Loading />}/>
