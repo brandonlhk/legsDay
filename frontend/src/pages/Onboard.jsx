@@ -19,10 +19,10 @@ export default function Onboard() {
 
     const [duration, setDuration] = useState("") //page 3
 
-    const [injuries, setInjuries] = useState([]) //page 5
-    const [core, setCore] = useState([]) //page 6
-    const [lowerBody, setLowerBody] = useState([]) //page 7
-    const [upperBody, setUpperBody] = useState([]) // page 8
+    const [injuries, setInjuries] = useState([]) //page 4
+    const [core, setCore] = useState([]) //page 5
+    const [lowerBody, setLowerBody] = useState([]) //page 6
+    const [upperBody, setUpperBody] = useState([]) // page 7
 
     const decision = () => {
     if (page === 0) {
@@ -37,7 +37,7 @@ export default function Onboard() {
     const canProceed = () => {
         switch (page) {
             case 0:
-                return name && age && gender; // Check if all fields on page 1 are filled
+                return name && age && gender && race; // Check if all fields on page 1 are filled
             case 1:
                 return workoutFreq; // Check if activity level is selected
             case 2:
@@ -65,7 +65,7 @@ export default function Onboard() {
             setPage((pageIndex) => pageIndex + 1);
             setProgressVal((prevProgress) => prevProgress + 14.28);
         } else {
-            alert("Please fill in all required fields before continuing.");
+            alert("Please fill in all fields before continuing.");
         }
     }
 
@@ -138,11 +138,11 @@ export default function Onboard() {
 
     // send data to next page
     useEffect(() => {
-    if (page === 8) {
-        const data = [age, gender, level, days, duration, injuries, core, lowerBody, upperBody]
+    if (page === 7) {
+        const data = [name, age, gender, race, workoutFreq, duration, injuries, core, lowerBody, upperBody]
         return navigate("/loading", {state: {data: data}})
     }
-    }, [page, navigate, age, gender, workoutFreq, duration, injuries, core, lowerBody, upperBody])
+    }, [page, navigate, age, gender, workoutFreq, duration, injuries, core, lowerBody, upperBody, name, race])
 
     return (
         <div>

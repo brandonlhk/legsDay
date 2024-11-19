@@ -8,6 +8,8 @@ import Signin from "./pages/Signin"
 import Onboard from "./pages/Onboard"
 import NotFound from "./pages/NotFound"
 import Loading from "./pages/Loading"
+import Recommendations from "./pages/Recommendations"
+import Register from "./pages/Register"
 import Homepage from "./pages/Homepage"
 import Map from "./pages/Map"
 import Library from "./pages/Library"
@@ -25,6 +27,8 @@ export default function App() {
           <Route path="/healthinfo" element={<HealthInfo />}/>
           <Route path="/onboard" element={<Onboard />}/>
           <Route path="/loading" element={<Loading />}/>
+          <Route path="/recommendations" element={<Recommendations />}/>
+          <Route path="/register" element={<Register />}/>
           <Route path="/home" element={<Homepage />}/>
           <Route path="/map" element={<Map />}/>
           <Route path="/library" element={<Library />}/>
