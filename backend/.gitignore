@@ -15,3 +15,7 @@ ipython_config.py
 
 
 *.csv
+/data
+
+.env
+

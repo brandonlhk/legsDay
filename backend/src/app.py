@@ -12,6 +12,9 @@ from pymongo import MongoClient, ReturnDocument
 from recommendation import Recommender
 from userdbManager import User
 from bson.objectid import ObjectId
+import math
+from multiprocessing import Pool
+from onemapsg import OneMapClient
 
 app = FastAPI()
 app.add_middleware(
@@ -28,6 +31,7 @@ client.server_info()
 user_db = client.user
 user_collection = user_db.users
 exercise_db = client['exercise_database']
+Client = OneMapClient(os.environ["EMAIL"], os.environ["PASSWORD"])
 
 class SubstitutionData(BaseModel):
     exercise_id: str
@@ -65,6 +69,98 @@ class CreateAccountRequest(BaseModel):
     core_strength: Optional[List[str]] = Field([], description="Optional responses for core strength")
     upper_body_strength: Optional[List[str]] = Field([], description="Optional responses for upp body strength")
     lower_body_strength: Optional[List[str]] = Field([], description="Optional responses for lower body strength")
+
+class DistanceRequest(BaseModel):
+    address: str
+    topk: int
+
+class ParkRequest(BaseModel):
+    _id: str
+    name: str
+    coordinates: List[float]
+    inc_crc: str
+    fml_upd_d: str
+
+class GymRequest(BaseModel):
+    name: str
+    kml_id: str
+    coordinates: List[float]
+    dinc_crc: str
+    fml_upd_d: str
+    hyperlink: str
+    photo_url: str
+    postal_code: str
+    street_name: str
+    building_number: str
+    building_name: str
+    unit_number: str
+    floor: str
+    description: str
+
+class FitnessCornerRequest(BaseModel):
+    _id: str
+    name:str
+    coordinates: List[float]
+    global_id: str
+    subtype: int
+    inc_crc: str
+    fml_upd_d: str
+
+class AllGymsRequest(BaseModel):
+    data: List[GymRequest]
+
+class AllParksRequest(BaseModel):
+    data: List[ParkRequest]
+
+class AllFitnessCornerRequest(BaseModel):
+    data: List[FitnessCornerRequest]
+
+# Haversine formula to calculate the great-circle distance
+def haversine(lat1, lon1, lat2, lon2):
+    R = 6371.0  # Radius of the Earth in kilometers
+    lat1_rad = math.radians(lat1)
+    lon1_rad = math.radians(lon1)
+    lat2_rad = math.radians(lat2)
+    lon2_rad = math.radians(lon2)
+    
+    dlat = lat2_rad - lat1_rad
+    dlon = lon2_rad - lon1_rad
+    
+    a = math.sin(dlat / 2)**2 + math.cos(lat1_rad) * math.cos(lat2_rad) * math.sin(dlon / 2)**2
+    c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
+    
+    return R * c  # Distance in kilometers
+
+def calculate_distance(pair):
+    lat_s, lon_s, event_document = pair
+    lat_l = float(event_document['coordinates'][0])
+    lon_l = float(event_document['coordinates'][1])
+    
+    dist = haversine(lat_s, lon_s, lat_l, lon_l)
+    
+    # Add distance to event document
+    event_document['distance'] = dist
+
+    event_document['_id'] = str(event_document['_id'])
+    
+    return event_document
+
+# Function to parallelize the distance calculation
+def calculate_distances(events_cursor, lat_s, lon_s):
+    # Prepare the input pairs: (lat_s, lon_s, event_document)
+    pairs = [(float(lat_s), float(lon_s), data) for data in events_cursor]
+    
+    # Use Pool to parallelize the computation
+    with Pool() as pool:
+        result = pool.map(calculate_distance, pairs)
+    
+    # Sort events by distance (ascending order)
+    sorted_result = sorted(result, key=lambda event: event['distance'])
+    
+    # Convert the sorted list into a dictionary with _id as the key
+    event_dict = {event['_id']: {**event, 'distance': event['distance']} for event in sorted_result}
+    
+    return event_dict
 
 # function to check if email input is valid 
 def is_email_valid(email: str):
@@ -274,5 +370,68 @@ async def settings(request_data: SettingsRequest):
     else:
         raise HTTPException(status_code=401, detail="UserID does not exist")
     
-
+@app.post("/get_nearest")
+async def nearest(request_data: DistanceRequest):
+    add = request_data.address
+    top_k = request_data.topk
+    url = f"https://www.onemap.gov.sg/api/common/elastic/search?searchVal={add}&returnGeom=Y&getAddrDetails=Y&pageNum=1"
+    headers = {
+        "Authorization": os.environ['TOKEN']
+    }
     
+    # Fetch events from the database
+    all_events = list(client['events_collection']['events_database'].find({}))  # Convert cursor to list for processing
+    
+    # Get coordinates of the address (latitude and longitude)
+    try:
+        res = requests.get(url, headers=headers).json()
+        lat, lon = res['results'][0]['LATITUDE'], res['results'][0]['LONGITUDE']
+    except Exception as e:
+        return {"message": "Error fetching location data", "error": str(e)}
+    
+    # Calculate distances and sort by nearest
+    ranked_events = calculate_distances(all_events, lat, lon)
+    
+    sorted_top_k = dict(sorted(ranked_events.items(), key=lambda item: item[1]['distance'])[:top_k])
+    
+    # Return the top-k events with distance included
+    return {
+        "message": "Fetched activities",
+        "activities": sorted_top_k
+    }
+
+@app.post("/get_fitness_corners")
+async def fitness():
+    all_fitness_corners = list(client['events_collection']['fitness_corner_database'].find({})) 
+    for i, fc in enumerate(all_fitness_corners):
+        _id = str(fc['_id'])
+        all_fitness_corners[i]['_id'] = _id
+
+    return {
+        "message": "Fetched fitness corners",
+        "fitness_corners": all_fitness_corners
+    }
+
+@app.post("/get_parks")
+async def parks():
+    all_fitness_corners = list(client['events_collection']['parks_database'].find({})) 
+    for i, fc in enumerate(all_fitness_corners):
+        _id = str(fc['_id'])
+        all_fitness_corners[i]['_id'] = _id
+
+    return {
+        "message": "Fetched parks",
+        "parks": all_fitness_corners
+    }
+
+@app.post("/get_gyms")
+async def fitness():
+    all_fitness_corners = list(client['events_collection']['gym_database'].find({})) 
+    for i, fc in enumerate(all_fitness_corners):
+        _id = str(fc['_id'])
+        all_fitness_corners[i]['_id'] = _id
+
+    return {
+        "message": "Fetched gyms",
+        "gyms": all_fitness_corners
+    }
