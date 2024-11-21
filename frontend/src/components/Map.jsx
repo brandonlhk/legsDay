@@ -15,7 +15,7 @@ const mapContainerStyle = {
   borderRadius: "20px",
 };
 
-export default function Map({ locations, center, zoom, currentLocation }) {
+export default function Map({ locations, center, zoom, currentLocation, selectedMarkerId, setSelectedMarkerId, onMarkerClick }) {
   const { isLoaded, loadError } = useLoadScript({
     googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY,
   });
@@ -37,7 +37,8 @@ export default function Map({ locations, center, zoom, currentLocation }) {
           key={location.id}
           position={{ lat: location.lat, lng: location.lng }}
           title={location.title}
-          onClick={() => setSelectedLocation(location)}
+          onClick={() => {onMarkerClick(location); setSelectedMarkerId(location.id)}}
+          animation={location.id === selectedMarkerId ? window.google.maps.Animation.BOUNCE : null}
         />
       ))}
 
@@ -52,17 +53,6 @@ export default function Map({ locations, center, zoom, currentLocation }) {
         />
       )}
 
-      {/* InfoWindow */}
-      {selectedLocation && (
-        <InfoWindow
-          position={{ lat: selectedLocation.lat, lng: selectedLocation.lng }}
-          onCloseClick={() => setSelectedLocation(null)}
-        >
-          <div>
-            <h2 className="font-semibold">{selectedLocation.title}</h2>
-          </div>
-        </InfoWindow>
-      )}
     </GoogleMap>
   );
 }
