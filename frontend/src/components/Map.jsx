@@ -6,7 +6,7 @@ const mapOptions = {
   mapTypeControl: false,
   streetViewControl: false,
   fullscreenControl: false,
-  zoomControl: true,
+  zoomControl: false
 };
 
 const mapContainerStyle = {
@@ -30,6 +30,10 @@ export default function Map({ locations, center, zoom, currentLocation }) {
       {/* Render filtered markers */}
       {locations.map((location) => (
         <Marker
+          icon={{
+            url: `markers/${location.popularity}-${location.type}.png`,
+            scaledSize: new window.google.maps.Size(48, 48)
+          }}
           key={location.id}
           position={{ lat: location.lat, lng: location.lng }}
           title={location.title}

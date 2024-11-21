@@ -6,6 +6,14 @@ import dayjs from "dayjs";
 
 export default function Homepage() {
 
+  /**
+   * some logic dump:
+   * on load, call endpoint to get locations
+   * 
+   */
+
+
+
   // ------------------------------------------- on load stuff -------------------------------------------
   const [name, setName] = useState(localStorage.getItem("name"))
   const [workoutFreq, setWorkoutFreq] = useState(localStorage.getItem("workoutFreq"))
@@ -18,10 +26,10 @@ export default function Homepage() {
   const [zoom, setZoom] = useState(12); // Default zoom
   const [currentLocation, setCurrentLocation] = useState(null); // Current user location
   const [locations, setLocations] = useState([ //dummy data right now
-    { id: 1, lat: 1.3521, lng: 103.8198, title: "Strength – Fit" },
-    { id: 2, lat: 1.344, lng: 103.819, title: "HIIT" },
-    { id: 3, lat: 1.338, lng: 103.81, title: "Circuit Training" },
-    { id: 4, lat: 1.3376, lng: 103.6969, title: "Circuit Training" },
+    { id: 1, lat: 1.3376, lng: 103.6969, title: "Circuit Training", type: "gym", popularity: "verypop" },
+    { id: 2, lat: 1.2857, lng: 103.8269, title: "Circuit Training", type: "fitness", popularity: "lesspop"},
+    { id: 2, lat: 1.2873, lng: 103.8246, title: "Circuit Training", type: "park", popularity: "pop"},
+    
   ]);
   const [filteredLocations, setFilteredLocations] = useState([]); // Locations within 3 km
   const [locationQuery, setLocationQuery] = useState(""); // Search query
@@ -29,12 +37,14 @@ export default function Homepage() {
   useEffect(() => {
     const fetchCurrentLocation = () => {
       if (navigator.geolocation) {
+        console.log("hello")
         navigator.geolocation.getCurrentPosition(
           (position) => {
             const userLocation = {
               lat: position.coords.latitude,
               lng: position.coords.longitude,
             };
+            console.log("hello")
             setCurrentLocation(userLocation);
             setCenter(userLocation);
             setZoom(15);
@@ -187,7 +197,7 @@ export default function Homepage() {
           <Map locations={filteredLocations} center={center} zoom={zoom} currentLocation={currentLocation} />
 
           {/* legend */}
-          <div>
+          <div className="mt-2">
             {/* top part */}
             <div className="flex gap-3 text-sm">
 
@@ -276,22 +286,81 @@ export default function Homepage() {
             ))}
           </div>
 
-
-
         </section>
 
         {/* Recommended Workout */}
         <section className="mb-6">
-        <h2 className="text-xl font-bold">Recommended Workout</h2>
+          <h2 className="text-xl font-bold">Recommended Workout</h2>
+          
+            {/* carousel */}
+          <div className="carousel carousel-center rounded-box mt-3 w-full gap-3">
 
+            {/* card-1 */}
+            <div className="carousel-item">
+
+              <div className="card w-[22rem] border border-gray-200">
+                <div className="card-body p-6">
+                  <h2 className="card-title text-xl font-semibold flex justify-between items-center">Bodyweight Exercises 
+                    <span className="flex space-x-2">
+                      <img src="park.png" alt="" className="h-8 w-8"/>
+                      <img src="fitness-corner.png" alt="" className="h-8 w-8"/>
+                    </span>
+                  </h2>
+                  <img src="bodyweight.png" alt="" />
+                  <p className="font-semibold">Strengthens muscles with bodyweight exercises like push-ups and squats, improving endurance and core stability without equipment.</p>
+                </div>
+              </div>
+
+            </div>
+
+            {/* card-2 */}
+            <div className="carousel-item">
+
+              <div className="card w-[22rem] border border-gray-200">
+                <div className="card-body p-6">
+                  <h2 className="card-title text-xl font-semibold flex justify-between items-center">Functional Mobility Training 
+                    <span className="flex space-x-2">
+                      <img src="gym.png" alt="" className="h-8 w-8"/>
+                    </span>
+                  </h2>
+                  <img src="functional.png" alt="" />
+                  <p className="font-semibold">Boost strength by improving joint mobility and movement patterns through stretches, rotations, and resistance exercises.</p>
+                </div>
+              </div>
+
+            </div>
+
+            {/* card-3 */}
+            <div className="carousel-item">
+
+              <div className="card w-[22rem] border border-gray-200">
+                <div className="card-body p-6">
+                  <h2 className="card-title text-xl font-semibold flex justify-between items-center">Brisk walks
+                    <span className="flex space-x-2">
+                      <img src="park.png" alt="" className="h-8 w-8"/>
+                      <img src="fitness-corner.png" alt="" className="h-8 w-8"/>
+                    </span>
+                  </h2>
+                  <img src="brisk.png" alt="" />
+                  <p className="font-semibold">Strengthen the lower body, improve endurance, and tone muscles with low-impact, moderate-intesity movement.</p>
+                </div>
+              </div>
+
+            </div>
+
+
+          </div>
         </section>
 
         {/* Other Activities Section */}
-        <section>
+        <section className="mb-20">
           <h2 className="text-xl font-bold">Other Activities</h2>
-          <button className="btn btn-primary w-full mb-32">
-            Take Health Assessment
-          </button>
+          <div className="rounded-lg bg-[#F5F7FA] mt-3 p-4">
+            <p className="text-md font-semibold">Unlock your unique path to better health with our free health assessment.</p>
+            <button className="btn bg-themeGreen w-full rounded-full my-3">
+              Take Health Assessment
+            </button>
+          </div>
         </section>
 
         {/* Footer Navigation */}
