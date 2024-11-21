@@ -59,16 +59,16 @@ class SettingsRequest(BaseModel):
     injury: Optional[List[str]] = Field([], description="Optional injury")
 
 class CreateAccountRequest(BaseModel):
-    age: Optional[float] = Field(0.0, description="Optional age")
+    name : Optional[str] = Field("", description="Optional name")
+    age: Optional[float] = Field(0.0, description="Opti@onal age")
     gender: Optional[str] = Field("", description="Optional gender")
-    frequency: Optional[str] = Field("", description="Optional workout frequency")
+    race: Optional[str] = Field("", description="Optional race")
+    workoutFreq: Optional[str] = Field("", description="Optional workout frequency")
     duration: Optional[str] = Field("", description="Optional workout duration")
-    status: Optional[str] = Field("", description="Optional status")
-    injury: Optional[List[str]] = Field([], description="Optional injury")
-    level: Optional[str] = Field("", description="Optional exercise experience")
-    core_strength: Optional[List[str]] = Field([], description="Optional responses for core strength")
-    upper_body_strength: Optional[List[str]] = Field([], description="Optional responses for upp body strength")
-    lower_body_strength: Optional[List[str]] = Field([], description="Optional responses for lower body strength")
+    injuries: Optional[List[str]] = Field([], description="Optional injuries")
+    core: Optional[List[str]] = Field([], description="Optional responses for core strength")
+    upperBody: Optional[List[str]] = Field([], description="Optional responses for upp body strength")
+    lowerBody: Optional[List[str]] = Field([], description="Optional responses for lower body strength")
 
 class DistanceRequest(BaseModel):
     address: str
@@ -240,37 +240,22 @@ async def substitute_program(request_data: SubstitutionRequest):
 
 @app.post('/register')
 async def register(request_data: CreateAccountRequest):
+    name = request_data.name
     age = request_data.age
     gender = request_data.gender
-    frequency = request_data.frequency
+    race = request_data.race
+    frequency = request_data.workoutFreq
     duration = request_data.duration
-    status = request_data.status
-    injury = request_data.injury
-    level = request_data.level
-    core_strength = request_data.core_strength
-    upper_body_strength = request_data.upper_body_strength
-    lower_body_strength = request_data.lower_body_strength
+    injury = request_data.injuries
+    core_strength = request_data.core
+    upper_body_strength = request_data.upperBody
+    lower_body_strength = request_data.lowerBody
     user_id = uuid.uuid4().hex
 
     recommender = Recommender()
     upper_body = recommender.upper_body
     lower_body = recommender.lower_body
     abdominals = recommender.abs
-
-    # # Check if email, username, and password are provided (redundant due to Pydantic validation)
-    # if not username or not email or not password:
-    #     raise HTTPException(status_code=400, detail="Email, username, and password are required")
-
-    # # Check if email is valid
-    # if not is_email_valid(email):
-    #     raise HTTPException(status_code=400, detail="Invalid email")
-
-    # # Check if the email already exists in the database
-    # if user_collection.find_one({"email": email}):
-    #     raise HTTPException(status_code=400, detail="Email already exists")
-
-    # # Hash the password
-    # hashed_password = generate_password_hash(password)
 
     # Initialize preference weights
     preferences = {}
@@ -283,13 +268,13 @@ async def register(request_data: CreateAccountRequest):
     # Create the user object
     new_user = {
         "username": user_id,
+        "name": name,
         "age": age,
         "gender": gender,
+        "race": race,
         "frequency": frequency,
         "duration": duration,
-        "status": status,
         "injury": injury,
-        "level": level,
         "upper_body_strength": upper_body_strength,
         "lower_body_strength": lower_body_strength,
         "core_strength": core_strength,
@@ -364,7 +349,6 @@ async def settings(request_data: SettingsRequest):
             "message": "Rewrote to db successsfully",
             "amended": {'frequency': frequency,
                         'duration': duration,
-                        'weight': weight,
                         'injury': injury}
         }
     else:
