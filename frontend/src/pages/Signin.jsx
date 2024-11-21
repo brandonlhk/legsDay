@@ -5,14 +5,25 @@ import { faEye, faEyeSlash } from "@fortawesome/free-solid-svg-icons";
 
 export default function Signin() {
 
+  const mockData = {"email": "alextan@gmail.com", "password": "123"}
   const navigate = useNavigate()
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
+  const [error, setError] = useState("")
 
   const togglePasswordVisibility = () => {
     setIsPasswordVisible((prev) => !prev);
   };
+
+  const handleSignin = () => {
+    setError("")
+    if (email == mockData.email && password == mockData.password) {
+      navigate("/home")
+    } else {
+      setError("Email or password is wrong")
+    }
+  }
 
   return (
     <div className="">
@@ -58,10 +69,10 @@ export default function Signin() {
                   </button>
                 </div>
               </label>
-
+              {error !== "" && <p className="text-red-600 font-bold mt-3">{error}</p>}
             </div>
 
-            <button className="btn bg-themeGreen btn-lg mt-8 w-full text-black rounded-full" onClick={() => navigate("/home")}>Sign in</button>
+            <button className="btn bg-themeGreen btn-lg mt-6 w-full text-black rounded-full" onClick={handleSignin}>Sign in</button>
 
         </div>
       </div>
