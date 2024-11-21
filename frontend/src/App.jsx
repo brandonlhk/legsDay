@@ -11,7 +11,6 @@ import Loading from "./pages/Loading"
 import Recommendations from "./pages/Recommendations"
 import Register from "./pages/Register"
 import Homepage from "./pages/Homepage"
-import Map from "./pages/Map"
 import Library from "./pages/Library"
 import Settings from "./pages/Settings"
 
@@ -30,7 +29,6 @@ export default function App() {
           <Route path="/recommendations" element={<Recommendations />}/>
           <Route path="/register" element={<Register />}/>
           <Route path="/home" element={<Homepage />}/>
-          <Route path="/map" element={<Map />}/>
           <Route path="/library" element={<Library />}/>
           <Route path="/settings" element={<Settings />}/>
           
