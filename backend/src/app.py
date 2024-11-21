@@ -15,6 +15,7 @@ from bson.objectid import ObjectId
 import math
 from multiprocessing import Pool
 from onemapsg import OneMapClient
+from datetime import datetime
 
 app = FastAPI()
 app.add_middleware(
@@ -114,6 +115,11 @@ class AllParksRequest(BaseModel):
 
 class AllFitnessCornerRequest(BaseModel):
     data: List[FitnessCornerRequest]
+
+class WorkoutCounter(BaseModel):
+    user_id: str
+    date: str
+    counter: int
 
 # Haversine formula to calculate the great-circle distance
 def haversine(lat1, lon1, lat2, lon2):
@@ -419,3 +425,56 @@ async def fitness():
         "message": "Fetched gyms",
         "gyms": all_fitness_corners
     }
+
+@app.delete("/workout_reset/{user_id}")
+async def reset_workout_counter(user_id: str):
+    try:
+        # Delete existing counter
+        user_collection.update_one(
+            {"_id": ObjectId(user_id)},
+            {"$unset": {"workout_counter": ""}}
+        )
+        
+        # Create new counter
+        today = datetime.now().strftime("%Y-%m-%d")
+        new_counter = WorkoutCounter(
+            user_id=user_id,
+            date=today,
+            counter=0
+        )
+        
+        user_collection.update_one(
+            {"_id": user_id},
+            {"$set": {"workout_counter": new_counter.model_dump()}}
+        )
+        
+        return {"message": "Workout counter reset successfully"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.put("/workout_increment/{user_id}")
+async def increment_workout_counter(user_id: str):
+    try:
+        # Get current counter
+        user = user_collection.find_one({"_id": ObjectId(user_id)})
+        if not user or "workout_counter" not in user:
+            raise HTTPException(status_code=404, detail="Workout counter not found")
+            
+        counter = user["workout_counter"]
+        today = datetime.now().strftime("%Y-%m-%d")
+        
+        # Verify date is current
+        if counter["date"] != today:
+            raise HTTPException(status_code=400, detail="Counter needs to be reset for today")
+        
+        # Increment counter
+        user_collection.update_one(
+            {"_id": user_id},
+                {"$inc": {"workout_counter.counter": 1}}
+            )
+        
+        return {"message": "Counter incremented successfully"}
+    except HTTPException as he:
+        raise he
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
