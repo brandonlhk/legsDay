@@ -15,6 +15,10 @@ from bson.objectid import ObjectId
 import math
 from multiprocessing import Pool
 from onemapsg import OneMapClient
+<<<<<<< Updated upstream
+=======
+from geopy.distance import geodesic
+>>>>>>> Stashed changes
 from datetime import datetime
 
 app = FastAPI()
@@ -73,7 +77,9 @@ class CreateAccountRequest(BaseModel):
 
 class DistanceRequest(BaseModel):
     address: str
-    topk: int
+    '''date needs to be in yyyy-mm-dd format. time needs to be in xx:xx:xx format'''
+    date: str
+    time: str
 
 class ParkRequest(BaseModel):
     _id: str
@@ -116,6 +122,7 @@ class AllParksRequest(BaseModel):
 class AllFitnessCornerRequest(BaseModel):
     data: List[FitnessCornerRequest]
 
+<<<<<<< Updated upstream
 class WorkoutCounter(BaseModel):
     user_id: str
     date: str
@@ -136,37 +143,64 @@ def haversine(lat1, lon1, lat2, lon2):
     c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
     
     return R * c  # Distance in kilometers
+=======
+class TimeslotRequest(BaseModel):
+    '''date needs to be in yyyy-mm-dd format. time needs to be in xx:xx:xx format'''
+    date: str
+    time: str
+>>>>>>> Stashed changes
 
-def calculate_distance(pair):
-    lat_s, lon_s, event_document = pair
-    lat_l = float(event_document['coordinates'][0])
-    lon_l = float(event_document['coordinates'][1])
-    
-    dist = haversine(lat_s, lon_s, lat_l, lon_l)
-    
-    # Add distance to event document
-    event_document['distance'] = dist
+class JoinUserGroupRequest(BaseModel):
+    date : str
+    time : str
+    user_id : str
+    user_group : str
+    location_id : str
+    location_type: str
 
-    event_document['_id'] = str(event_document['_id'])
-    
-    return event_document
+def calculate_distance(lat1, lon1, lat2, lon2):
+    return geodesic((lat1, lon1), (lat2, lon2)).km
 
-# Function to parallelize the distance calculation
-def calculate_distances(events_cursor, lat_s, lon_s):
-    # Prepare the input pairs: (lat_s, lon_s, event_document)
-    pairs = [(float(lat_s), float(lon_s), data) for data in events_cursor]
-    
-    # Use Pool to parallelize the computation
-    with Pool() as pool:
-        result = pool.map(calculate_distance, pairs)
-    
-    # Sort events by distance (ascending order)
-    sorted_result = sorted(result, key=lambda event: event['distance'])
-    
-    # Convert the sorted list into a dictionary with _id as the key
-    event_dict = {event['_id']: {**event, 'distance': event['distance']} for event in sorted_result}
-    
-    return event_dict
+# Function to fetch location data from the databases
+def get_locations(timeslot):
+    location_data = {
+        'gym': [],
+        'parks': [],
+        'fitness_corner': []
+    }
+
+    # Fetch gym data
+    all_gyms = timeslot["gym"]
+    for gym_id, gym_data in all_gyms.items():
+        coordinates= gym_data['coordinates']
+        location_data['gym'].append({
+            'id': gym_id,
+            'coordinates': coordinates,
+            'user_groups': gym_data['user_groups']
+        })
+
+    # Fetch park data
+    all_parks = timeslot["parks"]
+    for _id, data in all_parks.items():
+        coordinates= data['coordinates']
+        location_data['parks'].append({
+            'id': _id,
+            'coordinates': coordinates,
+            'user_groups': data['user_groups']
+        })
+
+
+    # Fetch fitness corner data
+    all_fitness_corners = timeslot["fitness_corner"]
+    for _id, data in all_fitness_corners.items():
+        coordinates= data['coordinates']
+        location_data['fitness_corner'].append({
+            'id': _id,
+            'coordinates': coordinates,
+            'user_groups': data['user_groups']
+        })
+
+    return location_data
 
 # function to check if email input is valid 
 def is_email_valid(email: str):
@@ -360,37 +394,58 @@ async def settings(request_data: SettingsRequest):
     else:
         raise HTTPException(status_code=401, detail="UserID does not exist")
     
+
 @app.post("/get_nearest")
 async def nearest(request_data: DistanceRequest):
     add = request_data.address
-    top_k = request_data.topk
-    url = f"https://www.onemap.gov.sg/api/common/elastic/search?searchVal={add}&returnGeom=Y&getAddrDetails=Y&pageNum=1"
-    headers = {
-        "Authorization": os.environ['TOKEN']
-    }
-    
-    # Fetch events from the database
-    all_events = list(client['events_collection']['events_database'].find({}))  # Convert cursor to list for processing
-    
-    # Get coordinates of the address (latitude and longitude)
+    date = request_data.date
+    time = request_data.time
+
+    schedule_collection = client['events_collection']['schedule_database']
+    date_time_str = f"{date} {time}"
+    timeslot_time = datetime.strptime(date_time_str, "%Y-%m-%d %H:%M:%S").isoformat()
+    timeslot = schedule_collection.find_one({"date": date, "hour": timeslot_time})
+
     try:
+        # Fetch location data for the provided address
+        url = f"https://www.onemap.gov.sg/api/common/elastic/search?searchVal={add}&returnGeom=Y&getAddrDetails=Y&pageNum=1"
+        headers = {
+            "Authorization": os.environ['TOKEN']
+        }
         res = requests.get(url, headers=headers).json()
         lat, lon = res['results'][0]['LATITUDE'], res['results'][0]['LONGITUDE']
     except Exception as e:
         return {"message": "Error fetching location data", "error": str(e)}
-    
-    # Calculate distances and sort by nearest
-    ranked_events = calculate_distances(all_events, lat, lon)
-    
-    sorted_top_k = dict(sorted(ranked_events.items(), key=lambda item: item[1]['distance'])[:top_k])
-    
-    # Return the top-k events with distance included
-    return {
-        "message": "Fetched activities",
-        "activities": sorted_top_k
+
+    # Get all locations (gyms, parks, fitness corners)
+    location_data = get_locations(timeslot)
+    # print(location_data)
+
+    # Dictionary to hold locations within 3km
+    locations_within_3km = {
+        'gym': {},
+        'parks': {},
+        'fitness_corner': {}
     }
 
-@app.post("/get_fitness_corners")
+    # Iterate through all locations and filter by distance
+    for location_type, locations in location_data.items():
+        for location in locations:
+            loc_id = location['id']
+            loc_coordinates = location['coordinates']
+            distance = calculate_distance(lat, lon, loc_coordinates[1], loc_coordinates[0])
+
+            if distance <= 3:  # Only consider locations within 3km
+                locations_within_3km[location_type][loc_id] = {
+                    'coordinates': loc_coordinates,
+                    'user_groups': location['user_groups']  # Assuming user_groups is a dictionary
+                }
+    return {
+        "message": "Fetched locations within 3km",
+        "locations": locations_within_3km
+    }
+
+@app.get("/get_fitness_corners")
 async def fitness():
     all_fitness_corners = list(client['events_collection']['fitness_corner_database'].find({})) 
     for i, fc in enumerate(all_fitness_corners):
@@ -402,7 +457,7 @@ async def fitness():
         "fitness_corners": all_fitness_corners
     }
 
-@app.post("/get_parks")
+@app.get("/get_parks")
 async def parks():
     all_fitness_corners = list(client['events_collection']['parks_database'].find({})) 
     for i, fc in enumerate(all_fitness_corners):
@@ -414,7 +469,7 @@ async def parks():
         "parks": all_fitness_corners
     }
 
-@app.post("/get_gyms")
+@app.get("/get_gyms")
 async def fitness():
     all_fitness_corners = list(client['events_collection']['gym_database'].find({})) 
     for i, fc in enumerate(all_fitness_corners):
@@ -426,6 +481,7 @@ async def fitness():
         "gyms": all_fitness_corners
     }
 
+<<<<<<< Updated upstream
 @app.delete("/workout_reset/{user_id}")
 async def reset_workout_counter(user_id: str):
     try:
@@ -478,3 +534,65 @@ async def increment_workout_counter(user_id: str):
         raise he
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+=======
+@app.get("/get_all_locations")
+async def all_locations():
+    all_gyms = list(client['events_collection']['gym_database'].find({})) 
+    for i, fc in enumerate(all_gyms):
+        _id = str(fc['_id'])
+        all_gyms[i]['_id'] = _id
+
+    all_parks = list(client['events_collection']['parks_database'].find({})) 
+    for i, fc in enumerate(all_parks):
+        _id = str(fc['_id'])
+        all_parks[i]['_id'] = _id
+
+    all_fitness_corners = list(client['events_collection']['fitness_corner_database'].find({})) 
+    for i, fc in enumerate(all_fitness_corners):
+        _id = str(fc['_id'])
+        all_fitness_corners[i]['_id'] = _id
+
+    return {
+        "message": "Fetched all locations",
+        "gyms": all_gyms,
+        "fitness_corners": all_fitness_corners,
+        "parks": all_parks
+    }
+
+@app.post("/join_user_group")
+async def join_user_group(request_data: JoinUserGroupRequest):
+    date = request_data.date
+    time = request_data.time
+    user_id = request_data.user_id
+    user_group = request_data.user_group
+    location_type = request_data.location_type
+    location_id = request_data.location_id
+
+    # Fetch the document based on the date and time
+    schedule_collection = client['events_collection']['schedule_database']
+    date_time_str = f"{date} {time}"
+    timeslot_time = datetime.strptime(date_time_str, "%Y-%m-%d %H:%M:%S").isoformat()
+    timeslot = schedule_collection.find_one({"date": date, "hour": timeslot_time})
+    print(timeslot_time)
+
+    # Add the user to the appropriate user group
+    location_data = timeslot[location_type][location_id]
+    location_data['user_groups'][user_group].append(user_id)
+
+    # Now update the MongoDB document with the new data
+    result = schedule_collection.update_one(
+        {
+            "date": date, 
+            "hour": timeslot_time # Match the exact datetime for the update
+        },
+        {"$set": {f"{location_type}.{location_id}": location_data}},  # Update the specific location data
+        upsert=False  # Do not create a new document; we're updating an existing one
+    )
+
+    if result.modified_count == 0 and result.upserted_id:
+        return {"message": f"User {user_id} already in {user_group} for {date}T{time}."}
+    elif result.modified_count > 0:
+        return {"message": f"User {user_id} successfully added to {user_group} for {date}T{time}."}
+    else:
+        raise HTTPException(status_code=500, detail="Error updating the document in MongoDB.")
+>>>>>>> Stashed changes
