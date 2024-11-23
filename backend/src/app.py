@@ -16,6 +16,7 @@ import math
 from multiprocessing import Pool
 from onemapsg import OneMapClient
 from datetime import datetime
+from geopy.distance import geodesic
 
 app = FastAPI()
 app.add_middleware(
@@ -119,6 +120,27 @@ class AllParksRequest(BaseModel):
 class AllFitnessCornerRequest(BaseModel):
     data: List[FitnessCornerRequest]
 
+class WorkoutCounter(BaseModel):
+    user_id: str
+    date: str
+    counter: int
+
+# Haversine formula to calculate the great-circle distance
+def haversine(lat1, lon1, lat2, lon2):
+    R = 6371.0  # Radius of the Earth in kilometers
+    lat1_rad = math.radians(lat1)
+    lon1_rad = math.radians(lon1)
+    lat2_rad = math.radians(lat2)
+    lon2_rad = math.radians(lon2)
+    
+    dlat = lat2_rad - lat1_rad
+    dlon = lon2_rad - lon1_rad
+    
+    a = math.sin(dlat / 2)**2 + math.cos(lat1_rad) * math.cos(lat2_rad) * math.sin(dlon / 2)**2
+    c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
+    
+    return R * c  # Distance in kilometers
+    
 class TimeslotRequest(BaseModel):
     '''date needs to be in yyyy-mm-dd format. time needs to be in xx:xx:xx format'''
     date: str
@@ -441,6 +463,58 @@ async def fitness():
         "gyms": all_fitness_corners
     }
 
+@app.delete("/workout_reset/{user_id}")
+async def reset_workout_counter(user_id: str):
+    try:
+        # Delete existing counter
+        user_collection.update_one(
+            {"_id": ObjectId(user_id)},
+            {"$unset": {"workout_counter": ""}}
+        )
+        
+        # Create new counter
+        today = datetime.now().strftime("%Y-%m-%d")
+        new_counter = WorkoutCounter(
+            user_id=user_id,
+            date=today,
+            counter=0
+        )
+        
+        user_collection.update_one(
+            {"_id": user_id},
+            {"$set": {"workout_counter": new_counter.model_dump()}}
+        )
+        
+        return {"message": "Workout counter reset successfully"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.put("/workout_increment/{user_id}")
+async def increment_workout_counter(user_id: str):
+    try:
+        # Get current counter
+        user = user_collection.find_one({"_id": ObjectId(user_id)})
+        if not user or "workout_counter" not in user:
+            raise HTTPException(status_code=404, detail="Workout counter not found")
+            
+        counter = user["workout_counter"]
+        today = datetime.now().strftime("%Y-%m-%d")
+        
+        # Verify date is current
+        if counter["date"] != today:
+            raise HTTPException(status_code=400, detail="Counter needs to be reset for today")
+        
+        # Increment counter
+        user_collection.update_one(
+            {"_id": user_id},
+                {"$inc": {"workout_counter.counter": 1}}
+            )
+        
+        return {"message": "Counter incremented successfully"}
+    except HTTPException as he:
+        raise he
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 @app.get("/get_all_locations")
 async def all_locations():
     all_gyms = list(client['events_collection']['gym_database'].find({})) 
