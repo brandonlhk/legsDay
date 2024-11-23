@@ -25,9 +25,9 @@ export default function HealthInfo() {
                     <p className="text-3xl font-bold mt-3 whitespace-pre-wrap">Share your Profile and <br></br>Set Your Workout Goals</p>
 
                     {/* img here */}
-                    <img src="placeholder.jpg" alt="" className="object-cover rounded-md my-6"/>
+                    <img src="goal_1.png" alt="" className="object-cover rounded-md my-6"/>
 
-                    <div className="text-md">
+                    <div className="text-lg space-y-4 text-pretty">
                         <p>Define your fitness journey!</p>
                         <p>Share your profile and set your workout goals to stay focused, track progress, and achieve results faster.</p>
                     </div>
@@ -47,9 +47,9 @@ export default function HealthInfo() {
                     <p className="text-3xl font-bold mt-3">Assess Your Body</p>
 
                     {/* img here */}
-                    <img src="placeholder.jpg" alt="" className="object-cover rounded-md my-6"/>
+                    <img src="goal_2.png" alt="" className="object-cover rounded-md my-6"/>
 
-                    <div className="text-md">
+                    <div className="text-lg space-y-4">
                         <p>Stay safe and strong!</p>
                         <p>Take an injury and strength assessment to understand your body&apos;s limits, prevent setbacks, and build a solid foundation for progress.</p>
                     </div>
@@ -69,10 +69,10 @@ export default function HealthInfo() {
                     <p className="text-3xl font-bold mt-3">Discover Workout Spots Nearby and Form Fitness Buddy Groups</p>
 
                     {/* img here */}
-                    <img src="placeholder.jpg" alt="" className="object-cover rounded-md my-6"/>
+                    <img src="goal_3.png" alt="" className="object-cover rounded-md my-6"/>
 
 
-                    <div className="text-md">
+                    <div className="text-lg">
                         <p>Find nearby workout locations and connect with others to form supportive fitness buddy groups, making exercise both fun and motivating.</p>
                     </div>
 

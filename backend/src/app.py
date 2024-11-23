@@ -15,10 +15,6 @@ from bson.objectid import ObjectId
 import math
 from multiprocessing import Pool
 from onemapsg import OneMapClient
-<<<<<<< Updated upstream
-=======
-from geopy.distance import geodesic
->>>>>>> Stashed changes
 from datetime import datetime
 
 app = FastAPI()
@@ -51,7 +47,7 @@ class RecommendationRequest(BaseModel):
     userid: str
     
 class LoginRequest(BaseModel):
-    username: str
+    email: str
     password: str
 
 class FrequencyRequest(BaseModel):
@@ -65,15 +61,16 @@ class SettingsRequest(BaseModel):
 
 class CreateAccountRequest(BaseModel):
     name : Optional[str] = Field("", description="Optional name")
-    age: Optional[float] = Field(0.0, description="Opti@onal age")
+    age: Optional[int] = Field(0, description="Optional age")
     gender: Optional[str] = Field("", description="Optional gender")
     race: Optional[str] = Field("", description="Optional race")
     workoutFreq: Optional[str] = Field("", description="Optional workout frequency")
-    duration: Optional[str] = Field("", description="Optional workout duration")
     injuries: Optional[List[str]] = Field([], description="Optional injuries")
     core: Optional[List[str]] = Field([], description="Optional responses for core strength")
     upperBody: Optional[List[str]] = Field([], description="Optional responses for upp body strength")
     lowerBody: Optional[List[str]] = Field([], description="Optional responses for lower body strength")
+    email: Optional[str] = Field("")
+    password: Optional[str] = Field("")
 
 class DistanceRequest(BaseModel):
     address: str
@@ -122,33 +119,10 @@ class AllParksRequest(BaseModel):
 class AllFitnessCornerRequest(BaseModel):
     data: List[FitnessCornerRequest]
 
-<<<<<<< Updated upstream
-class WorkoutCounter(BaseModel):
-    user_id: str
-    date: str
-    counter: int
-
-# Haversine formula to calculate the great-circle distance
-def haversine(lat1, lon1, lat2, lon2):
-    R = 6371.0  # Radius of the Earth in kilometers
-    lat1_rad = math.radians(lat1)
-    lon1_rad = math.radians(lon1)
-    lat2_rad = math.radians(lat2)
-    lon2_rad = math.radians(lon2)
-    
-    dlat = lat2_rad - lat1_rad
-    dlon = lon2_rad - lon1_rad
-    
-    a = math.sin(dlat / 2)**2 + math.cos(lat1_rad) * math.cos(lat2_rad) * math.sin(dlon / 2)**2
-    c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
-    
-    return R * c  # Distance in kilometers
-=======
 class TimeslotRequest(BaseModel):
     '''date needs to be in yyyy-mm-dd format. time needs to be in xx:xx:xx format'''
     date: str
     time: str
->>>>>>> Stashed changes
 
 class JoinUserGroupRequest(BaseModel):
     date : str
@@ -285,58 +259,44 @@ async def register(request_data: CreateAccountRequest):
     gender = request_data.gender
     race = request_data.race
     frequency = request_data.workoutFreq
-    duration = request_data.duration
-    injury = request_data.injuries
     core_strength = request_data.core
     upper_body_strength = request_data.upperBody
     lower_body_strength = request_data.lowerBody
+    email = request_data.email
+    password = request_data.password
+    
     user_id = uuid.uuid4().hex
-
-    recommender = Recommender()
-    upper_body = recommender.upper_body
-    lower_body = recommender.lower_body
-    abdominals = recommender.abs
-
-    # Initialize preference weights
-    preferences = {}
-    for col, body_part in zip([upper_body, lower_body, abdominals], ['upper', 'lower', 'abs']):
-        preferences[body_part] = initialize_weights([str(i['_id']) for i in col.find({})])
-
-    recommender = Recommender()
-    reps_n_sets = calculate_reps_and_sets(preferences, core_strength, upper_body_strength, lower_body_strength)
+    hashed_password = generate_password_hash(password, method='pbkdf2:sha256', salt_length=16)
 
     # Create the user object
     new_user = {
-        "username": user_id,
+        "user_id": user_id,
+        "email": email,
+        "password": hashed_password,
         "name": name,
         "age": age,
         "gender": gender,
         "race": race,
         "frequency": frequency,
-        "duration": duration,
-        "injury": injury,
         "upper_body_strength": upper_body_strength,
         "lower_body_strength": lower_body_strength,
         "core_strength": core_strength,
-        "preferences": preferences,
-        "reps": reps_n_sets
     }
 
     # Insert the new user into the database
     result = user_collection.insert_one(new_user)
 
     return {
-        "message": "User created successfully",
-        "userid": str(result.inserted_id)
+        "message": "User created successfully"
     }
 
 @app.post("/login")
 async def login(request_data: LoginRequest):
-    username = request_data.username
+    email = request_data.email
     password = request_data.password
 
     # Find the user in the database
-    user = user_collection.find_one({"username": username})
+    user = user_collection.find_one({"email": email})
 
     # Check if user exists and password is correct
     if user and check_password_hash(user['password'], password):
@@ -345,7 +305,7 @@ async def login(request_data: LoginRequest):
             "userid": str(user['_id'])
         }
     else:
-        raise HTTPException(status_code=401, detail="Invalid username or password")
+        raise HTTPException(status_code=401, detail="Invalid email or password")
 
 @app.post("/frequency")
 async def frequency(request_data: FrequencyRequest):
@@ -481,60 +441,6 @@ async def fitness():
         "gyms": all_fitness_corners
     }
 
-<<<<<<< Updated upstream
-@app.delete("/workout_reset/{user_id}")
-async def reset_workout_counter(user_id: str):
-    try:
-        # Delete existing counter
-        user_collection.update_one(
-            {"_id": ObjectId(user_id)},
-            {"$unset": {"workout_counter": ""}}
-        )
-        
-        # Create new counter
-        today = datetime.now().strftime("%Y-%m-%d")
-        new_counter = WorkoutCounter(
-            user_id=user_id,
-            date=today,
-            counter=0
-        )
-        
-        user_collection.update_one(
-            {"_id": user_id},
-            {"$set": {"workout_counter": new_counter.model_dump()}}
-        )
-        
-        return {"message": "Workout counter reset successfully"}
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
-@app.put("/workout_increment/{user_id}")
-async def increment_workout_counter(user_id: str):
-    try:
-        # Get current counter
-        user = user_collection.find_one({"_id": ObjectId(user_id)})
-        if not user or "workout_counter" not in user:
-            raise HTTPException(status_code=404, detail="Workout counter not found")
-            
-        counter = user["workout_counter"]
-        today = datetime.now().strftime("%Y-%m-%d")
-        
-        # Verify date is current
-        if counter["date"] != today:
-            raise HTTPException(status_code=400, detail="Counter needs to be reset for today")
-        
-        # Increment counter
-        user_collection.update_one(
-            {"_id": user_id},
-                {"$inc": {"workout_counter.counter": 1}}
-            )
-        
-        return {"message": "Counter incremented successfully"}
-    except HTTPException as he:
-        raise he
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-=======
 @app.get("/get_all_locations")
 async def all_locations():
     all_gyms = list(client['events_collection']['gym_database'].find({})) 
@@ -595,4 +501,3 @@ async def join_user_group(request_data: JoinUserGroupRequest):
         return {"message": f"User {user_id} successfully added to {user_group} for {date}T{time}."}
     else:
         raise HTTPException(status_code=500, detail="Error updating the document in MongoDB.")
->>>>>>> Stashed changes

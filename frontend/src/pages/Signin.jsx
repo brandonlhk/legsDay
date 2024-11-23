@@ -5,7 +5,6 @@ import { faEye, faEyeSlash } from "@fortawesome/free-solid-svg-icons";
 
 export default function Signin() {
 
-  const mockData = {"email": "alextan@gmail.com", "password": "123"}
   const navigate = useNavigate()
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
@@ -16,12 +15,31 @@ export default function Signin() {
     setIsPasswordVisible((prev) => !prev);
   };
 
-  const handleSignin = () => {
-    setError("")
-    if (email == mockData.email && password == mockData.password) {
-      navigate("/home")
-    } else {
+  const handleSignin = async () => {
+    const requestData = {
+      email,
+      password
+    }
+
+    try {
+      const response = await fetch ("http://localhost:5000/login", {
+        method: "POST",
+        headers: {
+          "Content-Type" : "application/json"
+        },
+        body: JSON.stringify(requestData)
+      })
+
+      const data = await response.json()
+
+      if (response.ok) {
+        navigate("/home")
+      } else {
+        setError(data.message)
+      }
+    } catch (error) {
       setError("Email or password is wrong")
+      console.log(error)
     }
   }
 
@@ -30,10 +48,10 @@ export default function Signin() {
       {/* Container */}
       <div className="mx-auto p-6">
         <div className="flex flex-col">
-            <img src="signin.jpg" alt="workout icon" className="object-contain max-w-[70%] mx-auto"/>
+            <img src="auth.png" alt="workout icon" className="object-contain mx-auto"/>
 
             <div className="mt-6">
-              <p className="font-bold text-4xl">Sign in to OTOT</p>
+              <p className="font-bold text-4xl">Sign in to Own Time Own Target</p>
 
               {/* email */}
               <label className="form-control w-full mt-6">

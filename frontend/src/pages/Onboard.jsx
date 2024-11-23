@@ -7,7 +7,7 @@ import { faCircleInfo } from "@fortawesome/free-solid-svg-icons";
 export default function Onboard() {
     const navigate = useNavigate();
     const [page, setPage] = useState(0)
-    const [progressVal, setProgressVal] = useState(11.1) 
+    const [progressVal, setProgressVal] = useState(20) 
 
     // page 1
     const [name, setName] = useState("")
@@ -16,13 +16,9 @@ export default function Onboard() {
     const [race, setRace] = useState("")
 
     const [workoutFreq, setWorkoutFreq] = useState("") //page 2
-
-    const [duration, setDuration] = useState("") //page 3
-
-    const [injuries, setInjuries] = useState([]) //page 4
-    const [core, setCore] = useState([]) //page 5
-    const [lowerBody, setLowerBody] = useState([]) //page 6
-    const [upperBody, setUpperBody] = useState([]) // page 7
+    const [core, setCore] = useState([]) //page 3
+    const [lowerBody, setLowerBody] = useState([]) //page 4
+    const [upperBody, setUpperBody] = useState([]) // page 5
 
     const decision = () => {
     if (page === 0) {
@@ -30,7 +26,7 @@ export default function Onboard() {
     }
     else {
         setPage((pageIndex) => pageIndex - 1)
-        setProgressVal((prevProgress) => prevProgress - 11.11)
+        setProgressVal((prevProgress) => prevProgress - 20)
     }
     }
 
@@ -41,14 +37,10 @@ export default function Onboard() {
             case 1:
                 return workoutFreq; // Check if activity level is selected
             case 2:
-                return duration; // Check if eating habits are selected
-            case 3:
-                return injuries.length > 0; // Check if any injury selection is made
-            case 4:
                 return core.length > 0; // Check if core strength selection is made
-            case 5:
+            case 3:
                 return lowerBody.length > 0; // Check if lower body strength selection is made
-            case 6:
+            case 4:
                 return upperBody.length > 0; // Check if upper body strength selection is made
             default:
                 return false;
@@ -63,7 +55,7 @@ export default function Onboard() {
                 behavior: 'smooth'
             });
             setPage((pageIndex) => pageIndex + 1);
-            setProgressVal((prevProgress) => prevProgress + 14.28);
+            setProgressVal((prevProgress) => prevProgress + 20);
         } else {
             alert("Please fill in all fields before continuing.");
         }
@@ -75,10 +67,6 @@ export default function Onboard() {
         if (value === "None") {
             //if none is seleceted, removes all other stuff
             switch (from) {
-                case "injuries":
-                    setInjuries(["None"])
-                    break
-
                 case "core":
                     setCore(["None"])
                     break
@@ -99,13 +87,6 @@ export default function Onboard() {
             // if none is already inside, it removes it and set whatever value is pressed
 
                 switch (from) {
-                    case "injuries":
-                        if (injuries.includes("None")){
-                            setInjuries([value])
-                        } else {
-                            setInjuries((prevSelected) => prevSelected.includes(value) ? prevSelected.filter((item) => item !== value) : [...prevSelected, value])
-                        }
-                        break
     
                     case "core":
                         if (core.includes("None")) {
@@ -138,11 +119,11 @@ export default function Onboard() {
 
     // send data to next page
     useEffect(() => {
-    if (page === 7) {
-        const data = [name, age, gender, race, workoutFreq, duration, injuries, core, lowerBody, upperBody]
+    if (page === 5) {
+        const data = [name, age, gender, race, workoutFreq, core, lowerBody, upperBody]
         return navigate("/loading", {state: {data: data}})
     }
-    }, [page, navigate, age, gender, workoutFreq, duration, injuries, core, lowerBody, upperBody, name, race])
+    }, [page, navigate, age, gender, workoutFreq, core, lowerBody, upperBody, name, race])
 
     return (
         <div>
@@ -165,7 +146,7 @@ export default function Onboard() {
                 {/* First page */}
                 {page === 0 && <div className="p-3">
                     {/* Header */}
-                    <p className="text-lg mt-3 text-pretty">Basic Information</p>
+                    <p className="text-lg text-pretty">Basic Information</p>
                     <p className="text-3xl font-bold">Please share some <br />details about yourself</p>
                 
                     {/* Inputs */}
@@ -261,73 +242,8 @@ export default function Onboard() {
                     </div>
                 </div>}
 
-                {/* Third page */}
-                {page === 2 && <div>
-                    {/* Header */}
-                    <p className="text-lg mt-3 text-pretty">Workout Goals Settings</p>
-                    <p className="text-3xl font-bold">How long do you plan to work out each day?</p>
-
-                    {/* Inputs */}
-                    <div className="flex flex-col mt-12 gap-4 mb-6" >
-                        {/* 2 days */}
-                        {[
-                            {"duration": "30", "info" : "30 min / day (recommended)"},
-                            {"duration": "45", "info" : "45 min / day"},
-                            {"duration": "60", "info" : "60 min / day"},
-                        ].map((data, index) => (
-                        <div key={index} className={`card w-full shadow-md ${duration === data.duration ? "border-themeGreen border-2": "border-slate-300 border"}`} onClick={() => setDuration(data.duration)}>
-                        <div className="card-body h-16 flex justify-center">
-                            <div className="form-control">
-                                <label className="label cursor-pointer flex justify-start">
-                                <input type="radio" name="freq" className="radio" value={data.duration} checked={duration === data.duration} hidden/>
-                                <div className="flex items-center">
-                                    <span className="label-text font-bold text-lg">{data.info}</span>
-                                </div>
-                                </label>
-                            </div>
-                        </div>
-                    </div>
-                        ))}
-
-                    </div>
-                </div>}
-
-                {/* Fourth page */}
-                {page === 3 && <div>
-                    {/* Header */}
-                    <p className="text-lg mt-3 text-pretty">Injury Assessment</p>
-                    <p className="text-3xl font-bold">Do you have any past or existing injuries?</p>
-                
-                    {/* Inputs */}
-                    <div className="flex flex-col mt-12 gap-4 mb-6" >
-                        {/* 2 days */}
-                        {[
-                            "Shoulder",
-                            "Wrist",
-                            "Knee",
-                            "Ankle",
-                            "Lower back",
-                            "None"
-                            ].map((data, index) => (
-                        <div key={index} className={`card w-full shadow-md ${injuries.includes(data) ? "border-themeGreen border-2": "border-slate-300 border"}`}>
-                        <div className="card-body h-16 flex justify-center">
-                            <div className="form-control">
-                                <label className="label cursor-pointer flex justify-start">
-                                <input type="checkbox" name="injuries" className="checkbox" value={data} checked={injuries.includes(data)} onChange={(event) => handleCheckboxChange(event, "injuries")}/>
-                                <div className="flex items-center ml-3">
-                                    <span className="label-text font-bold text-lg">{data}</span>
-                                </div>
-                                </label>
-                            </div>
-                        </div>
-                    </div>
-                        ))}
-
-                    </div>
-                </div>}
-
                 {/* Fifth page */}
-                {page === 4 && <div>
+                {page === 2 && <div>
                     {/* Header */}
                     <p className="text-lg mt-3 text-pretty">Core Strength Assessment</p>
                     <p className="text-3xl font-bold">Do you face difficulties in any of the following:</p>
@@ -358,7 +274,7 @@ export default function Onboard() {
                 </div>}
 
                 {/* Sixth page */}
-                {page === 5 && <div>
+                {page === 3 && <div>
                     {/* Header */}
                     <p className="text-lg mt-3 text-pretty">Lower Body Strength Assessment</p>
                     <p className="text-3xl font-bold">Do you face difficulties in any of the following:</p>
@@ -389,7 +305,7 @@ export default function Onboard() {
                 </div>}
 
                 {/* Seventh page */}
-                {page === 6 && <div>
+                {page === 4 && <div>
                     {/* Header */}
                     <p className="text-lg mt-3 text-pretty">Upper Body Strength Assessment</p>
                     <p className="text-3xl font-bold">Do you face difficulties in any of the following:</p>

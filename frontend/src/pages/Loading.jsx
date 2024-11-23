@@ -32,11 +32,9 @@ export default function Loading() {
     localStorage.setItem("race", receivedData[3])
 
     localStorage.setItem("workoutFreq", receivedData[4]) //page 2
-    localStorage.setItem("duration", receivedData[5]) //page 3
-    localStorage.setItem("injuries", JSON.stringify(receivedData[6])) //page 4
-    localStorage.setItem("core", JSON.stringify(receivedData[7])) //page 5
-    localStorage.setItem("lowerbody", JSON.stringify(receivedData[8])) //page 6
-    localStorage.setItem("upperbody", JSON.stringify(receivedData[9])) //page 7
+    localStorage.setItem("core", JSON.stringify(receivedData[5])) //page 5
+    localStorage.setItem("lowerbody", JSON.stringify(receivedData[6])) //page 6
+    localStorage.setItem("upperbody", JSON.stringify(receivedData[7])) //page 7
 
     return (
         <div className="min-h-screen flex flex-col justify-center items-center">

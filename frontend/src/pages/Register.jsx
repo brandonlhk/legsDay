@@ -11,10 +11,51 @@ export default function Signin() {
   const [repeat, setRepeat] = useState("")
   const [isPasswordVisible, setIsPasswordVisible] = useState(false)
   const [error, setError] = useState("")
+  const [success, setSuccess] = useState("")
 
   const togglePasswordVisibility = () => {
     setIsPasswordVisible((prev) => !prev);
   };
+  const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+  const register = async () => {
+    const requestData = {
+      name: localStorage.getItem("name"), 
+      age: localStorage.getItem("age"), 
+      gender: localStorage.getItem("gender"), 
+      race: localStorage.getItem("race"), 
+      workoutFreq: localStorage.getItem("workoutFreq"), 
+      core: JSON.parse(localStorage.getItem("core")),
+      upperBody: JSON.parse(localStorage.getItem("upperBody")), 
+      lowerBody: JSON.parse(localStorage.getItem("lowerBody")), 
+      email,
+      password
+    }
+
+    try {
+      const response = await fetch ("http://localhost:5000/register", {
+        method: "POST",
+        headers: {
+          "Content-Type" : "application/json"
+        },
+        body: JSON.stringify(requestData)
+      })
+
+      const data = await response.json()
+      console.log(data)
+
+      if (response.ok) {
+        setSuccess("Registered sucessfully! Directing you to sign in page...")
+        await wait(3000)
+        navigate("/signin")
+      } else {
+        setError("Error occurred during registration, try again")
+      }
+    } catch (error) {
+      setError("Error occurred during registration, try again")
+      console.log(error)
+    }
+  }
 
   const handleCreateAccount = () => {
     // Email validation regex
@@ -36,8 +77,8 @@ export default function Signin() {
     }
 
     // If everything is valid, clear error and navigate
-    setError("");
-    navigate("/signin");
+    setError("")
+    register()
   };
 
   return (
@@ -45,7 +86,7 @@ export default function Signin() {
       {/* Container */}
       <div className="mx-auto p-6">
         <div className="flex flex-col">
-            <img src="signin.jpg" alt="workout icon" className="object-contain max-w-[70%] mx-auto"/>
+            <img src="auth.png" alt="workout icon" className="object-contain mx-auto"/>
 
             <div className="mt-6">
               <p className="font-bold text-4xl">Create An Account</p>
@@ -114,7 +155,10 @@ export default function Signin() {
               </label>
               
               {error && (
-              <p className="text-red-500 text-sm mt-4 font-medium">{error}</p>
+              <p className="text-red-500 text-sm mt-2 font-medium">{error}</p>
+            )}
+              {success && (
+              <p className="text-green-500 text-sm mt-2 font-medium">{success}</p>
             )}
 
             </div>
