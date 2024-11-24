@@ -22,6 +22,7 @@ export default function Homepage() {
   const [workoutFreq, setWorkoutFreq] = useState(localStorage.getItem("workoutFreq"))
   const [workoutProg, setWorkoutProg] = useState(localStorage.getItem("workoutProg"))
 
+
   // ------------------------------------------- END LOAD -------------------------------------  
   
 
@@ -53,12 +54,7 @@ export default function Homepage() {
   const [center, setCenter] = useState({ lat: 1.3521, lng: 103.8198 }); // Default center (Singapore)
   const [zoom, setZoom] = useState(12); // Default zoom
   const [currentLocation, setCurrentLocation] = useState(null); // Current user location
-  const [locations, setLocations] = useState([ //dummy data right now
-    { id: 1, lat: 1.3376, lng: 103.6969, title: "Circuit Training", type: "gym", popularity: "verypop" },
-    { id: 2, lat: 1.2857, lng: 103.8269, title: "Circuit Training", type: "fitness", popularity: "lesspop"},
-    { id: 3, lat: 1.2873, lng: 103.8246, title: "Circuit Training", type: "park", popularity: "pop"},
-    
-  ]);
+  const [locations, setLocations] = useState([]);
   const [filteredLocations, setFilteredLocations] = useState([]); // Locations within 3 km
   const [locationQuery, setLocationQuery] = useState(""); // Search query
 
@@ -88,50 +84,7 @@ export default function Homepage() {
 
   //   fetchCurrentLocation();
   // }, []);
-
-  // Handle search
-  const handleSearch = async () => {
-    try {
-      const response = await fetch(
-        `https://maps.googleapis.com/maps/api/geocode/json?address=${locationQuery}&key=${import.meta.env.VITE_GOOGLE_MAPS_API_KEY}`
-      );
-      const data = await response.json();
-
-      if (data.results.length > 0) {
-        const newLocation = data.results[0].geometry.location;
-        setCurrentLocation(newLocation);
-        setCenter(newLocation);
-        setZoom(15);
-        filterLocations(newLocation);
-      } else {
-        alert("Location not found.");
-      }
-    } catch (error) {
-      console.error("Error searching location:", error);
-    }
-  };
-
-  // Filter locations within 3 km of the current location
-  const filterLocations = (current) => {
-    const R = 6371; // Radius of Earth in km
-    const toRad = (value) => (value * Math.PI) / 180;
-
-    const nearbyLocations = locations.filter((loc) => {
-      const dLat = toRad(loc.lat - current.lat);
-      const dLng = toRad(loc.lng - current.lng);
-      const a =
-        Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-        Math.cos(toRad(current.lat)) *
-          Math.cos(toRad(loc.lat)) *
-          Math.sin(dLng / 2) *
-          Math.sin(dLng / 2);
-      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-      const distance = R * c; // Distance in km
-      return distance <= 3; // Filter locations within 3 km
-    });
-
-    setFilteredLocations(nearbyLocations);
-  };
+  
 
   // ------------------------------------------- END MAP  -------------------------------------------
 
@@ -242,6 +195,82 @@ const generateTimeSlots = (startHour, endHour) => {
   // ------------------------------------------- END RENDER TIMESLOT  -------------------------------------------
 
 
+  // fetch stuff
+    // Handle search
+    const handleSearch = async () => {
+      try {
+        setCurrentLocation(locationQuery)
+        const requestBody = {
+          address: locationQuery, // Use the user's search query for the address
+          date: selectedDate, // Current date in YYYY-MM-DD format
+          time: `${timeValue}:00:00`, // Current time in HH:mm:ss format
+        };
+    
+        const response = await fetch("http://localhost:5000/get_nearest", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(requestBody), // Send the request body as JSON
+        });
+    
+        const data = await response.json();
+    
+        if (data.locations) {
+          const allLocations = [];
+          Object.keys(data.locations).forEach((category) => {
+
+            const categoryData = data.locations[category];
+    
+            Object.keys(categoryData).forEach((id) => {
+              const location = categoryData[id];
+              const userGroups = location.user_groups || {};
+    
+              // Calculate total popularity
+              const totalPopularity = Object.values(userGroups).reduce(
+                (sum, group) => sum + group.length,
+                0
+              );
+    
+              // Determine popularity status
+              let popularityStatus = "lesspop";
+              if (totalPopularity >= 3 && totalPopularity <= 10) {
+                popularityStatus = "pop";
+              } else if (totalPopularity >= 11) {
+                popularityStatus = "verypop";
+              }
+              console.log(`${popularityStatus}-${category}`)
+              // Add location with calculated marker name
+              allLocations.push({
+                id,
+                category,
+                coordinates: location.coordinates,
+                markerName: `${popularityStatus}-${category}`,
+              });
+            });
+          });
+    
+          // Update the map state
+          if (allLocations.length > 0) {
+            setLocations(allLocations);
+            const firstLocation = allLocations[0];
+            setCenter({
+              lat: firstLocation.coordinates[1],
+              lng: firstLocation.coordinates[0],
+            });
+            setZoom(15);
+          } else {
+            alert("No locations found near your search.");
+          }
+        } else {
+          alert("No locations found.");
+        }
+      } catch (error) {
+        console.error("Error fetching nearest locations:", error);
+      }
+    };
+  
+
   return (
     <div>
       {/* HEADER - ALL_MARKERS */}
@@ -329,7 +358,7 @@ const generateTimeSlots = (startHour, endHour) => {
 
           {/* MAP */}
           <Map 
-          locations={filteredLocations} 
+          locations={locations} 
           center={center} zoom={zoom} 
           currentLocation={currentLocation} 
           selectedMarkerId={selectedMarkerId} // Pass state to child

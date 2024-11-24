@@ -20,7 +20,6 @@ export default function Map({ locations, center, zoom, currentLocation, selected
     googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY,
   });
 
-
   if (loadError) return <div>Error loading maps</div>;
   if (!isLoaded) return <div>Loading Maps...</div>;
 
@@ -30,12 +29,11 @@ export default function Map({ locations, center, zoom, currentLocation, selected
       {locations.map((location) => (
         <Marker
           icon={{
-            url: `markers/${location.popularity}-${location.type}.png`,
+            url: `markers/${location.markerName}.png`,
             scaledSize: new window.google.maps.Size(48, 48)
           }}
           key={location.id}
-          position={{ lat: location.lat, lng: location.lng }}
-          title={location.title}
+          position={{ lat: location.coordinates[1], lng: location.coordinates[0] }}
           onClick={() => {onMarkerClick(location); setSelectedMarkerId(location.id)}}
           animation={location.id === selectedMarkerId ? window.google.maps.Animation.BOUNCE : null}
         />

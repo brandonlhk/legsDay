@@ -6,6 +6,17 @@ import dayjs from "dayjs";
 
 export default function Homepage() {
 
+  /**
+   * some logic dump:
+   * on load, call endpoint to get locations
+   * render these locations in the map component
+   * only those within 3km will be seen on the map
+   * user clicks on a marker
+   * state switches to viewtimeslots 
+   */
+
+
+
   // ------------------------------------------- LOAD -------------------------------------------
   const [name, setName] = useState(localStorage.getItem("name"))
   const [workoutFreq, setWorkoutFreq] = useState(localStorage.getItem("workoutFreq"))
@@ -213,15 +224,18 @@ const generateTimeSlots = (startHour, endHour) => {
 
   
   // ------------------------------------------- RENDER TIMESLOT  -------------------------------------------
-  const [selectedTimeslot, setSelectedTimeslot] = useState({date: selectedDate, timeslot: timeslots[0]});
+  const [selectedTimeslot, setSelectedTimeslot] = useState({date: selectedDate, timeslot: timeslots[0]}); // State to track selected timeslot
 
   const handleTimeslotSelect = (date, timeslot) => {
     handleDateSelect(date);
-    setSelectedTimeslot({ date, timeslot });
+    setSelectedTimeslot({ date, timeslot }); // Update the globally selected timeslot
   
     // Parse the start time from the timeslot (e.g., "7:00 AM - 8:00 AM")
-    const startTime = parseInt(timeslot.split(":")[0], 10);
-    setTimeValue(startTime); // Update the slider value
+    const [startTime] = timeslot.split(" - "); // Extract "7:00 AM"
+    const parsedHour = dayjs(startTime, ["h:mm A"]).hour(); // Convert to 24-hour format
+  
+    // Update the slider value
+    setTimeValue(parsedHour);
   };
   
 
@@ -393,12 +407,14 @@ const generateTimeSlots = (startHour, endHour) => {
                     const newValue = Number(e.target.value);
                     setTimeValue(newValue);
                 
-                    // Get corresponding time slot
+                    // Find the corresponding timeslot
                     const slotIndex = Math.max(0, newValue - startHour);
                     const selectedSlot = renderedTimeslots[slotIndex];
                 
-                    // Update the selected time slot
-                    handleTimeslotSelect(selectedDate, selectedSlot || "");
+                    // Update the selected timeslot
+                    if (selectedSlot) {
+                      setSelectedTimeslot({ date: selectedDate, timeslot: selectedSlot });
+                    }
                   }}
                 />
 
