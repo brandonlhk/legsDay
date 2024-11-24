@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faTrophy, faSearch } from "@fortawesome/free-solid-svg-icons";
-import Map from "../components/Map";
+import Map from "../../components/Map";
 import dayjs from "dayjs"; 
 
 export default function Homepage() {
@@ -59,7 +59,6 @@ export default function Homepage() {
     { id: 3, lat: 1.2873, lng: 103.8246, title: "Circuit Training", type: "park", popularity: "pop"},
     
   ]);
-  const [timeslots, setTimeslots] = useState(["5:00pm - 6:00pm", "6:00pm - 7:00pm", "7:00pm - 8:00pm", "8:00pm - 9:00pm",]) //some dummy data
   const [filteredLocations, setFilteredLocations] = useState([]); // Locations within 3 km
   const [locationQuery, setLocationQuery] = useState(""); // Search query
 
@@ -137,28 +136,33 @@ export default function Homepage() {
   // ------------------------------------------- END MAP  -------------------------------------------
 
 
-  // ------------------------------------------- RENDER TIMESLOT  -------------------------------------------
-  const [selectedTimeslot, setSelectedTimeslot] = useState({date: null, timeslot: null}); // State to track selected timeslot
-
-  const handleTimeslotSelect = (date, timeslot) => {
-    handleDateSelect(date)
-    setSelectedTimeslot({ date, timeslot }); // Update the globally selected timeslot
-  };
-
-  // ------------------------------------------- END RENDER TIMESLOT  -------------------------------------------
-
-  
-
 
 
   // ------------------------------------------- SLIDER -------------------------------------------
 
-  const [timeValue, setTimeValue] = useState(18); // Default to 6 PM (24-hour format)
   const today = dayjs(); // Today's date
+  const currentHour = today.hour()
   const [selectedDate, setSelectedDate] = useState(today.format("YYYY-MM-DD"));
+  const startDay = currentHour > 22 ? today.add(1, "day") : today;
   const dates = Array.from({ length: 7 }, (_, index) =>
-    today.add(index, "day").format("YYYY-MM-DD")
-  );
+    startDay.add(index, "day").format("YYYY-MM-DD"));
+  const startHour = 7; // Start at 7 AM
+  const endHour = 22; // End at 10 PM (22 in 24-hour format)
+  const isAfterEndHour = currentHour >= endHour;
+
+
+
+const generateTimeSlots = (startHour, endHour) => {
+  const slots = [];
+  for (let hour = startHour; hour < endHour-1; hour++) {
+    const start = dayjs().hour(hour).minute(0).format("h:00a");
+    const end = dayjs().hour(hour + 1).minute(0).format("h:00a");
+    slots.push(`${start} - ${end}`);
+  }
+  return slots;
+};
+
+
 
   const handleDateSelect = (date) => {
     setSelectedDate(date);
@@ -196,8 +200,46 @@ export default function Homepage() {
     }
   };
 
+  const getDefaultTime = () => {
+    const currentHour = dayjs().hour()
+    if (currentHour < 7 || currentHour > 22) {
+      return 7
+    }
+
+    return currentHour;
+  }
+  const [timeValue, setTimeValue] = useState(getDefaultTime); //default to current time, but 
+  const timeslots = generateTimeSlots(startHour, endHour + 1)
+  const filteredTimeslots = isAfterEndHour
+  ? timeslots // Render all slots for the next day
+  : timeslots.filter((slot, index) => {
+    const slotStartHour = startHour + index;
+    return slotStartHour >= currentHour;
+  });
+  const [renderedTimeslots, setRenderedTimeslots] = useState(filteredTimeslots);
+  
+
   // ------------------------------------------- END SLIDER -------------------------------------------
 
+
+  
+  // ------------------------------------------- RENDER TIMESLOT  -------------------------------------------
+  const [selectedTimeslot, setSelectedTimeslot] = useState({date: selectedDate, timeslot: timeslots[0]}); // State to track selected timeslot
+
+  const handleTimeslotSelect = (date, timeslot) => {
+    handleDateSelect(date);
+    setSelectedTimeslot({ date, timeslot }); // Update the globally selected timeslot
+  
+    // Parse the start time from the timeslot (e.g., "7:00 AM - 8:00 AM")
+    const [startTime] = timeslot.split(" - "); // Extract "7:00 AM"
+    const parsedHour = dayjs(startTime, ["h:mm A"]).hour(); // Convert to 24-hour format
+  
+    // Update the slider value
+    setTimeValue(parsedHour);
+  };
+  
+
+  // ------------------------------------------- END RENDER TIMESLOT  -------------------------------------------
 
 
   return (
@@ -356,12 +398,24 @@ export default function Homepage() {
                 {/* Slider */}
                 <input
                   type="range"
-                  min="7" // Start time (7 AM)
+                  min={dayjs(selectedDate).isSame(dayjs(), "day") ? Math.max(7, currentHour) : 7}
                   max="22" // End time (10 PM)
                   value={timeValue}
                   step="1" // Step increments of 1 hour
                   className="range  w-full range-xs"
-                  onChange={(e) => setTimeValue(Number(e.target.value))}
+                  onChange={(e) => {
+                    const newValue = Number(e.target.value);
+                    setTimeValue(newValue);
+                
+                    // Find the corresponding timeslot
+                    const slotIndex = Math.max(0, newValue - startHour);
+                    const selectedSlot = renderedTimeslots[slotIndex];
+                
+                    // Update the selected timeslot
+                    if (selectedSlot) {
+                      setSelectedTimeslot({ date: selectedDate, timeslot: selectedSlot });
+                    }
+                  }}
                 />
 
                 {/* Labels below the slider */}
@@ -485,32 +539,28 @@ export default function Homepage() {
         {/* TIMESLOTS & STICKY - TIMESLOTS */}
         {view === "timeslots" && selectedMarker && (
           <>
+            {/* title */}
+            <h2 className="font-semibold text-lg">
+              {dayjs(selectedDate).isSame(dayjs(), "day") ? "Today" : `${dayjs(selectedDate).format("ddd")} ${dayjs(selectedDate).format("DD")}`}
+            </h2>
+            
             {/* RENDER DATES */}
-            {dates.map((date, index) => (
-              <div key={index} className="mb-3">
-                {/* title */}
-                <h2 className="font-semibold text-lg">
-                  {dayjs(date).isSame(dayjs(), "day") ? "Today" : `${dayjs(date).format("ddd")} ${dayjs(date).format("DD")}`}
-                </h2>
-
-                {/* buttons */}
-                <div className="grid grid-cols-2 gap-4 mt-4">
-                  {timeslots.map((timeslot, index) => (
-                    <button
-                        key={index}
-                        onClick={() => handleTimeslotSelect(date, timeslot)}
-                        className={`p-3 rounded-md border font-bold ${
-                          selectedTimeslot.date === date && selectedTimeslot.timeslot === timeslot
-                            ? "border-green-500 border-2"
-                            : "border-gray-200 text-gray-700"
-                        }`}
-                      >
-                        {timeslot}
-                      </button>
-                  ))}
-                </div>
-              </div>
-            ))}
+            <div className="grid grid-cols-2 gap-4 mt-4">
+              {renderedTimeslots.map((timeslot, index) => (
+                <button
+                    key={index}
+                    onClick={() => handleTimeslotSelect(selectedDate, timeslot)}
+                    className={`p-3 rounded-md border font-bold ${
+                      selectedTimeslot.date === selectedDate && selectedTimeslot.timeslot === timeslot
+                        ? "border-green-500 border-2"
+                        : "border-gray-200 text-gray-700 border-2"
+                    }`}
+                  >
+                    {timeslot}
+                  </button>
+              ))}
+            </div>
+   
 
             <div className="mb-32"></div>
 

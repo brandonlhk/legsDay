@@ -2,17 +2,22 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import ViewportHeight from './components/ViewportHeight';
 import Start from "./pages/Start"
 
-import HealthInfo from "./pages/HealthInfo"
+//onboard
+import HealthInfo from "./pages/onboard/HealthInfo"
+import Onboard from "./pages/onboard/Onboard"
+import Loading from "./pages/onboard/Loading"
+import Recommendations from "./pages/onboard/Recommendations"
 
-import Signin from "./pages/Signin"
-import Onboard from "./pages/Onboard"
+//auth
+import Signin from "./pages/auth/Signin"
+import Register from "./pages/auth/Register"
+
 import NotFound from "./pages/NotFound"
-import Loading from "./pages/Loading"
-import Recommendations from "./pages/Recommendations"
-import Register from "./pages/Register"
-import Homepage from "./pages/Homepage"
-import Library from "./pages/Library"
-import Settings from "./pages/Settings"
+
+// homepages
+import Homepage from "./pages/homepage/Homepage"
+import Preview from "./pages/homepage/AccountlessHomepage"
+// import Settings from "./pages/Settings"
 
 export default function App() {
   return (
@@ -22,15 +27,20 @@ export default function App() {
           <Route path="*" element={<NotFound />}/>
           <Route path="/" element={<Start />}/>
 
+          {/* auth */}
           <Route path="/signin" element={<Signin />}/>
+          <Route path="/register" element={<Register />}/>
+
+          {/* onboard */}
           <Route path="/healthinfo" element={<HealthInfo />}/>
           <Route path="/onboard" element={<Onboard />}/>
           <Route path="/loading" element={<Loading />}/>
           <Route path="/recommendations" element={<Recommendations />}/>
-          <Route path="/register" element={<Register />}/>
+
+          {/* homepages */}
           <Route path="/home" element={<Homepage />}/>
-          <Route path="/library" element={<Library />}/>
-          <Route path="/settings" element={<Settings />}/>
+          <Route path="/preview" element={<Preview />}/>
+          {/* <Route path="/settings" element={<Settings />}/> */}
           
       </Routes>
       </ViewportHeight>

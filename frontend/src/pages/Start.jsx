@@ -18,7 +18,7 @@ export default function Start() {
             </div>
 
             <div className="space-y-3 w-full">
-              <button className="btn bg-themeGreen btn-lg mt-12 w-full text-black rounded-full" onClick={() => navigate("/healthinfo")}>Try now</button>
+              <button className="btn bg-themeGreen btn-lg mt-12 w-full text-black rounded-full" onClick={() => navigate("/preview")}>Try now</button>
 
               <button className="btn btn-outline btn-lg w-full text-black rounded-full border-themeGreen border-2" onClick={() => navigate("/signin")}>Sign in</button>
             </div>
