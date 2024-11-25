@@ -33,6 +33,7 @@ export default function Signin() {
       const data = await response.json()
 
       if (response.ok) {
+        localStorage.setItem("userId", data.userid)
         navigate("/home")
       } else {
         setError(data.message)

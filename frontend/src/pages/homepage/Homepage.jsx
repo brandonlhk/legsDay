@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from 'react-router-dom';
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faTrophy, faSearch } from "@fortawesome/free-solid-svg-icons";
 import Map from "../../components/Map";
@@ -21,6 +22,7 @@ export default function Homepage() {
   const [name, setName] = useState(localStorage.getItem("name"))
   const [workoutFreq, setWorkoutFreq] = useState(localStorage.getItem("workoutFreq"))
   const [workoutProg, setWorkoutProg] = useState(localStorage.getItem("workoutProg"))
+  const navigate = useNavigate()
 
 
   // ------------------------------------------- END LOAD -------------------------------------  
@@ -36,8 +38,6 @@ export default function Homepage() {
     setSelectedMarker(location);
     setSelectedMarkerId(location.id)
     setView("timeslots"); // Switch to timeslot view
-    console.log("change to timeslots")
-    console.log(location)
   }
 
   const handleBack = () => {
@@ -195,8 +195,7 @@ const generateTimeSlots = (startHour, endHour) => {
   // ------------------------------------------- END RENDER TIMESLOT  -------------------------------------------
 
 
-  // fetch stuff
-    // Handle search
+  // fetch stuff & next page
     const handleSearch = async () => {
       try {
         setCurrentLocation(locationQuery)
@@ -246,6 +245,7 @@ const generateTimeSlots = (startHour, endHour) => {
                 category,
                 coordinates: location.coordinates,
                 markerName: `${popularityStatus}-${category}`,
+                userGroups : location.user_groups
               });
             });
           });
@@ -269,6 +269,12 @@ const generateTimeSlots = (startHour, endHour) => {
         console.error("Error fetching nearest locations:", error);
       }
     };
+
+    const handleNextPage = () => {
+      localStorage.setItem("marker", JSON.stringify(selectedMarker))
+      localStorage.setItem("timeslot", JSON.stringify(selectedTimeslot))
+      navigate("/booking")
+    }
   
 
   return (
@@ -291,7 +297,7 @@ const generateTimeSlots = (startHour, endHour) => {
 
       {/* HEADER - TIMESLOTS */}
       {view === "timeslots" && selectedMarker && (
-        <header className="mb- p-6">
+        <header className="p-6">
 
           <div className="flex gap-4 items-center">
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" onClick={handleBack}>
@@ -599,7 +605,7 @@ const generateTimeSlots = (startHour, endHour) => {
                 <p className="text-lg font-medium">
                   {dayjs(selectedTimeslot.date).isSame(dayjs(), "day") ? `Today, ${dayjs(selectedTimeslot.date).format("ddd")} ${dayjs(selectedTimeslot.date).format("DD")}, ${selectedTimeslot.timeslot}` : `${dayjs(selectedTimeslot.date).format("ddd")} ${dayjs(selectedTimeslot.date).format("DD")}, ${selectedTimeslot.timeslot}`}
                 </p>
-                <button className="btn bg-green-500 text-white rounded-full px-6 py-2 flex items-center w-full">
+                <button className="btn bg-green-500 text-white rounded-full px-6 py-2 flex items-center w-full" onClick={() => handleNextPage()}>
                   Select Timeslot
                 </button>
               </div>

@@ -19,6 +19,9 @@ import Homepage from "./pages/homepage/Homepage"
 import Preview from "./pages/homepage/AccountlessHomepage"
 // import Settings from "./pages/Settings"
 
+// features
+import Booking from "./pages/features/Booking"
+
 export default function App() {
   return (
     <Router>
@@ -41,7 +44,11 @@ export default function App() {
           <Route path="/home" element={<Homepage />}/>
           <Route path="/preview" element={<Preview />}/>
           {/* <Route path="/settings" element={<Settings />}/> */}
+
+          {/* features */}
+          <Route path="/booking" element={<Booking />}/>
           
+
       </Routes>
       </ViewportHeight>
     </Router>
