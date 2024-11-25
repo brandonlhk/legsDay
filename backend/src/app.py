@@ -147,12 +147,23 @@ class TimeslotRequest(BaseModel):
     time: str
 
 class JoinUserGroupRequest(BaseModel):
+    '''date needs to be in yyyy-mm-dd format. time needs to be in xx:xx:xx format'''
     date : str
     time : str
     user_id : str
     user_group : str
     location_id : str
     location_type: str
+
+class SaveChatRequest(BaseModel):
+    '''timeslot and msg_timestamp strings need to be in yyyy-mm-dd xx:xx:xx format'''
+    timeslot : str
+    msg_timestamp: str
+    user_id: str
+    user_group: str
+    location_type: str
+    location_id: str
+    msg_content: str
 
 def calculate_distance(lat1, lon1, lat2, lon2):
     return geodesic((lat1, lon1), (lat2, lon2)).km
@@ -557,7 +568,7 @@ async def join_user_group(request_data: JoinUserGroupRequest):
 
     # Add the user to the appropriate user group
     location_data = timeslot[location_type][location_id]
-    location_data['user_groups'][user_group].append(user_id)
+    location_data['user_groups'][user_group]['users'].append(user_id)
 
     # Now update the MongoDB document with the new data
     result = schedule_collection.update_one(
@@ -573,5 +584,44 @@ async def join_user_group(request_data: JoinUserGroupRequest):
         return {"message": f"User {user_id} already in {user_group} for {date}T{time}."}
     elif result.modified_count > 0:
         return {"message": f"User {user_id} successfully added to {user_group} for {date}T{time}."}
+    else:
+        raise HTTPException(status_code=500, detail="Error updating the document in MongoDB.")
+
+
+@app.post("/save_chat")
+async def save_chat(request_data: SaveChatRequest):
+    timeslot = request_data.timeslot
+    msg_timestamp = request_data.msg_timestamp
+    user_id = request_data.user_id
+    user_group = request_data.user_group
+    location_type = request_data.location_type
+    location_id = request_data.location_id
+    msg_content = request_data.msg_content
+
+    # Fetch the document based on the date and time
+    date = timeslot.split(" ")[0].strip()
+    schedule_collection = client['events_collection']['schedule_database']
+    timeslot_time = datetime.strptime(timeslot, "%Y-%m-%d %H:%M:%S").isoformat()
+    msg_timestamp = datetime.strptime(msg_timestamp, "%Y-%m-%d %H:%M:%S").isoformat()
+    timeslot = schedule_collection.find_one({"date": date, "hour": timeslot_time})
+    print(timeslot_time)
+
+    location_data = timeslot[location_type][location_id]
+    location_data['user_groups'][user_group]['chat'].append({msg_timestamp: {user_id: msg_content}})
+
+    # Now update the MongoDB document with the new data
+    result = schedule_collection.update_one(
+        {
+            "date": date, 
+            "hour": timeslot_time # Match the exact datetime for the update
+        },
+        {"$set": {f"{location_type}.{location_id}": location_data}},  # Update the specific location data
+        upsert=False  # Do not create a new document; we're updating an existing one
+    )
+
+    if result.modified_count == 0 and result.upserted_id:
+        return {"message": f"{msg_timestamp} already exists in {timeslot_time}'s {user_group} chat."}
+    elif result.modified_count > 0:
+        return {"message": f"User {user_id} successfully added to {timeslot_time}'s {user_group} chat.."}
     else:
         raise HTTPException(status_code=500, detail="Error updating the document in MongoDB.")

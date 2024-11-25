@@ -44,53 +44,53 @@ def generate_empty_dict(location_ids):
     
     # Define the user groups for each location type
     gym_user_groups = {
-        'general_strength_training_ladies': [],
-        'general_strength_training_parents': [],
-        'general_strength_training_seniors': [],
-        'general_strength_training_general': [],
-        'powerlifting_ladies': [],
-        'powerlifting_parents': [],
-        'powerlifting_seniors': [],
-        'powerlifting_general': [],
-        'functional_mobility_training_ladies': [],
-        'functional_mobility_training_parents': [],
-        'functional_mobility_training_seniors': [],
-        'functional_mobility_training_general': []
+        'general_strength_training_ladies': {'users': [], 'chat': []},
+        'general_strength_training_parents': {'users': [], 'chat': []},
+        'general_strength_training_seniors': {'users': [], 'chat': []},
+        'general_strength_training_general': {'users': [], 'chat': []},
+        'powerlifting_ladies': {'users': [], 'chat': []},
+        'powerlifting_parents': {'users': [], 'chat': []},
+        'powerlifting_seniors':{'users': [], 'chat': []},
+        'powerlifting_general': {'users': [], 'chat': []},
+        'functional_mobility_training_ladies': {'users': [], 'chat': []},
+        'functional_mobility_training_parents': {'users': [], 'chat': []},
+        'functional_mobility_training_seniors': {'users': [], 'chat': []},
+        'functional_mobility_training_general': {'users': [], 'chat': []}
     }
 
     fitness_user_groups = {
-        'calisthenics_cardio_ladies': [],
-        'calisthenics_cardio_parents': [],
-        'calisthenics_cardio_seniors': [],
-        'calisthenics_cardio_general': [],
-        'calisthenics_strength_ladies': [],
-        'calisthenics_strength_parents': [],
-        'calisthenics_strength_seniors': [],
-        'calisthenics_strength_general': []
+        'calisthenics_cardio_ladies': {'users': [], 'chat': []},
+        'calisthenics_cardio_parents': {'users': [], 'chat': []},
+        'calisthenics_cardio_seniors': {'users': [], 'chat': []},
+        'calisthenics_cardio_general': {'users': [], 'chat': []},
+        'calisthenics_strength_ladies': {'users': [], 'chat': []},
+        'calisthenics_strength_parents': {'users': [], 'chat': []},
+        'calisthenics_strength_seniors': {'users': [], 'chat': []},
+        'calisthenics_strength_general': {'users': [], 'chat': []}
     }
 
     park_user_groups = {
-        'calisthenics_ladies': [],
-        'calisthenics_parents': [],
-        'calisthenics_seniors': [],
-        'calisthenics_general': [],
-        '2.4k_ladies': [],
-        '2.4k_parents': [],
-        '2.4k_seniors': [],
-        '2.4k_general': [],
-        '5k_ladies': [],
-        '5k_parents': [],
-        '5k_seniors': [],
-        '5k_general': [],
-        'brisk_walk_ladies': [],
-        'brisk_walk_parents': [],
-        'brisk_walk_seniors': [],
-        'brisk_walk_general': []
+        'calisthenics_ladies': {'users': [], 'chat': []},
+        'calisthenics_parents': {'users': [], 'chat': []},
+        'calisthenics_seniors': {'users': [], 'chat': []},
+        'calisthenics_general': {'users': [], 'chat': []},
+        '2.4k_ladies': {'users': [], 'chat': []},
+        '2.4k_parents': {'users': [], 'chat': []},
+        '2.4k_seniors': {'users': [], 'chat': []},
+        '2.4k_general': {'users': [], 'chat': []},
+        '5k_ladies': {'users': [], 'chat': []},
+        '5k_parents': {'users': [], 'chat': []},
+        '5k_seniors': {'users': [], 'chat': []},
+        '5k_general': {'users': [], 'chat': []},
+        'brisk_walk_ladies': {'users': [], 'chat': []},
+        'brisk_walk_parents': {'users': [], 'chat': []},
+        'brisk_walk_seniors': {'users': [], 'chat': []},
+        'brisk_walk_general': {'users': [], 'chat': []}
     }
 
     # Loop through each day of the next week (7 days)
     current_day = next_week_start
-    for _ in tqdm(range(7)):  # A week has 7 days
+    for _ in tqdm(range(3)):  # A week has 7 days
         for hour in range(7, 23):  # Restrict to hours between 7 AM (inclusive) and 10 PM (inclusive)
             # Generate the current hour key (in datetime format)
             hour_time = current_day.replace(hour=hour, minute=0, second=0, microsecond=0)
