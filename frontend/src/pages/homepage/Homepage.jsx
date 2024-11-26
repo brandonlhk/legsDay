@@ -1,9 +1,10 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate } from 'react-router-dom';
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faTrophy, faSearch } from "@fortawesome/free-solid-svg-icons";
 import Map from "../../components/Map";
 import dayjs from "dayjs"; 
+
 
 export default function Homepage() {
 
@@ -23,6 +24,7 @@ export default function Homepage() {
   const [workoutFreq, setWorkoutFreq] = useState(localStorage.getItem("workoutFreq"))
   const [workoutProg, setWorkoutProg] = useState(localStorage.getItem("workoutCounter"))
   const navigate = useNavigate()
+  const [loading, setLoading] = useState(false)
 
 
   // ------------------------------------------- END LOAD -------------------------------------  
@@ -55,7 +57,6 @@ export default function Homepage() {
   const [zoom, setZoom] = useState(12); // Default zoom
   const [currentLocation, setCurrentLocation] = useState(null); // Current user location
   const [locations, setLocations] = useState([]);
-  const [filteredLocations, setFilteredLocations] = useState([]); // Locations within 3 km
   const [locationQuery, setLocationQuery] = useState(""); // Search query
 
   useEffect(() => {
@@ -71,10 +72,11 @@ export default function Homepage() {
             setCurrentLocation(userLocation);
             setCenter(userLocation);
             setZoom(15);
+            handleSearch()
           },
           (error) => {
+            handleSearch()
             console.error("Error fetching location:", error);
-            alert("Unable to fetch your location. Using default location.");
           }
         );
       } else {
@@ -95,7 +97,9 @@ export default function Homepage() {
 
   const today = dayjs(); // Today's date
   const currentHour = today.hour()
-  const [selectedDate, setSelectedDate] = useState(today.format("YYYY-MM-DD"));
+  const [selectedDate, setSelectedDate] = useState(
+    currentHour >= 22 ? today.add(1, "day").format("YYYY-MM-DD") : today.format("YYYY-MM-DD")
+  );
   const startDay = currentHour >= 22 ? today.add(1, "day") : today;
   const dates = Array.from({ length: 7 }, (_, index) =>
     startDay.add(index, "day").format("YYYY-MM-DD"));
@@ -160,12 +164,12 @@ export default function Homepage() {
 
   const getDefaultTime = () => {
     const currentHour = dayjs().hour();
-    if (currentHour < startHour || currentHour > endHour) {
+    if (currentHour >= 22 || currentHour < startHour) {
       return startHour;
     }
     return currentHour;
   };
-  const [timeValue, setTimeValue] = useState(getDefaultTime); //default to current time, but 
+  const [timeValue, setTimeValue] = useState(getDefaultTime);
   const timeslots = generateTimeSlots(startHour, endHour + 1)
   const filteredTimeslots =
   dayjs(selectedDate).isSame(dayjs(), "day") && !isAfterEndHour
@@ -185,9 +189,26 @@ export default function Homepage() {
     handleDateSelect(date);
     setSelectedTimeslot({ date, timeslot }); // Update the globally selected timeslot
   
+    const get24HourValue = (time) => {
+      const [hours, minutes] = time
+      .toUpperCase() // Ensure case consistency
+      .replace("AM", "") // Remove AM
+      .replace("PM", "") // Remove PM
+      .trim() // Remove extra spaces
+      .split(":")
+      .map(Number); // Convert to numbers
+  
+    // Adjust for PM times
+    const isPM = time.toUpperCase().includes("PM");
+    const hour24 = isPM && hours !== 12 ? hours + 12 : hours === 12 && !isPM ? 0 : hours;
+  
+    console.log("Converted 24-hour value:", hour24);
+    return hour24;
+    };
+
     // Parse the start time from the timeslot (e.g., "7:00 AM - 8:00 AM")
     const [startTime] = timeslot.split(" - "); // Extract "7:00 AM"
-    const parsedHour = dayjs(startTime, ["h:mm A"]).hour(); // Convert to 24-hour format
+    const parsedHour = get24HourValue(startTime)
   
     // Update the slider value
     setTimeValue(parsedHour);
@@ -200,9 +221,14 @@ export default function Homepage() {
   // fetch stuff & next page
     const handleSearch = async () => {
       try {
-        fetchCoordinates(locationQuery)
+        setLoading(true)
+        let currentPosition = locationQuery
+        if (locationQuery === "") {
+          currentPosition = "MacRitchie"
+        }
+        fetchCoordinates(currentPosition)
         const requestBody = {
-          address: locationQuery || "", // Use the user's search query for the address
+          address: currentPosition, // Use the user's search query for the address
           date: selectedDate, // Current date in YYYY-MM-DD format
           time: `${timeValue}:00:00`, // Current time in HH:mm:ss format
         };
@@ -260,6 +286,7 @@ export default function Homepage() {
           } else {
             alert("No locations found near your search.");
           }
+          setLoading(false)
         } else {
           alert("No locations found.");
         }
@@ -296,6 +323,18 @@ export default function Homepage() {
         return null;
       }
     }
+
+    useEffect(() => {
+      if (!didMount.current) {
+        // Skip the first render
+        didMount.current = true;
+        return;
+      }
+    
+      // Call handleSearch on subsequent updates
+      handleSearch();
+    }, [timeValue, selectedDate]);
+    const didMount = useRef(false); // Ref to track the first render
   
 
   return (
@@ -640,6 +679,19 @@ export default function Homepage() {
         )}
 
       </div>
+
+      {loading && (
+      
+      
+      <> 
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div className="flex flex-col items-center">
+        <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-green-500"></div>
+        <p className="mt-4 text-white text-lg font-bold">Loading...</p>
+        </div>
+  </div>
+      </>
+      )}
       
     </div>
   );
