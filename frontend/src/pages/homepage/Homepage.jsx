@@ -58,32 +58,32 @@ export default function Homepage() {
   const [filteredLocations, setFilteredLocations] = useState([]); // Locations within 3 km
   const [locationQuery, setLocationQuery] = useState(""); // Search query
 
-  // useEffect(() => {
-  //   const fetchCurrentLocation = () => {
-  //     if (navigator.geolocation) {
-  //       navigator.geolocation.getCurrentPosition(
-  //         (position) => {
-  //           const userLocation = {
-  //             lat: position.coords.latitude,
-  //             lng: position.coords.longitude,
-  //           };
-  //           setCurrentLocation(userLocation);
-  //           setCenter(userLocation);
-  //           setZoom(15);
-  //           filterLocations(userLocation);
-  //         },
-  //         (error) => {
-  //           console.error("Error fetching location:", error);
-  //           alert("Unable to fetch your location. Using default location.");
-  //         }
-  //       );
-  //     } else {
-  //       alert("Geolocation is not supported by your browser.");
-  //     }
-  //   };
+  useEffect(() => {
+    const fetchCurrentLocation = () => {
+      if (navigator.geolocation) {
+        console.log("hi")
+        navigator.geolocation.getCurrentPosition(
+          (position) => {
+            const userLocation = {
+              lat: position.coords.latitude,
+              lng: position.coords.longitude,
+            };
+            setCurrentLocation(userLocation);
+            setCenter(userLocation);
+            setZoom(15);
+          },
+          (error) => {
+            console.error("Error fetching location:", error);
+            alert("Unable to fetch your location. Using default location.");
+          }
+        );
+      } else {
+        alert("Geolocation is not supported by your browser.");
+      }
+    };
 
-  //   fetchCurrentLocation();
-  // }, []);
+    fetchCurrentLocation();
+  }, []);
   
 
   // ------------------------------------------- END MAP  -------------------------------------------
@@ -96,7 +96,7 @@ export default function Homepage() {
   const today = dayjs(); // Today's date
   const currentHour = today.hour()
   const [selectedDate, setSelectedDate] = useState(today.format("YYYY-MM-DD"));
-  const startDay = currentHour > 22 ? today.add(1, "day") : today;
+  const startDay = currentHour >= 22 ? today.add(1, "day") : today;
   const dates = Array.from({ length: 7 }, (_, index) =>
     startDay.add(index, "day").format("YYYY-MM-DD"));
   const startHour = 7; // Start at 7 AM
@@ -105,20 +105,25 @@ export default function Homepage() {
 
 
 
-const generateTimeSlots = (startHour, endHour) => {
-  const slots = [];
-  for (let hour = startHour; hour < endHour-1; hour++) {
-    const start = dayjs().hour(hour).minute(0).format("h:00a");
-    const end = dayjs().hour(hour + 1).minute(0).format("h:00a");
-    slots.push(`${start} - ${end}`);
-  }
-  return slots;
-};
+  const generateTimeSlots = (startHour, endHour) => {
+    const slots = [];
+    for (let hour = startHour; hour < endHour; hour++) {
+      const start = dayjs().hour(hour).minute(0).format("h:00a");
+      const end = dayjs().hour(hour + 1).minute(0).format("h:00a");
+      slots.push(`${start} - ${end}`);
+    }
+    return slots;
+  };
 
 
 
   const handleDateSelect = (date) => {
     setSelectedDate(date);
+    const isToday = dayjs(date).isSame(dayjs(), "day");
+    const filteredSlots = isToday
+      ? timeslots.filter((_, index) => startHour + index >= currentHour)
+      : timeslots;
+    setRenderedTimeslots(filteredSlots);
   };
 
 
@@ -154,21 +159,18 @@ const generateTimeSlots = (startHour, endHour) => {
   };
 
   const getDefaultTime = () => {
-    const currentHour = dayjs().hour()
-    if (currentHour < 7 || currentHour > 22) {
-      return 7
+    const currentHour = dayjs().hour();
+    if (currentHour < startHour || currentHour > endHour) {
+      return startHour;
     }
-
     return currentHour;
-  }
+  };
   const [timeValue, setTimeValue] = useState(getDefaultTime); //default to current time, but 
   const timeslots = generateTimeSlots(startHour, endHour + 1)
-  const filteredTimeslots = isAfterEndHour
-  ? timeslots // Render all slots for the next day
-  : timeslots.filter((slot, index) => {
-    const slotStartHour = startHour + index;
-    return slotStartHour >= currentHour;
-  });
+  const filteredTimeslots =
+  dayjs(selectedDate).isSame(dayjs(), "day") && !isAfterEndHour
+    ? timeslots.filter((_, index) => startHour + index >= currentHour)
+    : timeslots;
   const [renderedTimeslots, setRenderedTimeslots] = useState(filteredTimeslots);
   
 
@@ -198,9 +200,9 @@ const generateTimeSlots = (startHour, endHour) => {
   // fetch stuff & next page
     const handleSearch = async () => {
       try {
-        setCurrentLocation(locationQuery)
+        fetchCoordinates(locationQuery)
         const requestBody = {
-          address: locationQuery, // Use the user's search query for the address
+          address: locationQuery || "", // Use the user's search query for the address
           date: selectedDate, // Current date in YYYY-MM-DD format
           time: `${timeValue}:00:00`, // Current time in HH:mm:ss format
         };
@@ -214,6 +216,7 @@ const generateTimeSlots = (startHour, endHour) => {
         });
     
         const data = await response.json();
+        console.log(data)
     
         if (data.locations) {
           const allLocations = [];
@@ -227,7 +230,7 @@ const generateTimeSlots = (startHour, endHour) => {
     
               // Calculate total popularity
               const totalPopularity = Object.values(userGroups).reduce(
-                (sum, group) => sum + group.length,
+                (sum, group) => sum + (group.users?.length || 0),
                 0
               );
     
@@ -253,11 +256,6 @@ const generateTimeSlots = (startHour, endHour) => {
           // Update the map state
           if (allLocations.length > 0) {
             setLocations(allLocations);
-            const firstLocation = allLocations[0];
-            setCenter({
-              lat: firstLocation.coordinates[1],
-              lng: firstLocation.coordinates[0],
-            });
             setZoom(15);
           } else {
             alert("No locations found near your search.");
@@ -274,6 +272,29 @@ const generateTimeSlots = (startHour, endHour) => {
       localStorage.setItem("marker", JSON.stringify(selectedMarker))
       localStorage.setItem("timeslot", JSON.stringify(selectedTimeslot))
       navigate("/booking")
+    }
+
+    const fetchCoordinates = async (locationQuery) => {
+      try {
+        const response = await fetch(
+          `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(
+            locationQuery
+          )}&key=${import.meta.env.VITE_GOOGLE_MAPS_API_KEY}`
+        );
+    
+        const data = await response.json();
+        if (data.results && data.results.length > 0) {
+          const location = data.results[0].geometry.location;
+          setCurrentLocation(location); // Update current location
+          setCenter(location); // Center the map
+        } else {
+          console.error("Location not found");
+          return null;
+        }
+      } catch (error) {
+        console.error("Error fetching coordinates:", error);
+        return null;
+      }
     }
   
 
@@ -433,13 +454,18 @@ const generateTimeSlots = (startHour, endHour) => {
                 {/* Slider */}
                 <input
                   type="range"
-                  min={dayjs(selectedDate).isSame(dayjs(), "day") ? Math.max(7, currentHour) : 7}
+                  min="7"
                   max="22" // End time (10 PM)
                   value={timeValue}
                   step="1" // Step increments of 1 hour
                   className="range  w-full range-xs"
                   onChange={(e) => {
                     const newValue = Number(e.target.value);
+
+                    // If today, prevent moving slider to earlier times than currentHour
+                    if (dayjs(selectedDate).isSame(dayjs(), "day") && newValue < currentHour) {
+                      return; // Ignore invalid movement
+                    }
                     setTimeValue(newValue);
                 
                     // Find the corresponding timeslot
