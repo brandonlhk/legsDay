@@ -15,12 +15,14 @@ export default function Booking() {
     const [hour, minute] = startTime.replace(/am|pm/i, "").split(":").map(Number); // Extract hour and minute
     const formattedHour = isPM && hour !== 12 ? hour + 12 : (!isPM && hour === 12 ? 0 : hour); // Handle PM and 12 AM edge cases
     const formattedTime = `${String(formattedHour).padStart(2, "0")}:${String(minute || 0).padStart(2, "0")}:00`; // Format to "HH:MM:SS"
+    const userAge = localStorage.getItem("age")
+    const userGender = localStorage.getItem("gender")
 
     const navigate = useNavigate()
     const [selectedWorkout, setSelectedWorkout] = useState(null);
     const [selectedGroup, setSelectedGroup] = useState(null)
 
-    // agree
+    // agree checkbox
     const [agreed, setAgreed] = useState(false)
     
     // view
@@ -324,25 +326,41 @@ export default function Booking() {
 
             {/* add conditoning later */}
             <div className="mt-6 space-y-3">
-                {Object.keys(marker.userGroups)
-                .filter((group) => group.startsWith(selectedWorkout.tag)) // Match userGroups using the selected workout's tag
+            {Object.keys(marker.userGroups)
+                .filter((group) => {
+                    // Filter by selected workout tag
+                    if (!group.startsWith(selectedWorkout.tag)) return false;
+
+                    // Additional conditions based on user's gender and age
+                    if (group.includes("_seniors") && userAge < 65) return false; // Exclude seniors group if age < 65
+                    if (group.includes("_ladies") && userGender !== "F") return false; // Exclude ladies group if not female
+                    if (group.includes("_parents")) return false; // Exclude all parents groups
+
+                    return true; // Include the group otherwise
+                })
                 .map((group, index) => (
                     <div
-                        key={index}
-                        className={`p-4 border rounded-lg flex justify-between items-center cursor-pointer ${
+                    key={index}
+                    className={`p-4 border rounded-lg flex justify-between items-center cursor-pointer ${
                         selectedGroup === group ? "border-green-500 bg-green-50" : "border-gray-200"
-                        }`}
-                        onClick={() => setSelectedGroup(group)} // Set the selected group
+                    }`}
+                    onClick={() => setSelectedGroup(group)} // Set the selected group
                     >
-                        <div>
-                            <h3 className="text-lg font-semibold capitalize">
-                                {group.replace(/_/g, " ").replace("general", "General Group").replace("ladies", "Ladies Only Group").replace("parents", "Parents Only Group")}
-                            </h3>
-                            <p className="text-sm text-gray-600">
-                            <FontAwesomeIcon icon={faUser} />
-                            <span className="ml-3">{marker.userGroups[group].users.length} pax has joined</span>
-                            </p>
-                        </div>
+                    <div>
+                        <h3 className="text-lg font-semibold capitalize">
+                        {group
+                            .replace(/_/g, " ")
+                            .replace("general", "General Group")
+                            .replace("ladies", "Ladies Only Group")
+                            .replace("parents", "Parents Only Group")}
+                        </h3>
+                        <p className="text-sm text-gray-600">
+                        <FontAwesomeIcon icon={faUser} />
+                        <span className="ml-3">
+                            {marker.userGroups[group].users.length} pax has joined
+                        </span>
+                        </p>
+                    </div>
                     </div>
                 ))}
             </div>

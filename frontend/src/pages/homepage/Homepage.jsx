@@ -21,7 +21,7 @@ export default function Homepage() {
   // ------------------------------------------- LOAD -------------------------------------------
   const [name, setName] = useState(localStorage.getItem("name"))
   const [workoutFreq, setWorkoutFreq] = useState(localStorage.getItem("workoutFreq"))
-  const [workoutProg, setWorkoutProg] = useState(localStorage.getItem("workoutProg"))
+  const [workoutProg, setWorkoutProg] = useState(localStorage.getItem("workoutCounter"))
   const navigate = useNavigate()
 
 
