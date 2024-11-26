@@ -314,6 +314,7 @@ async def register(request_data: CreateAccountRequest):
         "upper_body_strength": upper_body_strength,
         "lower_body_strength": lower_body_strength,
         "core_strength": core_strength,
+        "workout_counter": 0
     }
 
     # Insert the new user into the database
@@ -330,12 +331,17 @@ async def login(request_data: LoginRequest):
 
     # Find the user in the database
     user = user_collection.find_one({"email": email})
+    print(user)
 
     # Check if user exists and password is correct
     if user and check_password_hash(user['password'], password):
         return {
             "message": "Login successful",
-            "userid": str(user['_id'])
+            "userid": str(user['_id']),
+            "workoutFreq": str(user["frequency"]),
+            "workoutCounter" : str(user["workout_counter"]),
+            "gender" : str(user['gender']),
+            "age": str(user['age'])
         }
     else:
         raise HTTPException(status_code=401, detail="Invalid email or password")
