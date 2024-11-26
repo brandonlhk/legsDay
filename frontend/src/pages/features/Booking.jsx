@@ -19,6 +19,9 @@ export default function Booking() {
     const navigate = useNavigate()
     const [selectedWorkout, setSelectedWorkout] = useState(null);
     const [selectedGroup, setSelectedGroup] = useState(null)
+
+    // agree
+    const [agreed, setAgreed] = useState(false)
     
     // view
     const [view, setView] = useState("selectWorkout")
@@ -31,6 +34,10 @@ export default function Booking() {
 
         if (view === "chooseGroup") {
             setView("selectWorkout")
+        }
+
+        if (view === "agree") {
+            setView("chooseGroup")
         }
     }
 
@@ -140,7 +147,7 @@ export default function Booking() {
 
             if (response.ok) {
             alert("Successfully joined the group!");
-            setView("done")
+            setView("complete")
             const result = await response.json();
             console.log("Join group result:", result);
             } else {
@@ -155,8 +162,8 @@ export default function Booking() {
 
   return (
     <div className="p-6">
-      {/* GO BACK - SELECTWORKOUT & CHOOSEGROUP */}
-      {view !== "done" && (
+      {/* GO BACK - SELECTWORKOUT & CHOOSEGROUP & DONE */}
+      {view !== "complete" && (
         <>
             <header className="mb-6">
 
@@ -172,8 +179,19 @@ export default function Booking() {
         </>
       )}
 
-      {/* SUCCESSFUL - DONE */}
-        {view === "done" && (
+      {view === "agree" && (
+        <>
+            <div className="mb-3">
+                <img className="w-full" src={selectedWorkout.image} alt="" />
+                <h2 className="text-lg font-bold">{selectedWorkout.name}</h2>
+                <p>{selectedWorkout.description}</p>
+                <p>Level of difficulty: {selectedWorkout.difficulty}</p>
+            </div>
+        </>
+      )}
+
+      {/* SUCCESSFUL - COMPLETE */}
+        {view === "complete" && (
             <>
                 <div className="flex flex-col items-center text-center mb-6">
                     <div className="text-green-500 mb-2">
@@ -206,7 +224,10 @@ export default function Booking() {
                     <FontAwesomeIcon icon={faSignal} />
                     <span className="text-gray-500">{selectedWorkout.difficulty}</span>
                 </div>
-
+            </>
+        )}
+        {view === "done" || view === "agree" && (
+            <>
                 <div className="flex items-center gap-3 mb-2">
                     <FontAwesomeIcon icon={faUser} />
                     <span className="text-gray-500">{selectedGroup}</span>
@@ -223,8 +244,28 @@ export default function Booking() {
           <span className="text-gray-500">{marker.coordinates[0]}, {marker.coordinates[1]}</span>
         </div>
       </div>
+        {view === "agree" && (
+            <>
+                <div className="divider"></div>
+                <h2 className="text-xl font-bold">Terms of Engagement of Group Workout Sessions on OTOT App</h2>
+                <p>Before proceeding, please read and agree to the following guidelines to ensure a positive and supportive community experience:</p>
+                <p className="mt-3"><span className="font-bold">Respect is Key:</span> Treat everyone with kindness and respect. We are all here to learn, grow, and support each other.</p>
+                <p className="mt-3"><span className="font-bold">Inclusivity matters:</span> This is a safe space for everyone, regardless of fitness level, background, or identity. Encourage and uplift one another.</p>
+                <p className="mt-3"><span className="font-bold">Zero Tolerance for Inappropriate Behavior:</span> Harassment, bullying, or any form of inappropriate actions will not be tolerated and may result in removal from the platform.</p>
+                <p className="mt-3"><span className="font-bold">Punctuality and Commitment:</span> Show respect for others’ time by being prompt and reliable for sessions you’ve committed to.</p>
+                <p className="mt-3"><span className="font-bold">Safety First:</span> Prioritize your health and well-being. Listen to your body and inform the group members of any concerns or limitations.</p>
+                <p className="mt-3"><span className="font-bold">Open Communication:</span> Share feedback constructively and report any issues to the app moderators.</p>
 
-    {/* SELECT WORKOUT - SELECTWORKOUT */}
+                {/* agree portion here */}
+                <div className="flex mb-16 mt-3">
+                    <label className="label">
+                        <input type="checkbox" className="checkbox" onChange={() => setAgreed((!agreed))}/>
+                        <p className="ml-3">I agree to the terms of engagement for group workout sessions and commit to promoting a respectful, inclusive, and positive environment.</p>
+                    </label>
+                </div>
+            </>
+        )}
+    {/* SELECT WORKOUT OPTIONS - SELECTWORKOUT */}
     {view === "selectWorkout" && (
         <>
             {/* Workout Options */}
@@ -261,7 +302,8 @@ export default function Booking() {
         </>
     )}
 
-    {view === "done" && (
+    {/* JOIN CONVERSATION PAGE -  COMPLETE*/}
+    {view === "complete" && (
         <>
             <h2 className="text-lg font-bold">Join the conversation!</h2>
 
@@ -315,6 +357,22 @@ export default function Booking() {
                 <button
                 className="w-full py-3 bg-green-500 text-white font-bold rounded-lg"
                 disabled={!selectedGroup}
+                onClick={() => setView("agree")}
+                >
+                Join Workout Group
+                </button>
+            </div>
+        </>
+    )}
+
+    {/* SELECT WORKOUT BUTTON - SELECTWORKOUT */}
+    {view === "agree" && (
+        <>
+            {/* Footer Button */}
+            <div className="mt-6 fixed bottom-0 left-0 w-full p-4 bg-white shadow-md">
+                <button
+                className="w-full py-3 bg-green-500 text-white font-bold rounded-lg"
+                disabled={!agreed}
                 onClick={join}
                 >
                 Join Workout Group
@@ -323,8 +381,8 @@ export default function Booking() {
         </>
     )}
 
-    {/* GO HOME OR JOIN CONVO - DONE */} 
-    {view === "done" && (
+    {/* GO HOME OR JOIN CONVO - COMPLETE */} 
+    {view === "complete" && (
         <>
             {/* Footer Button */}
             <div className="mt-6 fixed bottom-0 left-0 w-full p-4 bg-white shadow-md">
