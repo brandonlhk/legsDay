@@ -628,11 +628,11 @@ async def save_chat(request_data: SaveChatRequest):
     # Fetch the document based on the date and time
     date = timeslot.split("T")[0].strip()
     schedule_collection = client['events_collection']['schedule_database']
-    timeslot = schedule_collection.find_one({"date": date, "hour": timeslot})
+    timeslot_data = schedule_collection.find_one({"date": date, "hour": timeslot})
 
-    location_data = timeslot[location_type][location_id]
+    location_data = timeslot_data[location_type][location_id]
     location_data['user_groups'][user_group]['chat'].append({msg_timestamp: {user_id: msg_content}})
-
+    # print(location_data['user_groups'][user_group]['chat'], timeslot)
     # Now update the MongoDB document with the new data
     result = schedule_collection.update_one(
         {
@@ -643,10 +643,12 @@ async def save_chat(request_data: SaveChatRequest):
         upsert=False  # Do not create a new document; we're updating an existing one
     )
 
+    # print(result)
+
     if result.modified_count == 0 and result.upserted_id:
-        return {"message": f"{msg_timestamp} already exists in {timeslot_time}'s {user_group} chat."}
+        return {"message": f"{msg_timestamp} already exists in {timeslot}'s {user_group} chat."}
     elif result.modified_count > 0:
-        return {"message": f"User {user_id} successfully added to {timeslot_time}'s {user_group} chat.."}
+        return {"message": f"User {user_id} successfully added to {timeslot}'s {user_group} chat.."}
     else:
         raise HTTPException(status_code=500, detail="Error updating the document in MongoDB.")
 
