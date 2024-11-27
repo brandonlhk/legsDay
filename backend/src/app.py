@@ -17,6 +17,7 @@ from multiprocessing import Pool
 from onemapsg import OneMapClient
 from datetime import datetime
 from geopy.distance import geodesic
+import pytz
 
 app = FastAPI()
 app.add_middleware(
@@ -157,11 +158,10 @@ class JoinUserGroupRequest(BaseModel):
 
 class GetUserGroupRequest(BaseModel):
     '''current datetime needs to be in yyyy-mm-ddTxx:xx:xx format, which is ISO format'''
-    current_datetime: str
     user_id : str
 
 class SaveChatRequest(BaseModel):
-    '''timeslot and msg_timestamp strings need to be in yyyy-mm-dd xx:xx:xx format'''
+    '''timeslot and msg_timestamp strings need to be in yyyy-mm-ddYxx:xx:xx format'''
     timeslot : str
     msg_timestamp: str
     user_id: str
@@ -576,8 +576,6 @@ async def join_user_group(request_data: JoinUserGroupRequest):
     date_time_str = f"{date} {time}"
     timeslot_time = datetime.strptime(date_time_str, "%Y-%m-%d %H:%M:%S").isoformat()
     timeslot = schedule_collection.find_one({"date": date, "hour": timeslot_time})
-    
-    print(timeslot_time)
 
     # Add the user to the appropriate user group
     location_data = timeslot[location_type][location_id]
@@ -628,12 +626,9 @@ async def save_chat(request_data: SaveChatRequest):
     msg_content = request_data.msg_content
 
     # Fetch the document based on the date and time
-    date = timeslot.split(" ")[0].strip()
+    date = timeslot.split("T")[0].strip()
     schedule_collection = client['events_collection']['schedule_database']
-    timeslot_time = datetime.strptime(timeslot, "%Y-%m-%d %H:%M:%S").isoformat()
-    msg_timestamp = datetime.strptime(msg_timestamp, "%Y-%m-%d %H:%M:%S").isoformat()
-    timeslot = schedule_collection.find_one({"date": date, "hour": timeslot_time})
-    print(timeslot_time)
+    timeslot = schedule_collection.find_one({"date": date, "hour": timeslot})
 
     location_data = timeslot[location_type][location_id]
     location_data['user_groups'][user_group]['chat'].append({msg_timestamp: {user_id: msg_content}})
@@ -642,7 +637,7 @@ async def save_chat(request_data: SaveChatRequest):
     result = schedule_collection.update_one(
         {
             "date": date, 
-            "hour": timeslot_time # Match the exact datetime for the update
+            "hour": timeslot # Match the exact datetime for the update
         },
         {"$set": {f"{location_type}.{location_id}": location_data}},  # Update the specific location data
         upsert=False  # Do not create a new document; we're updating an existing one
@@ -658,13 +653,22 @@ async def save_chat(request_data: SaveChatRequest):
 @app.post("/get_user_groups")
 async def get_user_groups(request_data: GetUserGroupRequest):
     user_id = request_data.user_id
-    current_datetime = datetime.fromisoformat(request_data.current_datetime)
+    current_datetime = datetime.now(pytz.timezone('Asia/Singapore'))
 
     user = user_collection.find_one({'_id': ObjectId(user_id)})
     all_user_groups = user['user_groups']
-    user_groups = [group_dict for group_dict in all_user_groups if datetime.fromisoformat(group_dict.key())>current_datetime]
+    user_groups = []
 
-
+    for group_dict in all_user_groups:
+        for timestamp_str, group_data in group_dict.items():
+            # Convert ObjectId to string for the location field
+            if isinstance(group_data['location'], dict):
+                group_data['location']['_id'] = str(group_data['location']['_id'])
+            
+            # Check if the timestamp is after the current datetime
+            timestamp = datetime.fromisoformat(timestamp_str).replace(tzinfo=pytz.timezone('Asia/Singapore'))
+            if timestamp > current_datetime:
+                user_groups.append(group_dict)
     return {
         "message": f"Fetched user groups for user {user_id}",
         "user_groups": user_groups
