@@ -314,7 +314,8 @@ async def register(request_data: CreateAccountRequest):
         "upper_body_strength": upper_body_strength,
         "lower_body_strength": lower_body_strength,
         "core_strength": core_strength,
-        "workout_counter": 0
+        "workout_counter": 0,
+        "user_groups": []
     }
 
     # Insert the new user into the database
@@ -434,7 +435,7 @@ async def nearest(request_data: DistanceRequest):
             loc_coordinates = location['coordinates']
             distance = calculate_distance(lat, lon, loc_coordinates[1], loc_coordinates[0])
 
-            if distance <= 3:  # Only consider locations within 3km
+            if distance <= 1:  # Only consider locations within 3km
                 locations_within_3km[location_type][loc_id] = {
                     'coordinates': loc_coordinates,
                     'user_groups': location['user_groups']  # Assuming user_groups is a dictionary
@@ -570,6 +571,7 @@ async def join_user_group(request_data: JoinUserGroupRequest):
     date_time_str = f"{date} {time}"
     timeslot_time = datetime.strptime(date_time_str, "%Y-%m-%d %H:%M:%S").isoformat()
     timeslot = schedule_collection.find_one({"date": date, "hour": timeslot_time})
+    
     print(timeslot_time)
 
     # Add the user to the appropriate user group
@@ -584,6 +586,22 @@ async def join_user_group(request_data: JoinUserGroupRequest):
         },
         {"$set": {f"{location_type}.{location_id}": location_data}},  # Update the specific location data
         upsert=False  # Do not create a new document; we're updating an existing one
+    )
+
+    location_collection = client['events_collection'][f'{location_type}_database']
+    user = user_collection.find_one({'_id': ObjectId(user_id)})
+    loc = location_collection.find_one({'_id': ObjectId(location_id)})
+
+    if not user:
+        return {"message": f"Invalid UserID"}
+
+    existing_user_groups = user['user_groups']
+    existing_user_groups.append({timeslot_time: {'user_group': user_group, 'location': loc}})
+
+    user_result = user_collection.update_one(
+        {"_id": ObjectId(user_id)},
+        {"$set": {f"user_groups": existing_user_groups}},  
+        upsert=False  # Do not create a new document; we're updating an existing one}
     )
 
     if result.modified_count == 0 and result.upserted_id:
