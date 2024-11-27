@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faCalendarAlt, faMapMarkerAlt, faUser, faSignal, faFileLines } from "@fortawesome/free-solid-svg-icons";
+import { faCalendarAlt, faMapMarkerAlt, faUser, faSignal, faFileLines, faCircleCheck } from "@fortawesome/free-solid-svg-icons";
 import { useNavigate } from 'react-router-dom';
 
 export default function Booking() {
@@ -21,6 +21,7 @@ export default function Booking() {
     const navigate = useNavigate()
     const [selectedWorkout, setSelectedWorkout] = useState(null);
     const [selectedGroup, setSelectedGroup] = useState(null)
+
 
     // agree checkbox
     const [agreed, setAgreed] = useState(false)
@@ -120,7 +121,7 @@ export default function Booking() {
     const categoryToType = {
         gym: "gym",
         parks: "others",
-        fitness_corners: "others",
+        fitness_corner: "others",
       };
     // Filter workouts based on the category type
     const filteredWorkouts = workouts.filter(
@@ -162,6 +163,13 @@ export default function Booking() {
         }
     }
 
+    const joinConvo = () => {
+        // i need to send the selectedgroup, marker, timeslot save it on localstorage first
+        //marker and timeslot already in 
+        localStorage.setItem("selectedGroup", selectedGroup)
+        navigate("/message-groups")
+    }
+
   return (
     <div className="p-6">
       {/* GO BACK - SELECTWORKOUT & CHOOSEGROUP & DONE */}
@@ -195,17 +203,17 @@ export default function Booking() {
       {/* SUCCESSFUL - COMPLETE */}
         {view === "complete" && (
             <>
-                <div className="flex flex-col items-center text-center mb-6">
+                <div className="flex flex-col items-center text-center my-6">
                     <div className="text-green-500 mb-2">
-                    <FontAwesomeIcon icon={faSignal} size="3x" />
+                    <FontAwesomeIcon icon={faCircleCheck} size="3x" />
                     </div>
-                    <h1 className="text-2xl font-bold">You’re all set!</h1>
+                    <h1 className="text-3xl font-bold">You’re all set!</h1>
 
-                    <div className="bg-blueGrey p-4">
+                    <div className="bg-blueGrey p-4 mt-6">
                         <p className="text-sm text-gray-600 mt-2">
-                            <FontAwesomeIcon icon={faFileLines}/>
+                            <FontAwesomeIcon icon={faFileLines} className="mr-3"/>
                         Please note that our platform only facilitates joining workout groups.
-                        Visit the respective gym's website to complete facility bookings before the session date.
+                        Visit the respective gym&apos;s website to complete facility bookings before the session date.
                         </p>
                     </div>
                 </div>
@@ -220,15 +228,15 @@ export default function Booking() {
         }
       {/* Date and Location */}
       <div className="mb-6">
-        {view === "done" && (
+        {view === "done" || view === "complete" && (
             <>
                 <div className="flex items-center gap-3 mb-2">
                     <FontAwesomeIcon icon={faSignal} />
-                    <span className="text-gray-500">{selectedWorkout.difficulty}</span>
+                    <span className="text-gray-500">Level of difficulty: {selectedWorkout.difficulty}</span>
                 </div>
             </>
         )}
-        {view === "done" || view === "agree" && (
+        {view === "done" || view === "agree" || view === "complete" && (
             <>
                 <div className="flex items-center gap-3 mb-2">
                     <FontAwesomeIcon icon={faUser} />
@@ -246,27 +254,30 @@ export default function Booking() {
           <span className="text-gray-500">{marker.coordinates[0]}, {marker.coordinates[1]}</span>
         </div>
       </div>
-        {view === "agree" && (
-            <>
-                <div className="divider"></div>
-                <h2 className="text-xl font-bold">Terms of Engagement of Group Workout Sessions on OTOT App</h2>
-                <p>Before proceeding, please read and agree to the following guidelines to ensure a positive and supportive community experience:</p>
-                <p className="mt-3"><span className="font-bold">Respect is Key:</span> Treat everyone with kindness and respect. We are all here to learn, grow, and support each other.</p>
-                <p className="mt-3"><span className="font-bold">Inclusivity matters:</span> This is a safe space for everyone, regardless of fitness level, background, or identity. Encourage and uplift one another.</p>
-                <p className="mt-3"><span className="font-bold">Zero Tolerance for Inappropriate Behavior:</span> Harassment, bullying, or any form of inappropriate actions will not be tolerated and may result in removal from the platform.</p>
-                <p className="mt-3"><span className="font-bold">Punctuality and Commitment:</span> Show respect for others’ time by being prompt and reliable for sessions you’ve committed to.</p>
-                <p className="mt-3"><span className="font-bold">Safety First:</span> Prioritize your health and well-being. Listen to your body and inform the group members of any concerns or limitations.</p>
-                <p className="mt-3"><span className="font-bold">Open Communication:</span> Share feedback constructively and report any issues to the app moderators.</p>
 
-                {/* agree portion here */}
-                <div className="flex mb-16 mt-3">
-                    <label className="label">
-                        <input type="checkbox" className="checkbox" onChange={() => setAgreed((!agreed))}/>
-                        <p className="ml-3">I agree to the terms of engagement for group workout sessions and commit to promoting a respectful, inclusive, and positive environment.</p>
-                    </label>
-                </div>
-            </>
-        )}
+    {/* TERMS AND CONDITIONS - AGREE */}
+    {view === "agree" && (
+        <>
+            <div className="divider"></div>
+            <h2 className="text-xl font-bold">Terms of Engagement of Group Workout Sessions on OTOT App</h2>
+            <p>Before proceeding, please read and agree to the following guidelines to ensure a positive and supportive community experience:</p>
+            <p className="mt-3"><span className="font-bold">Respect is Key:</span> Treat everyone with kindness and respect. We are all here to learn, grow, and support each other.</p>
+            <p className="mt-3"><span className="font-bold">Inclusivity matters:</span> This is a safe space for everyone, regardless of fitness level, background, or identity. Encourage and uplift one another.</p>
+            <p className="mt-3"><span className="font-bold">Zero Tolerance for Inappropriate Behavior:</span> Harassment, bullying, or any form of inappropriate actions will not be tolerated and may result in removal from the platform.</p>
+            <p className="mt-3"><span className="font-bold">Punctuality and Commitment:</span> Show respect for others’ time by being prompt and reliable for sessions you’ve committed to.</p>
+            <p className="mt-3"><span className="font-bold">Safety First:</span> Prioritize your health and well-being. Listen to your body and inform the group members of any concerns or limitations.</p>
+            <p className="mt-3"><span className="font-bold">Open Communication:</span> Share feedback constructively and report any issues to the app moderators.</p>
+
+            {/* agree portion here */}
+            <div className="flex mb-16 mt-3">
+                <label className="label">
+                    <input type="checkbox" className="checkbox" onChange={() => setAgreed((!agreed))}/>
+                    <p className="ml-3">I agree to the terms of engagement for group workout sessions and commit to promoting a respectful, inclusive, and positive environment.</p>
+                </label>
+            </div>
+        </>
+    )}
+
     {/* SELECT WORKOUT OPTIONS - SELECTWORKOUT */}
     {view === "selectWorkout" && (
         <>
@@ -280,7 +291,7 @@ export default function Booking() {
                     <h2 className="card-title text-xl font-semibold flex justify-between items-center">{workout.name} 
                     </h2>
                     <img src={workout.image} alt="" />
-                    <p className="font-semibold">Strengthens muscles with bodyweight exercises like push-ups and squats, improving endurance and core stability without equipment.</p>
+                    <p className="font-semibold">{workout.description}</p>
                     </div>
                 </div>
                 ))}
@@ -304,11 +315,19 @@ export default function Booking() {
         </>
     )}
 
-    {/* JOIN CONVERSATION PAGE -  COMPLETE*/}
+    {/* JOIN CONVERSATION PAGE (SHOW CONVO) -  COMPLETE*/}
     {view === "complete" && (
         <>
             <h2 className="text-lg font-bold">Join the conversation!</h2>
+            {marker.userGroups[selectedGroup].chat.length !== 0 && marker.userGroups[selectedGroup].chat.map((convo, index) => (
+                <div key={index}>
+                    {convo}
+                </div>
+            ))}
 
+            {marker.userGroups[selectedGroup].chat.length === 0 && (
+                <p className="text-center mt-3">There are no messages yet! Send one to introduce yourself!</p>
+            )}
         </>
     )}
 
@@ -399,22 +418,25 @@ export default function Booking() {
         </>
     )}
 
-    {/* GO HOME OR JOIN CONVO - COMPLETE */} 
+    {/* GO HOME OR JOIN CONVO BUTTONS- COMPLETE */} 
     {view === "complete" && (
         <>
             {/* Footer Button */}
             <div className="mt-6 fixed bottom-0 left-0 w-full p-4 bg-white shadow-md">
                 <button
-                className="w-full py-3 bg-themeGreen text-white font-bold rounded-full"
+                className={`w-full py-3 font-bold rounded-full ${
+                    selectedGroup
+                    ? "bg-themeGreen text-white"
+                    : "bg-gray-400 text-gray-200 cursor-not-allowed"
+                }`}
                 disabled={!selectedGroup}
-                onClick={join}
+                onClick={joinConvo}
                 >
                 Join Conversation 
                 </button>
 
                 <button
                 className="btn btn-ghost w-full py-3 text-themeGreen font-bold rounded-full"
-                disabled={!selectedGroup}
                 onClick={() => {navigate("/home")}}
                 >
                 Back to homepage

@@ -21,6 +21,7 @@ import Preview from "./pages/homepage/AccountlessHomepage"
 
 // features
 import Booking from "./pages/features/Booking"
+import Message from "./pages/features/MessageGroup"
 
 export default function App() {
   return (
@@ -47,7 +48,8 @@ export default function App() {
 
           {/* features */}
           <Route path="/booking" element={<Booking />}/>
-          
+          <Route path="/message-groups" element={<Message />}/>
+
 
       </Routes>
       </ViewportHeight>

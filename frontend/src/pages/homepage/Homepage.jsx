@@ -1,7 +1,7 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate } from 'react-router-dom';
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faTrophy, faSearch } from "@fortawesome/free-solid-svg-icons";
+import { faTrophy, faSearch, faUser, faCalendarAlt, faMapMarkerAlt } from "@fortawesome/free-solid-svg-icons";
 import Map from "../../components/Map";
 import dayjs from "dayjs"; 
 
@@ -23,8 +23,53 @@ export default function Homepage() {
   const [name, setName] = useState(localStorage.getItem("name"))
   const [workoutFreq, setWorkoutFreq] = useState(localStorage.getItem("workoutFreq"))
   const [workoutProg, setWorkoutProg] = useState(localStorage.getItem("workoutCounter"))
+  const [groups, setGroups] = useState(null); // State to store user groups
+  const userId = localStorage.getItem("userId")
   const navigate = useNavigate()
   const [loading, setLoading] = useState(false)
+  // Track if `fetchCurrentLocation` has been called
+  const hasFetchedLocation = useRef(false);
+
+  const getGroups = async () => {
+    // Construct the request payload
+    const payload = {
+        user_id : userId
+    };
+
+    try {
+        const response = await fetch("http://localhost:5000/get_user_groups", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+        });
+
+        if (response.ok) {
+            const result = await response.json();
+            return result.user_groups
+        } else {
+            console.error("Failed to get groups:", await response.text());
+        }
+    } catch (error) {
+        console.error("Error getting groups:", error);
+    }
+  }
+
+  const formatUserGroupName = (userGroup) => {
+    // Split the string by underscores
+    const parts = userGroup.split("_");
+    
+    // Remove the last part
+    parts.pop();
+    
+    // Join the remaining parts into a readable name
+    const formattedName = parts
+      .map((word) => word.charAt(0).toUpperCase() + word.slice(1)) // Capitalize each word
+      .join(" "); // Join with spaces
+
+    return formattedName;
+  };
 
 
   // ------------------------------------------- END LOAD -------------------------------------  
@@ -59,32 +104,123 @@ export default function Homepage() {
   const [locations, setLocations] = useState([]);
   const [locationQuery, setLocationQuery] = useState(""); // Search query
 
-  useEffect(() => {
-    const fetchCurrentLocation = () => {
-      if (navigator.geolocation) {
-        console.log("hi")
-        navigator.geolocation.getCurrentPosition(
-          (position) => {
-            const userLocation = {
-              lat: position.coords.latitude,
-              lng: position.coords.longitude,
-            };
-            setCurrentLocation(userLocation);
-            setCenter(userLocation);
-            setZoom(15);
-            handleSearch()
-          },
-          (error) => {
-            handleSearch()
-            console.error("Error fetching location:", error);
-          }
-        );
-      } else {
-        alert("Geolocation is not supported by your browser.");
+  const handleSearch = async () => {
+    try {
+      setLoading(true)
+      let currentPosition = locationQuery
+      if (locationQuery === "") {
+        currentPosition = "MacRitchie"
       }
-    };
+      fetchCoordinates(currentPosition)
+      const requestBody = {
+        address: currentPosition, // Use the user's search query for the address
+        date: selectedDate, // Current date in YYYY-MM-DD format
+        time: `${timeValue}:00:00`, // Current time in HH:mm:ss format
+      };
+  
+      const response = await fetch("http://localhost:5000/get_nearest", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(requestBody), // Send the request body as JSON
+      });
+  
+      const data = await response.json();
+      console.log(data)
+  
+      if (data.locations) {
+        const allLocations = [];
+        Object.keys(data.locations).forEach((category) => {
 
-    fetchCurrentLocation();
+          const categoryData = data.locations[category];
+  
+          Object.keys(categoryData).forEach((id) => {
+            const location = categoryData[id];
+            const userGroups = location.user_groups || {};
+  
+            // Calculate total popularity
+            const totalPopularity = Object.values(userGroups).reduce(
+              (sum, group) => sum + (group.users?.length || 0),
+              0
+            );
+  
+            // Determine popularity status
+            let popularityStatus = "lesspop";
+            if (totalPopularity >= 3 && totalPopularity <= 10) {
+              popularityStatus = "pop";
+            } else if (totalPopularity >= 11) {
+              popularityStatus = "verypop";
+            }
+            console.log(`${popularityStatus}-${category}`)
+            // Add location with calculated marker name
+            allLocations.push({
+              id,
+              category,
+              coordinates: location.coordinates,
+              markerName: `${popularityStatus}-${category}`,
+              userGroups : location.user_groups
+            });
+          });
+        });
+  
+        // Update the map state
+        if (allLocations.length > 0) {
+          setLocations(allLocations);
+          setZoom(15);
+        } else {
+          alert("No locations found near your search.");
+        }
+        setLoading(false)
+      } else {
+        alert("No locations found.");
+      }
+    } catch (error) {
+      console.error("Error fetching nearest locations:", error);
+    }
+  };
+
+  const fetchCurrentLocation = () => {
+    if (hasFetchedLocation.current) return; // Prevent multiple calls
+    hasFetchedLocation.current = true; // Mark as called
+
+    if (navigator.geolocation) {
+      console.log("Fetching current location...");
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const userLocation = {
+            lat: position.coords.latitude,
+            lng: position.coords.longitude,
+          };
+
+          // Set location states
+          setCurrentLocation(userLocation);
+          setCenter(userLocation);
+          setZoom(15);
+
+          console.log("Calling handleSearch...");
+          handleSearch(); // Trigger search after setting location
+        },
+        (error) => {
+          console.error("Error fetching location:", error);
+          handleSearch(); // Trigger search even on error
+        }
+      );
+    } else {
+      alert("Geolocation is not supported by your browser.");
+    }
+  };
+
+
+  useEffect(() => {
+    fetchCurrentLocation(); // Runs once on mount
+    const fetchGroups = async () => {
+      const userGroups = await getGroups(); // Wait for the async function
+      setGroups(userGroups); // Update the state
+      console.log("Fetched groups:", userGroups);
+      };
+
+      fetchGroups();
   }, []);
   
 
@@ -218,83 +354,6 @@ export default function Homepage() {
   // ------------------------------------------- END RENDER TIMESLOT  -------------------------------------------
 
 
-  // fetch stuff & next page
-    const handleSearch = async () => {
-      try {
-        setLoading(true)
-        let currentPosition = locationQuery
-        if (locationQuery === "") {
-          currentPosition = "MacRitchie"
-        }
-        fetchCoordinates(currentPosition)
-        const requestBody = {
-          address: currentPosition, // Use the user's search query for the address
-          date: selectedDate, // Current date in YYYY-MM-DD format
-          time: `${timeValue}:00:00`, // Current time in HH:mm:ss format
-        };
-    
-        const response = await fetch("http://localhost:5000/get_nearest", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(requestBody), // Send the request body as JSON
-        });
-    
-        const data = await response.json();
-        console.log(data)
-    
-        if (data.locations) {
-          const allLocations = [];
-          Object.keys(data.locations).forEach((category) => {
-
-            const categoryData = data.locations[category];
-    
-            Object.keys(categoryData).forEach((id) => {
-              const location = categoryData[id];
-              const userGroups = location.user_groups || {};
-    
-              // Calculate total popularity
-              const totalPopularity = Object.values(userGroups).reduce(
-                (sum, group) => sum + (group.users?.length || 0),
-                0
-              );
-    
-              // Determine popularity status
-              let popularityStatus = "lesspop";
-              if (totalPopularity >= 3 && totalPopularity <= 10) {
-                popularityStatus = "pop";
-              } else if (totalPopularity >= 11) {
-                popularityStatus = "verypop";
-              }
-              console.log(`${popularityStatus}-${category}`)
-              // Add location with calculated marker name
-              allLocations.push({
-                id,
-                category,
-                coordinates: location.coordinates,
-                markerName: `${popularityStatus}-${category}`,
-                userGroups : location.user_groups
-              });
-            });
-          });
-    
-          // Update the map state
-          if (allLocations.length > 0) {
-            setLocations(allLocations);
-            setZoom(15);
-          } else {
-            alert("No locations found near your search.");
-          }
-          setLoading(false)
-        } else {
-          alert("No locations found.");
-        }
-      } catch (error) {
-        console.error("Error fetching nearest locations:", error);
-      }
-    };
-
     const handleNextPage = () => {
       localStorage.setItem("marker", JSON.stringify(selectedMarker))
       localStorage.setItem("timeslot", JSON.stringify(selectedTimeslot))
@@ -371,6 +430,48 @@ export default function Homepage() {
       )}
 
       <div className="px-6">
+
+        {/* GROUPS */}
+        <section className="mb-3">
+          <h2 className="text-xl font-bold">Your workout Group(s)</h2>
+        <div className="carousel carousel-center rounded-box mt-3 w-full gap-6">
+            {groups !== null &&
+              groups.map((groupObj, index) => {
+                // Access the date-time key and details object
+                const [time, details] = Object.entries(groupObj)[0];
+                const userGroup = formatUserGroupName(details.user_group);
+                const groupType = details.user_group.split("_").pop();
+
+                return (
+                  <div key={index} className="carousel-item">
+                    <div className="p-4 bg-blueGrey rounded-lg shadow-md">
+                      {/* Show the Group Name */}
+                      <h3 className="text-lg font-bold">{userGroup}</h3>
+
+                      {/* Show the Group Details */}
+                      <div className="group-details mt-2">
+                        <p>
+                          <FontAwesomeIcon icon={faUser} className="mr-3" />
+                          <span className="text-gray-500">{groupType} group</span>
+                        </p>
+
+                        <p>
+                          <FontAwesomeIcon icon={faCalendarAlt} className="mr-3" />
+                          <span className="text-gray-500">{dayjs(time).format("dddd, MMM D, h:mm A")}</span>
+                        </p>
+
+                        <p>
+                          <FontAwesomeIcon icon={faMapMarkerAlt} className="mr-3" />
+                          <span className="text-gray-500">{details.location.name}</span>
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+          </div>
+        </section>
+        
         {/* MAP SEGMENT */}
         <section className="mb-6">
 
@@ -627,11 +728,18 @@ export default function Homepage() {
             </section>
 
             {/* Footer Navigation */}
-            <footer className="fixed bottom-0 left-0 w-full bg-white shadow-md py-2 flex justify-around">
-              <button className="btn btn-ghost">My Activities</button>
-              <button className="btn btn-ghost">Library</button>
-              <button className="btn btn-ghost">Group Chat</button>
-              <button className="btn btn-ghost">Settings</button>
+            {/* nav */}
+            <footer className="fixed bottom-0 left-0 w-full bg-white shadow-md py-2 flex justify-around btm-nav text-sm">
+              <button className="active"><span className="btm-nav-label">Home</span></button>
+              <button><span className="btm-nav-label">Library</span></button>
+              <button onClick={() => {
+                // clear everything before going into message-groups
+                localStorage.removeItem("marker")
+                localStorage.removeItem("timeslot")
+                localStorage.removeItem("selectedGroup")
+                navigate("/message-groups")
+              }}><span className="btm-nav-label">Workout Groups</span></button>
+              <button><span className="btm-nav-label">Settings</span></button>
             </footer>
           </>
         )}
@@ -682,14 +790,13 @@ export default function Homepage() {
 
       {loading && (
       
-      
       <> 
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-        <div className="flex flex-col items-center">
-        <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-green-500"></div>
-        <p className="mt-4 text-white text-lg font-bold">Loading...</p>
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="flex flex-col items-center">
+            <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-green-500"></div>
+            <p className="mt-4 text-white text-lg font-bold">Loading...</p>
+            </div>
         </div>
-  </div>
       </>
       )}
       
