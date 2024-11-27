@@ -432,45 +432,49 @@ export default function Homepage() {
       <div className="px-6">
 
         {/* GROUPS */}
-        <section className="mb-3">
-          <h2 className="text-xl font-bold">Your workout Group(s)</h2>
-        <div className="carousel carousel-center rounded-box mt-3 w-full gap-6">
-            {groups !== null &&
-              groups.map((groupObj, index) => {
-                // Access the date-time key and details object
-                const [time, details] = Object.entries(groupObj)[0];
-                const userGroup = formatUserGroupName(details.user_group);
-                const groupType = details.user_group.split("_").pop();
+        {groups.length !== 0 && (
+          <>
+            <section className="mb-3">
+              <h2 className="text-xl font-bold">Your workout Group(s)</h2>
+            <div className="carousel carousel-center rounded-box mt-3 w-full gap-6">
+                {groups !== null &&
+                  groups.map((groupObj, index) => {
+                    // Access the date-time key and details object
+                    const [time, details] = Object.entries(groupObj)[0];
+                    const userGroup = formatUserGroupName(details.user_group);
+                    const groupType = details.user_group.split("_").pop();
 
-                return (
-                  <div key={index} className="carousel-item">
-                    <div className="p-4 bg-blueGrey rounded-lg shadow-md">
-                      {/* Show the Group Name */}
-                      <h3 className="text-lg font-bold">{userGroup}</h3>
+                    return (
+                      <div key={index} className="carousel-item">
+                        <div className="p-4 bg-blueGrey rounded-lg shadow-md">
+                          {/* Show the Group Name */}
+                          <h3 className="text-lg font-bold">{userGroup}</h3>
 
-                      {/* Show the Group Details */}
-                      <div className="group-details mt-2">
-                        <p>
-                          <FontAwesomeIcon icon={faUser} className="mr-3" />
-                          <span className="text-gray-500">{groupType} group</span>
-                        </p>
+                          {/* Show the Group Details */}
+                          <div className="group-details mt-2">
+                            <p>
+                              <FontAwesomeIcon icon={faUser} className="mr-3" />
+                              <span className="text-gray-500">{groupType} group</span>
+                            </p>
 
-                        <p>
-                          <FontAwesomeIcon icon={faCalendarAlt} className="mr-3" />
-                          <span className="text-gray-500">{dayjs(time).format("dddd, MMM D, h:mm A")}</span>
-                        </p>
+                            <p>
+                              <FontAwesomeIcon icon={faCalendarAlt} className="mr-3" />
+                              <span className="text-gray-500">{dayjs(time).format("dddd, MMM D, h:mm A")}</span>
+                            </p>
 
-                        <p>
-                          <FontAwesomeIcon icon={faMapMarkerAlt} className="mr-3" />
-                          <span className="text-gray-500">{details.location.name}</span>
-                        </p>
+                            <p>
+                              <FontAwesomeIcon icon={faMapMarkerAlt} className="mr-3" />
+                              <span className="text-gray-500">{details.location.name}</span>
+                            </p>
+                          </div>
+                        </div>
                       </div>
-                    </div>
-                  </div>
-                );
-              })}
-          </div>
-        </section>
+                    );
+                  })}
+              </div>
+            </section>
+          </>
+        )}
         
         {/* MAP SEGMENT */}
         <section className="mb-6">
