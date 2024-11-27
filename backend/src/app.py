@@ -426,8 +426,8 @@ async def nearest(request_data: DistanceRequest):
     location_data = get_locations(timeslot)
     # print(location_data)
 
-    # Dictionary to hold locations within 3km
-    locations_within_3km = {
+    # Dictionary to hold locations within 1km
+    locations_within_1km = {
         'gym': {},
         'parks': {},
         'fitness_corner': {}
@@ -440,14 +440,14 @@ async def nearest(request_data: DistanceRequest):
             loc_coordinates = location['coordinates']
             distance = calculate_distance(lat, lon, loc_coordinates[1], loc_coordinates[0])
 
-            if distance <= 1:  # Only consider locations within 3km
-                locations_within_3km[location_type][loc_id] = {
+            if distance <= 1:  # Only consider locations within 1km
+                locations_within_1km[location_type][loc_id] = {
                     'coordinates': loc_coordinates,
                     'user_groups': location['user_groups']  # Assuming user_groups is a dictionary
                 }
     return {
-        "message": "Fetched locations within 3km",
-        "locations": locations_within_3km
+        "message": "Fetched locations within 1km",
+        "locations": locations_within_1km
     }
 
 @app.get("/get_fitness_corners")
