@@ -59,14 +59,22 @@ def generate_empty_dict(location_ids):
     }
 
     fitness_user_groups = {
-        'calisthenics_cardio_ladies': {'users': [], 'chat': []},
-        'calisthenics_cardio_parents': {'users': [], 'chat': []},
-        'calisthenics_cardio_seniors': {'users': [], 'chat': []},
-        'calisthenics_cardio_general': {'users': [], 'chat': []},
-        'calisthenics_strength_ladies': {'users': [], 'chat': []},
-        'calisthenics_strength_parents': {'users': [], 'chat': []},
-        'calisthenics_strength_seniors': {'users': [], 'chat': []},
-        'calisthenics_strength_general': {'users': [], 'chat': []}
+        'calisthenics_ladies': {'users': [], 'chat': []},
+        'calisthenics_parents': {'users': [], 'chat': []},
+        'calisthenics_seniors': {'users': [], 'chat': []},
+        'calisthenics_general': {'users': [], 'chat': []},
+        '2.4k_ladies': {'users': [], 'chat': []},
+        '2.4k_parents': {'users': [], 'chat': []},
+        '2.4k_seniors': {'users': [], 'chat': []},
+        '2.4k_general': {'users': [], 'chat': []},
+        '5k_ladies': {'users': [], 'chat': []},
+        '5k_parents': {'users': [], 'chat': []},
+        '5k_seniors': {'users': [], 'chat': []},
+        '5k_general': {'users': [], 'chat': []},
+        'brisk_walk_ladies': {'users': [], 'chat': []},
+        'brisk_walk_parents': {'users': [], 'chat': []},
+        'brisk_walk_seniors': {'users': [], 'chat': []},
+        'brisk_walk_general': {'users': [], 'chat': []}
     }
 
     park_user_groups = {
@@ -89,8 +97,8 @@ def generate_empty_dict(location_ids):
     }
 
     # Loop through each day of the next week (7 days)
-    current_day = next_week_start
-    for _ in tqdm(range(3)):  # A week has 7 days
+    current_day = current_date
+    for _ in tqdm(range(14)):  # Try 2 weeks first
         for hour in range(7, 23):  # Restrict to hours between 7 AM (inclusive) and 10 PM (inclusive)
             # Generate the current hour key (in datetime format)
             hour_time = current_day.replace(hour=hour, minute=0, second=0, microsecond=0)
