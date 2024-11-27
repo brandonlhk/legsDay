@@ -155,6 +155,11 @@ class JoinUserGroupRequest(BaseModel):
     location_id : str
     location_type: str
 
+class GetUserGroupRequest(BaseModel):
+    '''current datetime needs to be in yyyy-mm-ddTxx:xx:xx format, which is ISO format'''
+    current_datetime: str
+    user_id : str
+
 class SaveChatRequest(BaseModel):
     '''timeslot and msg_timestamp strings need to be in yyyy-mm-dd xx:xx:xx format'''
     timeslot : str
@@ -649,3 +654,18 @@ async def save_chat(request_data: SaveChatRequest):
         return {"message": f"User {user_id} successfully added to {timeslot_time}'s {user_group} chat.."}
     else:
         raise HTTPException(status_code=500, detail="Error updating the document in MongoDB.")
+
+@app.post("/get_user_groups")
+async def get_user_groups(request_data: GetUserGroupRequest):
+    user_id = request_data.user_id
+    current_datetime = datetime.fromisoformat(request_data.current_datetime)
+
+    user = user_collection.find_one({'_id': ObjectId(user_id)})
+    all_user_groups = user['user_groups']
+    user_groups = [group_dict for group_dict in all_user_groups if datetime.fromisoformat(group_dict.key())>current_datetime]
+
+
+    return {
+        "message": f"Fetched user groups for user {user_id}",
+        "user_groups": user_groups
+    }
