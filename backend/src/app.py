@@ -538,6 +538,7 @@ async def increment_workout_counter(user_id: str):
         raise he
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+        
 @app.get("/get_all_locations")
 async def all_locations():
     all_gyms = list(client['events_collection']['gym_database'].find({})) 
@@ -580,6 +581,7 @@ async def join_user_group(request_data: JoinUserGroupRequest):
     # Add the user to the appropriate user group
     location_data = timeslot[location_type][location_id]
     location_data['user_groups'][user_group]['users'].append(user_id)
+    chat = location_data['user_groups'][user_group]['chat']
 
     # Now update the MongoDB document with the new data
     result = schedule_collection.update_one(
@@ -599,7 +601,7 @@ async def join_user_group(request_data: JoinUserGroupRequest):
         return {"message": f"Invalid UserID"}
 
     existing_user_groups = user['user_groups']
-    existing_user_groups.append({timeslot_time: {'user_group': user_group, 'location': loc}})
+    existing_user_groups.append({timeslot_time: {'user_group': user_group, 'location': loc, 'chat': chat}})
 
     user_result = user_collection.update_one(
         {"_id": ObjectId(user_id)},
