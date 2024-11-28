@@ -140,7 +140,7 @@ export default function Booking() {
         };
 
         try {
-            const response = await fetch(`${import.meta.env.VITE_PROTOCOL}${import.meta.env.VITE_HOST}:${import.meta.env.VITE_PORT}/join_user_group`, {
+            const response = await fetch(`${import.meta.env.VITE_PROTOCOL}${import.meta.env.VITE_HOST}${import.meta.env.VITE_PORT}/join_user_group`, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",

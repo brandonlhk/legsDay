@@ -22,7 +22,7 @@ export default function Signin() {
     }
 
     try {
-      const response = await fetch (`${import.meta.env.VITE_PROTOCOL}${import.meta.env.VITE_HOST}:${import.meta.env.VITE_PORT}/login`, {
+      const response = await fetch (`${import.meta.env.VITE_PROTOCOL}${import.meta.env.VITE_HOST}${import.meta.env.VITE_PORT}/login`, {
         method: "POST",
         headers: {
           "Content-Type" : "application/json"

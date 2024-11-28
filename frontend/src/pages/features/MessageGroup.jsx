@@ -45,7 +45,7 @@ export default function MessageGroup () {
         };
 
         try {
-            const response = await fetch(`${import.meta.env.VITE_PROTOCOL}${import.meta.env.VITE_HOST}:${import.meta.env.VITE_PORT}/get_user_groups`, {
+            const response = await fetch(`${import.meta.env.VITE_PROTOCOL}${import.meta.env.VITE_HOST}${import.meta.env.VITE_PORT}/get_user_groups`, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
