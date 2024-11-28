@@ -37,7 +37,7 @@ export default function Homepage() {
     };
 
     try {
-        const response = await fetch("http://localhost:5000/get_user_groups", {
+        const response = await fetch(`${import.meta.env.VITE_PROTOCOL}${import.meta.env.VITE_HOST}:${import.meta.env.VITE_PORT}/get_user_groups`, {
         method: "POST",
         headers: {
             "Content-Type": "application/json",
@@ -118,7 +118,7 @@ export default function Homepage() {
         time: `${timeValue}:00:00`, // Current time in HH:mm:ss format
       };
   
-      const response = await fetch("http://localhost:5000/get_nearest", {
+      const response = await fetch(`${import.meta.env.VITE_PROTOCOL}${import.meta.env.VITE_HOST}:${import.meta.env.VITE_PORT}/get_nearest`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

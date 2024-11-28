@@ -33,7 +33,7 @@ export default function Signin() {
     }
 
     try {
-      const response = await fetch ("http://localhost:5000/register", {
+      const response = await fetch (`${import.meta.env.VITE_PROTOCOL}${import.meta.env.VITE_HOST}:${import.meta.env.VITE_PORT}/register`, {
         method: "POST",
         headers: {
           "Content-Type" : "application/json"

@@ -6,8 +6,8 @@ import { useNavigate } from 'react-router-dom';
 export default function Booking() {
     const marker = JSON.parse(localStorage.getItem("marker"))
     const timeslot = JSON.parse(localStorage.getItem("timeslot"))
-    console.log(marker)
-    console.log(timeslot)
+    // console.log(marker)
+    // console.log(timeslot)
     
     // Extract and preprocess the start time (e.g., "7:00am")
     const startTime = timeslot.timeslot.split(" - ")[0].trim(); // Extract the starting time
@@ -140,7 +140,7 @@ export default function Booking() {
         };
 
         try {
-            const response = await fetch("http://localhost:5000/join_user_group", {
+            const response = await fetch(`${import.meta.env.VITE_PROTOCOL}${import.meta.env.VITE_HOST}:${import.meta.env.VITE_PORT}/join_user_group`, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
