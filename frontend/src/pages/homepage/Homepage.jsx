@@ -432,7 +432,7 @@ export default function Homepage() {
       <div className="px-6">
 
         {/* GROUPS */}
-        {groups.length !== 0 && (
+        {groups !== null && (
           <>
             <section className="mb-3">
               <h2 className="text-xl font-bold">Your workout Group(s)</h2>
