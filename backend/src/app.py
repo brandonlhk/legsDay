@@ -184,20 +184,20 @@ def get_locations(timeslot):
     # Fetch gym data
     all_gyms = timeslot["gym"]
     for gym_id, gym_data in all_gyms.items():
-        coordinates= gym_data['coordinates']
+        # coordinates= gym_data['coordinates']
         location_data['gym'].append({
             'id': gym_id,
-            'coordinates': coordinates,
+            'location_data': gym_data['location_data'],
             'user_groups': gym_data['user_groups']
         })
 
     # Fetch park data
     all_parks = timeslot["parks"]
     for _id, data in all_parks.items():
-        coordinates= data['coordinates']
+        # coordinates= data['coordinates']
         location_data['parks'].append({
             'id': _id,
-            'coordinates': coordinates,
+            'location_data': data['location_data'],
             'user_groups': data['user_groups']
         })
 
@@ -205,10 +205,10 @@ def get_locations(timeslot):
     # Fetch fitness corner data
     all_fitness_corners = timeslot["fitness_corner"]
     for _id, data in all_fitness_corners.items():
-        coordinates= data['coordinates']
+        # coordinates= data['location_data']['coordinates']
         location_data['fitness_corner'].append({
             'id': _id,
-            'coordinates': coordinates,
+            'location_data': data['location_data'],
             'user_groups': data['user_groups']
         })
 
@@ -437,12 +437,12 @@ async def nearest(request_data: DistanceRequest):
     for location_type, locations in location_data.items():
         for location in locations:
             loc_id = location['id']
-            loc_coordinates = location['coordinates']
+            loc_coordinates = location['location_data']['coordinates']
             distance = calculate_distance(lat, lon, loc_coordinates[1], loc_coordinates[0])
 
             if distance <= 1:  # Only consider locations within 1km
                 locations_within_1km[location_type][loc_id] = {
-                    'coordinates': loc_coordinates,
+                    'location_data': location['location_data'],
                     'user_groups': location['user_groups']  # Assuming user_groups is a dictionary
                 }
     return {

@@ -21,13 +21,15 @@ def get_location_ids():
 
     # Retrieve the location _id, latitude, and longitude from each database
     for db_name in databases:
-        locations = collection[db_name].find({}, {'_id': 1, 'coordinates': 1})  # Retrieve _id, latitude, and longitude
+        locations = collection[db_name].find({})  # Retrieve _id, latitude, and longitude
         
         # Append the location _id along with latitude and longitude to the list
         for location in locations:
+            loc_id = str(location['_id'])
+            del location['_id']
             location_data = {
-                'id': str(location['_id']),  # Stringify the _id
-                'coordinates': location['coordinates']  # Assuming 'latitude' field exists
+                'id': loc_id,  # Stringify the _id
+                'data': location  # Assuming 'latitude' field exists
             }
             location_ids[db_name.split('_')[0]].append(location_data)
     
@@ -98,7 +100,7 @@ def generate_empty_dict(location_ids):
 
     # Loop through each day of the next week (7 days)
     current_day = current_date
-    for _ in tqdm(range(14)):  # Try 2 weeks first
+    for _ in tqdm(range(23)):  # Try 2 weeks first
         for hour in range(7, 23):  # Restrict to hours between 7 AM (inclusive) and 10 PM (inclusive)
             # Generate the current hour key (in datetime format)
             hour_time = current_day.replace(hour=hour, minute=0, second=0, microsecond=0)
@@ -110,21 +112,21 @@ def generate_empty_dict(location_ids):
                 'gym': {
                     location_data['id']: {
                         'user_groups': gym_user_groups,  # Add user groups for gym
-                        'coordinates': location_data['coordinates']  # Tuple (lat, lon)
+                        'location_data': location_data['data']  # Tuple (lat, lon)
                     }
                     for location_data in location_ids['gym']
                 },
                 'fitness_corner': {
                     str(location_data['id']): {
                         'user_groups': fitness_user_groups,  # Add user groups for fitness corner
-                        'coordinates': location_data['coordinates']  # Tuple (lat, lon)
+                        'location_data': location_data['data']  # Tuple (lat, lon)
                     }
                     for location_data in location_ids['fitness']
                 },
                 'parks': {
                     str(location_data['id']): {
                         'user_groups': park_user_groups,  # Add user groups for park
-                        'coordinates': location_data['coordinates']  # Tuple (lat, lon)
+                        'location_data': location_data['data'] # Tuple (lat, lon)
                     }
                     for location_data in location_ids['parks']
                 }
