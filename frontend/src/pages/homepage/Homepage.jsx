@@ -127,16 +127,15 @@ export default function Homepage() {
       });
   
       const data = await response.json();
-      console.log(data)
   
       if (data.locations) {
         const allLocations = [];
         Object.keys(data.locations).forEach((category) => {
-
           const categoryData = data.locations[category];
-  
+
           Object.keys(categoryData).forEach((id) => {
             const location = categoryData[id];
+            console.log(location)
             const userGroups = location.user_groups || {};
   
             // Calculate total popularity
@@ -152,14 +151,14 @@ export default function Homepage() {
             } else if (totalPopularity >= 11) {
               popularityStatus = "verypop";
             }
-            console.log(`${popularityStatus}-${category}`)
             // Add location with calculated marker name
             allLocations.push({
               id,
               category,
-              coordinates: location.coordinates,
+              coordinates: location.location_data.coordinates,
               markerName: `${popularityStatus}-${category}`,
-              userGroups : location.user_groups
+              userGroups : location.user_groups,
+              address : location.location_data.address || `${location.location_data.name}, ${location.location_data.postal_address}`
             });
           });
         });
@@ -185,7 +184,6 @@ export default function Homepage() {
     hasFetchedLocation.current = true; // Mark as called
 
     if (navigator.geolocation) {
-      console.log("Fetching current location...");
       navigator.geolocation.getCurrentPosition(
         (position) => {
           const userLocation = {
@@ -198,7 +196,6 @@ export default function Homepage() {
           setCenter(userLocation);
           setZoom(15);
 
-          console.log("Calling handleSearch...");
           handleSearch(); // Trigger search after setting location
         },
         (error) => {
@@ -217,7 +214,6 @@ export default function Homepage() {
     const fetchGroups = async () => {
       const userGroups = await getGroups(); // Wait for the async function
       setGroups(userGroups); // Update the state
-      console.log("Fetched groups:", userGroups);
       };
 
       fetchGroups();
@@ -338,7 +334,6 @@ export default function Homepage() {
     const isPM = time.toUpperCase().includes("PM");
     const hour24 = isPM && hours !== 12 ? hours + 12 : hours === 12 && !isPM ? 0 : hours;
   
-    console.log("Converted 24-hour value:", hour24);
     return hour24;
     };
 
@@ -432,10 +427,10 @@ export default function Homepage() {
       <div className="px-6">
 
         {/* GROUPS */}
-        {groups !== null && (
+        {groups !== null && groups.length > 0 && view == "all_markers" && (
           <>
             <section className="mb-3">
-              <h2 className="text-xl font-bold">Your workout Group(s)</h2>
+              <h2 className="text-xl font-bold">Your Workout Group(s)</h2>
             <div className="carousel carousel-center rounded-box mt-3 w-full gap-6">
                 {groups !== null &&
                   groups.map((groupObj, index) => {
@@ -446,15 +441,15 @@ export default function Homepage() {
 
                     return (
                       <div key={index} className="carousel-item">
-                        <div className="p-4 bg-blueGrey rounded-lg shadow-md">
+                        <div className="p-4 bg-blueGrey rounded-lg shadow-md w-[22rem]">
                           {/* Show the Group Name */}
                           <h3 className="text-lg font-bold">{userGroup}</h3>
 
                           {/* Show the Group Details */}
-                          <div className="group-details mt-2">
+                          <div className="mt-2">
                             <p>
                               <FontAwesomeIcon icon={faUser} className="mr-3" />
-                              <span className="text-gray-500">{groupType} group</span>
+                              <span className="text-gray-500">{groupType[0].toUpperCase() + groupType.substring(1,)} Group</span>
                             </p>
 
                             <p>
@@ -462,10 +457,28 @@ export default function Homepage() {
                               <span className="text-gray-500">{dayjs(time).format("dddd, MMM D, h:mm A")}</span>
                             </p>
 
-                            <p>
-                              <FontAwesomeIcon icon={faMapMarkerAlt} className="mr-3" />
-                              <span className="text-gray-500">{details.location.name}</span>
+                            <p className="flex items-center">
+                              <FontAwesomeIcon icon={faMapMarkerAlt} className="mr-3 flex-shrink-0" />
+                              <span className="text-gray-500 truncate overflow-hidden whitespace-nowrap">{details.location.address || details.location.name + ", " + details.location.postal_code}</span>
                             </p>
+                              
+
+                            <button
+                              className="py-3 font-bold rounded-full btn-ghost btn text-themeGreen"
+                              onClick={() =>
+                                navigate("/message-groups", {
+                                  state: {
+                                    from : "direct",
+                                    time, // Pass the time
+                                    chat: details.chat || [], // Pass the chat array
+                                    location: details.location, // Pass the location details
+                                    userGroup, // Pass the formatted user group name
+                                    user_group: details.user_group, // Pass the raw user group
+                                  },
+                                })}
+                              >
+                              Message Group
+                            </button>
                           </div>
                         </div>
                       </div>
@@ -737,11 +750,12 @@ export default function Homepage() {
               <button className="active"><span className="btm-nav-label">Home</span></button>
               <button><span className="btm-nav-label">Library</span></button>
               <button onClick={() => {
-                // clear everything before going into message-groups
-                localStorage.removeItem("marker")
-                localStorage.removeItem("timeslot")
-                localStorage.removeItem("selectedGroup")
-                navigate("/message-groups")
+                navigate("/message-groups", {
+                  state: {
+                    from : "nav"
+                  },
+                }) 
+
               }}><span className="btm-nav-label">Workout Groups</span></button>
               <button><span className="btm-nav-label">Settings</span></button>
             </footer>

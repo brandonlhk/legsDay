@@ -44,7 +44,6 @@ export default function Signin() {
       }
     } catch (error) {
       setError("Email or password is wrong")
-      console.log(error)
     }
   }
 

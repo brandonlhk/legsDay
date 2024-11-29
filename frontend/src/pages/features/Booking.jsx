@@ -2,13 +2,14 @@ import { useState } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faCalendarAlt, faMapMarkerAlt, faUser, faSignal, faFileLines, faCircleCheck } from "@fortawesome/free-solid-svg-icons";
 import { useNavigate } from 'react-router-dom';
+import dayjs from "dayjs"
 
 export default function Booking() {
     const marker = JSON.parse(localStorage.getItem("marker"))
     const timeslot = JSON.parse(localStorage.getItem("timeslot"))
-    // console.log(marker)
-    // console.log(timeslot)
-    
+
+    console.log(marker, timeslot)
+
     // Extract and preprocess the start time (e.g., "7:00am")
     const startTime = timeslot.timeslot.split(" - ")[0].trim(); // Extract the starting time
     const isPM = startTime.toLowerCase().includes("pm");
@@ -149,16 +150,12 @@ export default function Booking() {
             });
 
             if (response.ok) {
-            alert("Successfully joined the group!");
-            setView("complete")
-            const result = await response.json();
-            console.log("Join group result:", result);
+                setView("complete")
             } else {
             console.error("Failed to join group:", await response.text());
             alert("Failed to join the group. Please try again.");
             }
         } catch (error) {
-            console.error("Error joining the group:", error);
             alert("An error occurred. Please try again.");
         }
     }
@@ -167,7 +164,17 @@ export default function Booking() {
         // i need to send the selectedgroup, marker, timeslot save it on localstorage first
         //marker and timeslot already in 
         localStorage.setItem("selectedGroup", selectedGroup)
-        navigate("/message-groups")
+        navigate("/message-groups", {
+            state: {
+                from : "nav",
+                //need to add these but for now, we go direct
+                // time, // Pass the time
+                // chat: details.chat || [], // Pass the chat array
+                // location: details.location, // Pass the location details
+                // userGroup, // Pass the formatted user group name
+                // user_group: details.user_group, // Pass the raw user group
+              },
+        })
     }
 
   return (
@@ -209,17 +216,17 @@ export default function Booking() {
                     </div>
                     <h1 className="text-3xl font-bold">You’re all set!</h1>
 
-                    <div className="bg-blueGrey p-4 mt-6">
-                        <p className="text-sm text-gray-600 mt-2">
-                            <FontAwesomeIcon icon={faFileLines} className="mr-3"/>
+                    <div className="bg-blueGrey p-4 mt-6 flex">
+                            <FontAwesomeIcon icon={faFileLines} className="mr-3 mt-2"/>
+                        <p className="text-md text-gray-600 text-left">
                         Please note that our platform only facilitates joining workout groups.
-                        Visit the respective gym&apos;s website to complete facility bookings before the session date.
+                        <br /><br />Visit the respective gym&apos;s website to complete facility bookings before the session date.
                         </p>
                     </div>
                 </div>
 
                 <div>
-                    <h2 className="text-lg font-bold">{selectedWorkout.name}</h2>
+                    <h2 className="text-lg font-bold mb-3">{selectedWorkout.name}</h2>
                 </div>
 
             </>
@@ -247,11 +254,11 @@ export default function Booking() {
         )}
         <div className="flex items-center gap-3 mb-2">
           <FontAwesomeIcon icon={faCalendarAlt} />
-          <span className="text-gray-500">{timeslot.date}, {timeslot.timeslot}</span>
+          <span className="text-gray-500">{dayjs(timeslot.date).format("ddd D")}, {timeslot.timeslot}</span>
         </div>
         <div className="flex items-center gap-3 text-gray-700">
           <FontAwesomeIcon icon={faMapMarkerAlt} />
-          <span className="text-gray-500">{marker.coordinates[0]}, {marker.coordinates[1]}</span>
+          <span className="text-gray-500">{marker.address}</span>
         </div>
       </div>
 
@@ -305,7 +312,11 @@ export default function Booking() {
             {/* Footer Button */}
             <div className="mt-6 fixed bottom-0 left-0 w-full p-4 bg-white shadow-md">
                 <button
-                className="w-full py-3 bg-green-500 text-white font-bold rounded-lg"
+                className={`w-full py-3 font-bold rounded-full ${
+                    selectedWorkout
+                    ? "bg-themeGreen text-white"
+                    : "bg-blueGrey text-[#476380] cursor-not-allowed"
+                }`}
                 disabled={!selectedWorkout}
                 onClick={selectWorkout}
                 >
@@ -353,7 +364,6 @@ export default function Booking() {
                     // Additional conditions based on user's gender and age
                     if (group.includes("_seniors") && userAge < 65) return false; // Exclude seniors group if age < 65
                     if (group.includes("_ladies") && userGender !== "F") return false; // Exclude ladies group if not female
-                    if (group.includes("_parents")) return false; // Exclude all parents groups
 
                     return true; // Include the group otherwise
                 })
@@ -392,7 +402,11 @@ export default function Booking() {
             {/* Footer Button */}
             <div className="mt-6 fixed bottom-0 left-0 w-full p-4 bg-white shadow-md">
                 <button
-                className="w-full py-3 bg-green-500 text-white font-bold rounded-lg"
+                className={`w-full py-3 font-bold rounded-full ${
+                    selectedGroup
+                    ? "bg-themeGreen text-white"
+                    : "bg-blueGrey text-[#476380] cursor-not-allowed"
+                }`}
                 disabled={!selectedGroup}
                 onClick={() => setView("agree")}
                 >
@@ -406,9 +420,13 @@ export default function Booking() {
     {view === "agree" && (
         <>
             {/* Footer Button */}
-            <div className="mt-6 fixed bottom-0 left-0 w-full p-4 bg-white shadow-md">
+            <div className="mt-6 fixed bottom-0 left-0 w-full p-4 bg-white shadow-md ">
                 <button
-                className="w-full py-3 bg-green-500 text-white font-bold rounded-lg"
+                className={`w-full py-3 font-bold rounded-full ${
+                agreed
+                ? "bg-themeGreen text-white"
+                : "bg-blueGrey text-[#476380] cursor-not-allowed"
+            }`}
                 disabled={!agreed}
                 onClick={join}
                 >
@@ -423,15 +441,15 @@ export default function Booking() {
         <>
             {/* Footer Button */}
             <div className="mt-6 fixed bottom-0 left-0 w-full p-4 bg-white shadow-md">
-                <button
-                className={`w-full py-3 font-bold rounded-full ${
-                    selectedGroup
-                    ? "bg-themeGreen text-white"
-                    : "bg-gray-400 text-gray-200 cursor-not-allowed"
-                }`}
-                disabled={!selectedGroup}
-                onClick={joinConvo}
-                >
+            <button
+            className={`w-full py-3 font-bold rounded-full ${
+                selectedGroup
+                ? "bg-themeGreen text-white"
+                : "bg-blueGrey text-[#476380] cursor-not-allowed"
+            }`}
+            disabled={!selectedGroup}
+            onClick={joinConvo}
+            >
                 Join Conversation 
                 </button>
 

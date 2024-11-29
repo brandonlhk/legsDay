@@ -42,7 +42,7 @@ export default function Signin() {
       })
 
       const data = await response.json()
-      console.log(data)
+
 
       if (response.ok) {
         setSuccess("Registered sucessfully! Directing you to sign in page...")
@@ -53,7 +53,6 @@ export default function Signin() {
       }
     } catch (error) {
       setError("Error occurred during registration, try again")
-      console.log(error)
     }
   }
 

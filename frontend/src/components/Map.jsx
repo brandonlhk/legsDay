@@ -11,7 +11,7 @@ const mapOptions = {
 
 const mapContainerStyle = {
   width: "100%",
-  height: "250px",
+  height: "350px",
   borderRadius: "20px",
 };
 
@@ -22,7 +22,7 @@ export default function Map({ locations, center, zoom, currentLocation, selected
 
   if (loadError) return <div>Error loading maps</div>;
   if (!isLoaded) return <div>Loading Maps...</div>;
-
+  // console.log(locations)
   return (
     <GoogleMap mapContainerStyle={mapContainerStyle} center={center} zoom={zoom} options={mapOptions}>
       {/* Render filtered markers */}
