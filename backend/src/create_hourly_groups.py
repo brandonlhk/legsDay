@@ -100,7 +100,7 @@ def generate_empty_dict(location_ids):
 
     # Loop through each day of the next week (7 days)
     current_day = current_date
-    for _ in tqdm(range(23)):  # Try 2 weeks first
+    for _ in tqdm(range(8)):  # Try 2 weeks first
         for hour in range(7, 23):  # Restrict to hours between 7 AM (inclusive) and 10 PM (inclusive)
             # Generate the current hour key (in datetime format)
             hour_time = current_day.replace(hour=hour, minute=0, second=0, microsecond=0)
@@ -112,21 +112,24 @@ def generate_empty_dict(location_ids):
                 'gym': {
                     location_data['id']: {
                         'user_groups': gym_user_groups,  # Add user groups for gym
-                        'location_data': location_data['data']  # Tuple (lat, lon)
+                        'location_data': location_data['data'],  # Tuple (lat, lon)
+                        'location_type': 'gym'
                     }
                     for location_data in location_ids['gym']
                 },
                 'fitness_corner': {
                     str(location_data['id']): {
                         'user_groups': fitness_user_groups,  # Add user groups for fitness corner
-                        'location_data': location_data['data']  # Tuple (lat, lon)
+                        'location_data': location_data['data'],  # Tuple (lat, lon)
+                        'location_type': 'fitnes_corner'
                     }
                     for location_data in location_ids['fitness']
                 },
                 'parks': {
                     str(location_data['id']): {
                         'user_groups': park_user_groups,  # Add user groups for park
-                        'location_data': location_data['data'] # Tuple (lat, lon)
+                        'location_data': location_data['data'], # Tuple (lat, lon)
+                        'location_type': 'parks'
                     }
                     for location_data in location_ids['parks']
                 }

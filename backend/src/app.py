@@ -125,6 +125,7 @@ class WorkoutCounter(BaseModel):
     user_id: str
     date: str
     counter: int
+    
 
 # Haversine formula to calculate the great-circle distance
 def haversine(lat1, lon1, lat2, lon2):
@@ -644,15 +645,26 @@ async def save_chat(request_data: SaveChatRequest):
         {"$set": {f"{location_type}.{location_id}": location_data}},  # Update the specific location data
         upsert=False  # Do not create a new document; we're updating an existing one
     )
+    user = user_collection.find_one({'_id': ObjectId(user_id)})
 
-    # print(result)
+    # Iterate over the user's groups to find the matching user group and timeslot
+    updated_user_groups = []
+    for group_dict in user['user_groups']:
+        for timestamp_str, group_data in group_dict.items():
+            if timestamp_str == timeslot:
+                # If the timestamp matches, append the message to the user's group chat
+                group_data['chat'].append({msg_timestamp: {user_id: msg_content}})
+        updated_user_groups.append(group_dict)
 
-    if result.modified_count == 0 and result.upserted_id:
-        return {"message": f"{msg_timestamp} already exists in {timeslot}'s {user_group} chat."}
-    elif result.modified_count > 0:
-        return {"message": f"User {user_id} successfully added to {timeslot}'s {user_group} chat.."}
-    else:
-        raise HTTPException(status_code=500, detail="Error updating the document in MongoDB.")
+    # Update the user document with the new chat
+    user_collection.update_one(
+        {"_id": ObjectId(user_id)},
+        {"$set": {"user_groups": updated_user_groups}},
+        upsert=False  # Do not create a new user, just update the existing one
+    )
+
+    return {"message": f"User {user_id} successfully added to {timeslot}'s {user_group} chat."}
+
 
 @app.post("/get_user_groups")
 async def get_user_groups(request_data: GetUserGroupRequest):
@@ -672,6 +684,7 @@ async def get_user_groups(request_data: GetUserGroupRequest):
             # Check if the timestamp is after the current datetime
             timestamp = datetime.fromisoformat(timestamp_str).replace(tzinfo=pytz.timezone('Asia/Singapore'))
             if timestamp > current_datetime:
+                print(group_dict)
                 user_groups.append(group_dict)
     return {
         "message": f"Fetched user groups for user {user_id}",
