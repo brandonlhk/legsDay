@@ -602,7 +602,7 @@ async def join_user_group(request_data: JoinUserGroupRequest):
         return {"message": f"Invalid UserID"}
 
     existing_user_groups = user['user_groups']
-    existing_user_groups.append({timeslot_time: {'user_group': user_group, 'loction_type': location_type, 'location': loc, 'chat': chat}})
+    existing_user_groups.append({timeslot_time: {'user_group': user_group, 'location_type': location_type, 'location': loc, 'chat': chat}})
 
     user_result = user_collection.update_one(
         {"_id": ObjectId(user_id)},
