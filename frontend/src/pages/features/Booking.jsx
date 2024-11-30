@@ -8,8 +8,6 @@ export default function Booking() {
     const marker = JSON.parse(localStorage.getItem("marker"))
     const timeslot = JSON.parse(localStorage.getItem("timeslot"))
 
-    console.log(marker, timeslot)
-
     // Extract and preprocess the start time (e.g., "7:00am")
     const startTime = timeslot.timeslot.split(" - ")[0].trim(); // Extract the starting time
     const isPM = startTime.toLowerCase().includes("pm");
@@ -354,8 +352,7 @@ export default function Booking() {
                 </div>
             </div>
 
-            {/* add conditoning later */}
-            <div className="mt-6 space-y-3">
+            <div className="mt-6 space-y-3 mb-24">
             {Object.keys(marker.userGroups)
                 .filter((group) => {
                     // Filter by selected workout tag

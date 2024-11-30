@@ -135,7 +135,6 @@ export default function Homepage() {
 
           Object.keys(categoryData).forEach((id) => {
             const location = categoryData[id];
-            console.log(location)
             const userGroups = location.user_groups || {};
   
             // Calculate total popularity
@@ -158,7 +157,7 @@ export default function Homepage() {
               coordinates: location.location_data.coordinates,
               markerName: `${popularityStatus}-${category}`,
               userGroups : location.user_groups,
-              address : location.location_data.address || `${location.location_data.name}, ${location.location_data.postal_address}`
+              address : location.location_data.address || `${location.location_data.name}, ${location.location_data.postal_code}`
             });
           });
         });
@@ -473,7 +472,8 @@ export default function Homepage() {
                                     chat: details.chat || [], // Pass the chat array
                                     location: details.location, // Pass the location details
                                     userGroup, // Pass the formatted user group name
-                                    user_group: details.user_group, // Pass the raw user group
+                                    user_group: details.user_group, // Pass the raw user group,
+                                    location_type : details.location_type
                                   },
                                 })}
                               >

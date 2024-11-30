@@ -16,6 +16,7 @@ export default function MessageGroup() {
   const { state } = useLocation(); // Retrieve passed state
   const [groupTime, setGroupTime] = useState("") 
   const [locationId, setLocationId] = useState("")
+  const [locationType, setLocationType] = useState("")
 
 
   const { from } = state;
@@ -23,9 +24,12 @@ export default function MessageGroup() {
   
   useEffect(() => {
     if (from === "direct") {
-      const { time, chat, location, userGroup, user_group } = state;
+      const { time, chat, location, userGroup, user_group, location_type } = state;
+      setLocationId(location._id)
+      setLocationType(location_type)
       setView("viewGroup");
       setGroupTime(time)
+      setChatMessages(chat)
       setCurrentGroup({chat: chat, location, user_group})
     }
   }, []);
@@ -58,6 +62,7 @@ export default function MessageGroup() {
 
       if (response.ok) {
         const result = await response.json();
+        console.log(result)
         return result.user_groups;
       } else {
         console.error("Failed to get groups:", await response.text());
@@ -67,12 +72,26 @@ export default function MessageGroup() {
     }
   };
 
+  const transformedChatMessages = chatMessages.map((chat) => {
+    // Extract the timestamp
+    const timestamp = Object.keys(chat)[0]; // Get the first key, which is the timestamp
+  
+    // Extract the user and message
+    const nestedObject = chat[timestamp]; // Get the object under the timestamp key
+    const [user, message] = Object.entries(nestedObject)[0]; // Extract user ID and message
+
+    const name = message.name
+    const content = message.message
+    console.log(content)
+
+    return { name, content, timestamp };
+  });
 
   useEffect(() => {
     const fetchGroups = async () => {
       const userGroups = await getGroups();
       setGroups(userGroups);
-      console.log("Fetched groups:", userGroups);
+      // console.log("Fetched groups:", userGroups);
     };
 
     fetchGroups();
@@ -82,14 +101,13 @@ export default function MessageGroup() {
     if (!newMessage.trim()) return; // Prevent empty messages
   
     const msgTimestamp = dayjs().toISOString(); // Get current timestamp
-    console.log(groupTime)
-    console.log(locationId)
+    console.log(locationType)
     const payload = {
       timeslot: groupTime,
       msg_timestamp: msgTimestamp,
       user_id: userId,
       user_group: currentGroup.user_group, 
-      location_type: "gym", 
+      location_type: locationType, 
       location_id: locationId, 
       msg_content: newMessage, 
     };
@@ -106,9 +124,11 @@ export default function MessageGroup() {
       if (response.ok) {
         // Append message to chat state
         const newChatMessage = {
-          user: name,
-          message: newMessage,
-          timestamp: dayjs(msgTimestamp).format("h:mm A"), // Format timestamp for display
+          [dayjs(msgTimestamp).toISOString()]: { userId :{
+              name, // Store the user's name in the object
+              message: newMessage, // Store the message content in the object
+          }
+          },
         };
   
         setChatMessages((prevChat) => [...prevChat, newChatMessage]); // Append new message
@@ -180,6 +200,7 @@ export default function MessageGroup() {
                         setGroupTime(time)
                         setLocationId(details.location._id)
                         setCurrentGroup(details);
+                        setLocationType(details.location_type)
                         setChatMessages(details.chat || []); // Load initial chat messages
                       }}
                     >
@@ -219,11 +240,11 @@ export default function MessageGroup() {
 
           {/* Chat Messages */}
           <div className="mb-4 h-64 overflow-y-auto bg-gray-50 p-4 rounded-lg">
-            {chatMessages.map((message, index) => (
+            {transformedChatMessages.map((message, index) => (
               <div key={index} className="mb-2">
-                <p className="font-bold">{message.user}</p>
-                <p className="text-sm">{message.message}</p>
-                <p className="text-xs text-gray-400">{message.timestamp}</p>
+                <p className="font-bold">{message.name}</p>
+                <p className="text-sm">{message.content}</p>
+                <p className="text-xs text-gray-400">{dayjs(message.timestamp).format("DD MMM, h:mm A")}</p>
               </div>
             ))}
           </div>

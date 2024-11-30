@@ -34,7 +34,7 @@ export default function Map({ locations, center, zoom, currentLocation, selected
           }}
           key={location.id}
           position={{ lat: location.coordinates[1], lng: location.coordinates[0] }}
-          onClick={() => {onMarkerClick(location); setSelectedMarkerId(location.id)}}
+          onClick={() =>{ console.log(location); onMarkerClick(location); setSelectedMarkerId(location.id)}}
           animation={location.id === selectedMarkerId ? window.google.maps.Animation.BOUNCE : null}
         />
       ))}
