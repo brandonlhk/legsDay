@@ -776,7 +776,7 @@ export default function Homepage() {
                 <button
                     key={index}
                     onClick={() => handleTimeslotSelect(selectedDate, timeslot)}
-                    className={`p-3 rounded-md border font-bold ${
+                    className={`p-3 rounded-md border font-bold text-sm ${
                       selectedTimeslot.date === selectedDate && selectedTimeslot.timeslot === timeslot
                         ? "border-green-500 border-2"
                         : "border-gray-200 text-gray-700 border-2"

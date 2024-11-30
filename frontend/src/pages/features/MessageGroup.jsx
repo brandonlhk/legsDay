@@ -162,7 +162,7 @@ export default function MessageGroup() {
       {/* Group List View */}
       {view === "groups" && (
         <>
-          <h2 className="text-2xl font-bold mb-3">Workout Groups</h2>
+          <h2 className="text-2xl font-bold mb-4">Workout Groups</h2>
           {groups !== null &&
             groups.map((groupObj, index) => {
               const [time, details] = Object.entries(groupObj)[0];
@@ -172,7 +172,7 @@ export default function MessageGroup() {
               // console.log(details)
 
               return (
-                <div key={index} className="p-6 mb-6 rounded-lg bg-[#F5F7FA]">
+                <div key={index} className="p-6 mb-4 rounded-lg bg-[#F5F7FA]">
                   <h3 className="text-lg font-bold">{userGroup}</h3>
                   <div className="group-details">
                     <p>
@@ -215,6 +215,8 @@ export default function MessageGroup() {
                 </div>
               );
             })}
+
+            <div className="mb-24"></div>
         </>
       )}
 
@@ -250,7 +252,7 @@ export default function MessageGroup() {
           </div>
 
           {/* Message Input */}
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 mb-24">
             <input
               type="text"
               value={newMessage}
