@@ -646,6 +646,7 @@ async def save_chat(request_data: SaveChatRequest):
         upsert=False  # Do not create a new document; we're updating an existing one
     )
     user = user_collection.find_one({'_id': ObjectId(user_id)})
+    user_name = user['name']
 
     # Iterate over the user's groups to find the matching user group and timeslot
     updated_user_groups = []
@@ -653,7 +654,7 @@ async def save_chat(request_data: SaveChatRequest):
         for timestamp_str, group_data in group_dict.items():
             if timestamp_str == timeslot:
                 # If the timestamp matches, append the message to the user's group chat
-                group_data['chat'].append({msg_timestamp: {user_id: msg_content}})
+                group_data['chat'].append({msg_timestamp: {user_id: {'message': msg_content, 'name': user_name}}})
         updated_user_groups.append(group_dict)
 
     # Update the user document with the new chat
