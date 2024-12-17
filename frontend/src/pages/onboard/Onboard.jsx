@@ -147,10 +147,10 @@ export default function Onboard() {
                 {page === 0 && <div className="p-3">
                     {/* Header */}
                     <p className="text-lg text-pretty">Basic Information</p>
-                    <p className="text-3xl font-bold">Please share some <br />details about yourself</p>
+                    <p className="text-3xl font-bold text-balance">Please share some details about yourself</p>
                 
                     {/* Inputs */}
-                    <div className="flex flex-col mt-3 gap-4">
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mt-3 lg:max-w-5xl">
                         {/* name */}
                         <label className="form-control w-full">
                             <div className="label">
@@ -183,7 +183,7 @@ export default function Onboard() {
                             <div className="label">
                                 <div>
                                     <span className="label-text font-bold text-xl">Race</span>
-                                    <div className="tooltip ml-2" data-tip="Providing your race helps us personalise your health assessment based on factors that may influence health risks and outcomes.">
+                                    <div className="tooltip tooltip-right ml-2" data-tip="Providing your race helps us personalise your health assessment based on factors that may influence health risks and outcomes.">
                                         <FontAwesomeIcon 
                                             icon={faCircleInfo}
                                             className="text-tertGreen"
@@ -211,7 +211,7 @@ export default function Onboard() {
                     <p className="text-3xl font-bold">How many day(s) do you plan to workout a week?</p>
                 
                     {/* Inputs */}
-                    <div className="flex flex-col mt-8 gap-6 mb-6" >
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-3 mb-6 lg:max-w-2xl" >
                         {/* 2 days */}
                         {[
                             {"days" : "1", "info" : "1 day"},
@@ -249,7 +249,7 @@ export default function Onboard() {
                     <p className="text-3xl font-bold">Do you face difficulties in any of the following:</p>
                 
                     {/* Inputs */}
-                    <div className="flex flex-col mt-12 gap-4 mb-6" >
+                    <div className="flex flex-col mt-12 gap-4 mb-6 lg:max-w-lg" >
                         {[
                             "Sitting up after lying down",
                             "Balancing on uneven ground",
@@ -280,7 +280,7 @@ export default function Onboard() {
                     <p className="text-3xl font-bold">Do you face difficulties in any of the following:</p>
                 
                     {/* Inputs */}
-                    <div className="flex flex-col mt-12 gap-4 mb-6" >
+                    <div className="flex flex-col mt-12 gap-4 mb-6 lg:max-w-lg" >
                         {[
                             "Standing up from sitting on the floor or squatting",
                             "Getting out of a car or vehicle",
@@ -311,7 +311,7 @@ export default function Onboard() {
                     <p className="text-3xl font-bold">Do you face difficulties in any of the following:</p>
                 
                     {/* Inputs */}
-                    <div className="flex flex-col mt-12 gap-4 mb-6" >
+                    <div className="flex flex-col mt-12 gap-4 mb-6 lg:max-w-lg" >
                         {[
                             "Carrying groceries",
                             "Pushing a pram or wheelchair",
@@ -338,7 +338,7 @@ export default function Onboard() {
                 
                 
                 {/* Next page */}
-                <button className="btn bg-themeGreen text-center w-full text-black mt-auto mb-6 rounded-full" onClick={nextPage}>Continue</button>
+                <button className="btn bg-themeGreen text-center w-full text-black mt-auto mb-6 rounded-full lg:max-w-sm" onClick={nextPage}>Continue</button>
             </div>
         </div>
     )
