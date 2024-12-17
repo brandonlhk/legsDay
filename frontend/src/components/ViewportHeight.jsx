@@ -1,24 +1,36 @@
-import  { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 
 const ViewportHeight = ({ children }) => {
+  const [isMobile, setIsMobile] = useState(false);
+
   useEffect(() => {
-    // Function to set the CSS variable for the viewport height
-    const setVh = () => {
-      document.documentElement.style.setProperty('--vh', `${window.innerHeight * 0.01}px`)
+    // Detect if the user is on a mobile device
+    const checkIsMobile = () => {
+      setIsMobile(window.innerWidth <= 768); // Example: Mobile is width <= 768px
     };
 
-    // Initial setting
-    setVh()
+    checkIsMobile(); // Initial check
+    window.addEventListener('resize', checkIsMobile);
 
-    // Update on window resize
-    window.addEventListener('resize', setVh)
-
-    // Cleanup the event listener on component unmount
-    return () => window.removeEventListener('resize', setVh);
+    return () => window.removeEventListener('resize', checkIsMobile);
   }, []);
 
+  useEffect(() => {
+    if (isMobile) {
+      // Function to set the CSS variable for the viewport height
+      const setVh = () => {
+        document.documentElement.style.setProperty('--vh', `${window.innerHeight * 0.01}px`);
+      };
+
+      setVh(); // Initial setting
+      window.addEventListener('resize', setVh);
+
+      return () => window.removeEventListener('resize', setVh);
+    }
+  }, [isMobile]);
+
   return (
-    <div className="min-h-[calc(100*var(--vh))]">
+    <div className={`${isMobile ? 'min-h-[calc(100*var(--vh))]' : 'h-screen'}`}>
       {children}
     </div>
   );
