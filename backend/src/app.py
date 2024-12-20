@@ -76,9 +76,8 @@ class CreateAccountRequest(BaseModel):
 
 class DistanceRequest(BaseModel):
     address: str
-    '''date needs to be in yyyy-mm-dd format. time needs to be in xx:xx:xx format'''
+    '''date needs to be in yyyy-mm-dd format'''
     date: str
-    time: str
 
 class ParkRequest(BaseModel):
     _id: str
@@ -405,12 +404,9 @@ async def settings(request_data: SettingsRequest):
 async def nearest(request_data: DistanceRequest):
     add = request_data.address
     date = request_data.date
-    time = request_data.time
-
+    # time = request_data.time
     schedule_collection = client['events_collection']['schedule_database']
-    date_time_str = f"{date} {time}"
-    timeslot_time = datetime.strptime(date_time_str, "%Y-%m-%d %H:%M:%S").isoformat()
-    timeslot = schedule_collection.find_one({"date": date, "hour": timeslot_time})
+    nearest = defaultdict()
 
     try:
         # Fetch location data for the provided address
@@ -423,32 +419,37 @@ async def nearest(request_data: DistanceRequest):
     except Exception as e:
         return {"message": "Error fetching location data", "error": str(e)}
 
-    # Get all locations (gyms, parks, fitness corners)
-    location_data = get_locations(timeslot)
-    # print(location_data)
 
-    # Dictionary to hold locations within 1km
-    locations_within_1km = {
-        'gym': {},
-        'parks': {},
-        'fitness_corner': {}
-    }
+    for hour in range(7, 23):  # 7 AM to 10 PM
+        # Construct the datetime for each hour (combine date + hour)
+        timeslot_time = datetime.strptime(f"{date} {hour}:00", "%Y-%m-%d %H:%M")
+        timeslot = schedule_collection.find_one({"date": date, "hour": timeslot_time.isoformat()})
 
-    # Iterate through all locations and filter by distance
-    for location_type, locations in location_data.items():
-        for location in locations:
-            loc_id = location['id']
-            loc_coordinates = location['location_data']['coordinates']
-            distance = calculate_distance(lat, lon, loc_coordinates[1], loc_coordinates[0])
+        # Get all locations (gyms, parks, fitness corners)
+        location_data = get_locations(timeslot)
 
-            if distance <= 1:  # Only consider locations within 1km
-                locations_within_1km[location_type][loc_id] = {
-                    'location_data': location['location_data'],
-                    'user_groups': location['user_groups']  # Assuming user_groups is a dictionary
-                }
+        # Dictionary to hold locations within 1km
+        nearest[timeslot_time.isoformat()] = {
+            'gym': {},
+            'parks': {},
+            'fitness_corner': {}
+        }
+
+        # Iterate through all locations and filter by distance
+        for location_type, locations in location_data.items():
+            for location in locations:
+                loc_id = location['id']
+                loc_coordinates = location['location_data']['coordinates']
+                distance = calculate_distance(lat, lon, loc_coordinates[1], loc_coordinates[0])
+
+                if distance <= 1:  # Only consider locations within 1km
+                    nearest[timeslot_time.isoformat()][location_type][loc_id] = {
+                        'location_data': location['location_data'],
+                        'user_groups': location['user_groups']  # Assuming user_groups is a dictionary
+                    }
     return {
         "message": "Fetched locations within 1km",
-        "locations": locations_within_1km
+        "locations": dict(nearest)
     }
 
 @app.get("/get_fitness_corners")
@@ -581,7 +582,8 @@ async def join_user_group(request_data: JoinUserGroupRequest):
 
     # Add the user to the appropriate user group
     location_data = timeslot[location_type][location_id]
-    location_data['user_groups'][user_group]['users'].append(user_id)
+    if user_id not in location_data['user_groups'][user_group]['users']:
+        location_data['user_groups'][user_group]['users'].append(user_id)
     chat = location_data['user_groups'][user_group]['chat']
 
     # Now update the MongoDB document with the new data
@@ -610,10 +612,64 @@ async def join_user_group(request_data: JoinUserGroupRequest):
         upsert=False  # Do not create a new document; we're updating an existing one}
     )
 
-    if result.modified_count == 0 and result.upserted_id:
+    if result.modified_count == 0:
         return {"message": f"User {user_id} already in {user_group} for {date}T{time}."}
     elif result.modified_count > 0:
         return {"message": f"User {user_id} successfully added to {user_group} for {date}T{time}."}
+    else:
+        raise HTTPException(status_code=500, detail="Error updating the document in MongoDB.")
+
+@app.post("/exit_user_group")
+async def exit_user_group(request_data: JoinUserGroupRequest):
+    date = request_data.date
+    time = request_data.time
+    user_id = request_data.user_id
+    user_group = request_data.user_group
+    location_type = request_data.location_type
+    location_id = request_data.location_id
+
+    # Fetch the document based on the date and time
+    schedule_collection = client['events_collection']['schedule_database']
+    date_time_str = f"{date} {time}"
+    timeslot_time = datetime.strptime(date_time_str, "%Y-%m-%d %H:%M:%S").isoformat()
+    timeslot = schedule_collection.find_one({"date": date, "hour": timeslot_time})
+
+    # Add the user to the appropriate user group
+    location_data = timeslot[location_type][location_id]
+    if user_id in location_data['user_groups'][user_group]['users']:
+        location_data['user_groups'][user_group]['users'].remove(user_id)
+    chat = location_data['user_groups'][user_group]['chat']
+
+    # Now update the MongoDB document with the new data
+    result = schedule_collection.update_one(
+        {
+            "date": date, 
+            "hour": timeslot_time # Match the exact datetime for the update
+        },
+        {"$set": {f"{location_type}.{location_id}": location_data}},  # Update the specific location data
+        upsert=False  # Do not create a new document; we're updating an existing one
+    )
+
+    location_collection = client['events_collection'][f'{location_type}_database']
+    user = user_collection.find_one({'_id': ObjectId(user_id)})
+    loc = location_collection.find_one({'_id': ObjectId(location_id)})
+
+    if not user:
+        return {"message": f"Invalid UserID"}
+
+    existing_user_groups = user['user_groups']
+    existing_user_groups.append({timeslot_time: {'user_group': user_group, 'location_type': location_type, 'location': loc, 'chat': chat}})
+
+    user_result = user_collection.update_one(
+        {"_id": ObjectId(user_id)},
+        {"$set": {f"user_groups": existing_user_groups}},  
+        upsert=False  # Do not create a new document; we're updating an existing one}
+    )
+
+    if result.modified_count == 0:
+        return {"message": f"User {user_id} is not in {user_group} for {date}T{time}."}
+    elif result.modified_count > 0:
+        return {"message": f"User {user_id} successfully removed from {user_group} for {date}T{time}."}
     else:
         raise HTTPException(status_code=500, detail="Error updating the document in MongoDB.")
 
