@@ -176,6 +176,9 @@ class SaveChatRequest(BaseModel):
     location_type: str
     location_id: str
     msg_content: str
+    
+class GetVideos(BaseModel):
+    category: str
 
 def calculate_distance(lat1, lon1, lat2, lon2):
     return geodesic((lat1, lon1), (lat2, lon2)).km
@@ -801,3 +804,46 @@ async def check_in(request_data: CheckInRequest):
             return {"message": f"User {user_id} was already checked in for {user_group} at this time."}
     else:
         return {"message": f"User {user_id} does not have {user_group} at {request_data.date}T{request_data.time} with the specified location."}
+    
+@app.post("/get_videos")
+async def check_in(request_data: GetVideos):
+    video_category = request_data.category
+    
+    # for now, hardcoded videos
+    bodyweight = [
+        "https://www.youtube.com/watch?app=desktop&v=9CPC8wrAu14",
+        "https://www.youtube.com/watch?v=jrHiJ8heFTw",
+        "https://www.youtube.com/watch?v=WtYQ7fOjvJc",
+        "https://www.youtube.com/watch?v=6yevi8iUC4U",
+        "https://www.youtube.com/watch?v=f2fCMFvwRR0&list"
+    ]
+    
+    mobility = [
+        "https://www.youtube.com/watch?v=SotLyRb8XjE"
+    ]
+    
+    general_strength = [
+        "https://www.youtube.com/watch?v=m1UF4RgGoY0&t=115s",
+        "https://www.youtube.com/watch?v=EKUNGQ4LmH8",
+        "https://www.youtube.com/watch?v=2Wh0_klqShw",
+        "https://www.youtube.com/watch?v=ZM8yPWiQuyE"
+    ]
+    
+    powerlifting = [
+        "https://www.youtube.com/watch?v=OPEDjl88P-4"
+    ]
+    
+    
+    if (video_category == "bodyweight"):
+        return {"videos" : bodyweight}
+    
+    if (video_category == "mobility"):
+        return {"videos" : mobility}
+    
+    if (video_category == "general_strength"):
+        return {"videos" : general_strength}
+    
+    if (video_category == "powerlifting"):
+        return {"videos" : powerlifting}
+        
+    
