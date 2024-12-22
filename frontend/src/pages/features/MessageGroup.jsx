@@ -140,16 +140,16 @@ export default function MessageGroup() {
     }
   };
 
-  const exitGroup = async () => {
-    const [date, time] = groupTime.split("T")
+  const exitGroup = async (time, details) => {
+    const [date, timePart] = time.split("T")
     const payload = {
       date: date,
-      time: time,
+      time: timePart,
       user_id: userId,
-      user_group: currentGroup.user_group, 
-      location_type: currentGroup.location_type, 
-      location_id: currentGroup.location._id 
-    };
+      user_group: details.user_group,
+      location_type: details.location_type,
+      location_id: details.location._id,
+  };
   
     try {
       const response = await fetch(`${import.meta.env.VITE_PROTOCOL}${import.meta.env.VITE_HOST}${import.meta.env.VITE_PORT}/exit_user_group`, {
@@ -238,9 +238,7 @@ export default function MessageGroup() {
                     <button
                       className="btn btn-ghost w-full py-3 text-themeGreen font-bold rounded-full"
                       onClick={() => {
-                        setGroupTime(time)
-                        setCurrentGroup(details)
-                        exitGroup()
+                        exitGroup(time, details)
                       }}
                     >
                       Exit group
