@@ -117,12 +117,10 @@ export default function Homepage() {
       });
   
       const data = await response.json();
-      console.log(data)
       if (data.locations) {
         const allLocations = [];
         Object.keys(data.locations).forEach((category) => {
           const categoryData = data.locations[category];
-          console.log(categoryData)
 
           Object.keys(categoryData).forEach((id) => {
             const location = categoryData[id];
@@ -208,7 +206,7 @@ export default function Homepage() {
       setGroups(userGroups); // Update the state
       };
 
-      // fetchGroups();
+      fetchGroups();
   }, []);
   
 

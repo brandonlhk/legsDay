@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faCalendarAlt, faMapMarkerAlt, faUser, faSignal, faFileLines, faCircleCheck } from "@fortawesome/free-solid-svg-icons";
+import { faCalendarAlt, faMapMarkerAlt, faUser, faSignal, faFileLines, faCircleCheck, faBookOpen } from "@fortawesome/free-solid-svg-icons";
 import { useNavigate } from 'react-router-dom';
 import dayjs from "dayjs"
 
@@ -20,6 +20,7 @@ export default function Booking() {
     const navigate = useNavigate()
     const [selectedWorkout, setSelectedWorkout] = useState(null);
     const [selectedGroup, setSelectedGroup] = useState(null)
+    const [videos, setVideos] = useState([])
 
 
     // agree checkbox
@@ -128,8 +129,10 @@ export default function Booking() {
     );
 
     const join = async () => {
-        // Construct the request payload
-        const payload = {
+        // Construct the join request payload
+        console.log(selectedWorkout);
+        console.log(selectedGroup);
+        const payloadForJoin = {
             date: timeslot.date, // Expected timeslot format: { date: "YYYY-MM-DD", time: "HH:mm" }
             time: formattedTime,
             user_id: localStorage.getItem("userId"),
@@ -137,26 +140,78 @@ export default function Booking() {
             location_id: marker.id, // Use the location ID from marker
             location_type: marker.category, // Use the location type from marker (e.g., "gym", "park", etc.)
         };
+        
+        let category = "bodyweight"
 
+        
+        if (selectedGroup.includes("mobility")) {
+            category = "mobility"
+        }
+        
+        if (selectedGroup.includes("general_strength")) {
+            category = "general_strength"
+        }
+        
+        if (selectedGroup.includes("powerlifting")) {
+            category = "powerlifting"
+        }
+
+        const payloadForVideos = {
+            category : category
+        }
+    
+        // Define the URLs for both requests
+        const joinUrl = `${import.meta.env.VITE_PROTOCOL}${import.meta.env.VITE_HOST}${import.meta.env.VITE_PORT}/join_user_group`;
+        const videosUrl = `${import.meta.env.VITE_PROTOCOL}${import.meta.env.VITE_HOST}${import.meta.env.VITE_PORT}/get_videos`;
+    
         try {
-            const response = await fetch(`${import.meta.env.VITE_PROTOCOL}${import.meta.env.VITE_HOST}${import.meta.env.VITE_PORT}/join_user_group`, {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-            },
-            body: JSON.stringify(payload),
+            // Create the join request
+            const joinRequest = fetch(joinUrl, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify(payloadForJoin),
             });
-
-            if (response.ok) {
-                setView("complete")
+    
+            // Create the videos request (template request for videos list)
+            const videosRequest = fetch(videosUrl, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify(payloadForVideos),
+            });
+    
+            // Execute both requests in parallel
+            const [joinResponse, videosResponse] = await Promise.all([joinRequest, videosRequest]);
+    
+            // Handle the join request response
+            if (joinResponse.ok) {
+                console.log("Successfully joined the group.");
             } else {
-            console.error("Failed to join group:", await response.text());
-            alert("Failed to join the group. Please try again.");
+                console.error("Failed to join group:", await joinResponse.text());
+                alert("Failed to join the group. Please try again.");
+                return; // Stop further execution
             }
+    
+            // Handle the videos request response
+            if (videosResponse.ok) {
+                const response = await videosResponse.json();
+                setVideos(response)
+            } else {
+                console.error("Failed to fetch videos:", await videosResponse.text());
+                alert("Failed to fetch videos. Please try again.");
+            }
+    
+            // Update the view after both requests succeed
+            setView("complete");
         } catch (error) {
+            console.error("An error occurred:", error);
             alert("An error occurred. Please try again.");
         }
-    }
+    };
+    
 
     const joinConvo = () => {
         // i need to send the selectedgroup, marker, timeslot save it on localstorage first
@@ -324,9 +379,20 @@ export default function Booking() {
         </>
     )}
 
+    {/* SHOW VIDEOS */}
+    {view === "complete" && (
+
+        <div className="flex flex-col mb-6">
+            <p className="font-bold">Unsure of what exercises to do?</p>  
+            {videos.videos.map((link, index) => (
+                <a key={index} className="text-tertGreen" href={link} target="_blank" rel="noopener noreferrer"><FontAwesomeIcon icon={faBookOpen} size="" className="mr-2"/>View exercise guide</a>
+            ))}
+        </div>
+    )}
+
     {/* JOIN CONVERSATION PAGE (SHOW CONVO) -  COMPLETE*/}
     {view === "complete" && (
-        <>
+        <div className="mb-28">
             <h2 className="text-lg font-bold">Join the conversation!</h2>
             {marker.userGroups[selectedGroup].chat.length !== 0 && marker.userGroups[selectedGroup].chat.map((convo, index) => (
                 <div key={index}>
@@ -337,8 +403,9 @@ export default function Booking() {
             {marker.userGroups[selectedGroup].chat.length === 0 && (
                 <p className="text-center mt-3">There are no messages yet! Send one to introduce yourself!</p>
             )}
-        </>
+        </div>
     )}
+
 
     {/* CHOOSE GROUP - CHOOSEGROUP */}
     {view === "chooseGroup" && (
