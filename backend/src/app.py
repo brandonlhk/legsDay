@@ -125,6 +125,13 @@ class WorkoutCounter(BaseModel):
     date: str
     counter: int
     
+class CheckInRequest(BaseModel):
+    user_id: str
+    date: str
+    time: str
+    user_group: str
+    location_type: str
+    location_id: str
 
 # Haversine formula to calculate the great-circle distance
 def haversine(lat1, lon1, lat2, lon2):
@@ -604,7 +611,7 @@ async def join_user_group(request_data: JoinUserGroupRequest):
         return {"message": f"Invalid UserID"}
 
     existing_user_groups = user['user_groups']
-    existing_user_groups.append({timeslot_time: {'user_group': user_group, 'location_type': location_type, 'location': loc, 'chat': chat}})
+    existing_user_groups.append({timeslot_time: {'user_group': user_group, 'location_type': location_type, 'location': loc, 'chat': chat, 'checked_in': False}})
 
     user_result = user_collection.update_one(
         {"_id": ObjectId(user_id)},
@@ -747,3 +754,50 @@ async def get_user_groups(request_data: GetUserGroupRequest):
         "message": f"Fetched user groups for user {user_id}",
         "user_groups": user_groups
     }
+
+@app.post("/check_in")
+async def check_in(request_data: CheckInRequest):
+    user_id = request_data.user_id
+    timeslot_time = datetime.strptime(f'{request_data.date} {request_data.time}', "%Y-%m-%d %H:%M:%S").isoformat()
+    user_group = request_data.user_group
+    location_type = request_data.location_type
+    location_id = request_data.location_id
+
+    # Find the user in the database
+    user = user_collection.find_one({'_id': ObjectId(user_id)})
+    if not user:
+        return {"message": f"Invalid UserID"}
+
+    # Find if the user already has the group entry with the provided timeslot and location
+    existing_group_entry = None
+    for entry in user['user_groups']:
+        if timeslot_time in entry:
+            group_info = entry[timeslot_time]
+            if (group_info.get('user_group') == user_group and
+                group_info.get('location_type') == location_type and
+                str(group_info.get('location', {}).get('_id')) == location_id):
+                existing_group_entry = entry
+                break
+
+    if existing_group_entry:
+        # If an entry exists, update just the `checked_in` field for that timeslot
+        result = user_collection.update_one(
+            {
+                "_id": ObjectId(user_id),
+                f"user_groups.{user['user_groups'].index(existing_group_entry)}.{timeslot_time}.user_group": user_group,
+                f"user_groups.{user['user_groups'].index(existing_group_entry)}.{timeslot_time}.location_type": location_type,
+                f"user_groups.{user['user_groups'].index(existing_group_entry)}.{timeslot_time}.location._id": ObjectId(location_id),
+            },
+            {
+                "$set": {
+                    f"user_groups.{user['user_groups'].index(existing_group_entry)}.{timeslot_time}.checked_in": True  # Update just the `checked_in` field
+                }
+            }
+        )
+
+        if result.modified_count > 0:
+            return {"message": f"User {user_id} successfully checked in to {user_group} for {request_data.date}T{request_data.time}."}
+        else:
+            return {"message": f"User {user_id} was already checked in for {user_group} at this time."}
+    else:
+        return {"message": f"User {user_id} does not have {user_group} at {request_data.date}T{request_data.time} with the specified location."}
