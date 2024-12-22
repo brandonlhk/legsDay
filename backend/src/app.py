@@ -642,47 +642,61 @@ async def exit_user_group(request_data: JoinUserGroupRequest):
     schedule_collection = client['events_collection']['schedule_database']
     date_time_str = f"{date} {time}"
     timeslot_time = datetime.strptime(date_time_str, "%Y-%m-%d %H:%M:%S").isoformat()
+
+    # Fetch the timeslot data from the schedule collection
     timeslot = schedule_collection.find_one({"date": date, "hour": timeslot_time})
 
-    # Add the user to the appropriate user group
-    location_data = timeslot[location_type][location_id]
-    if user_id in location_data['user_groups'][user_group]['users']:
-        location_data['user_groups'][user_group]['users'].remove(user_id)
-    chat = location_data['user_groups'][user_group]['chat']
+    if not timeslot:
+        raise HTTPException(status_code=404, detail="Timeslot not found.")
 
-    # Now update the MongoDB document with the new data
+    # Remove the user from the specified user group in the schedule database
+    location_data = timeslot.get(location_type, {}).get(location_id, {})
+    if user_id in location_data.get('user_groups', {}).get(user_group, {}).get('users', []):
+        location_data['user_groups'][user_group]['users'].remove(user_id)
+    else:
+        raise HTTPException(status_code=404, detail="User not found in the user group.")
+
+    # Update the schedule database to reflect the changes
     result = schedule_collection.update_one(
         {
             "date": date, 
-            "hour": timeslot_time # Match the exact datetime for the update
+            "hour": timeslot_time  # Match the exact datetime for the update
         },
-        {"$set": {f"{location_type}.{location_id}": location_data}},  # Update the specific location data
-        upsert=False  # Do not create a new document; we're updating an existing one
+        {
+            "$set": {f"{location_type}.{location_id}": location_data}  # Update the specific location data
+        },
+        upsert=False  # Do not create a new document; we are updating an existing one
     )
 
-    location_collection = client['events_collection'][f'{location_type}_database']
     user = user_collection.find_one({'_id': ObjectId(user_id)})
-    loc = location_collection.find_one({'_id': ObjectId(location_id)})
 
     if not user:
-        return {"message": f"Invalid UserID"}
+        raise HTTPException(status_code=404, detail="User not found.")
 
+    # Remove the user from their user_groups in the user collection
     existing_user_groups = user['user_groups']
-    existing_user_groups.append({timeslot_time: {'user_group': user_group, 'location_type': location_type, 'location': loc, 'chat': chat}})
+    updated_user_groups = []
 
+    for group_dict in existing_user_groups:
+        for timestamp_str, group_data in group_dict.items():
+            # If the group and timeslot match, remove the user
+            if not timestamp_str == timeslot_time and group_data['user_group'] == user_group:
+                updated_user_groups.append(group_dict)
+
+    # Update the user document with the new user_groups list
     user_result = user_collection.update_one(
         {"_id": ObjectId(user_id)},
-        {"$set": {f"user_groups": existing_user_groups}},  
-        upsert=False  # Do not create a new document; we're updating an existing one}
+        {"$set": {"user_groups": updated_user_groups}},
+        upsert=False  # Do not create a new document; we are updating an existing one
     )
 
+    # Check if the schedule document was modified
     if result.modified_count == 0:
-        return {"message": f"User {user_id} is not in {user_group} for {date}T{time}."}
+        return {"message": f"User {user_id} was not found in {user_group} for {date}T{time}."}
     elif result.modified_count > 0:
         return {"message": f"User {user_id} successfully removed from {user_group} for {date}T{time}."}
     else:
         raise HTTPException(status_code=500, detail="Error updating the document in MongoDB.")
-
 
 @app.post("/save_chat")
 async def save_chat(request_data: SaveChatRequest):
