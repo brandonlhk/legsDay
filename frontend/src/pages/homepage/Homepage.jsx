@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate } from 'react-router-dom';
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faTrophy, faSearch, faUser, faCalendarAlt, faMapMarkerAlt } from "@fortawesome/free-solid-svg-icons";
@@ -7,16 +7,6 @@ import dayjs from "dayjs";
 
 
 export default function Homepage() {
-
-  /**
-   * some logic dump:
-   * on load, call endpoint to get locations
-   * render these locations in the map component
-   * only those within 3km will be seen on the map
-   * user clicks on a marker
-   * state switches to viewtimeslots 
-   */
-
 
 
   // ------------------------------------------- LOAD -------------------------------------------
@@ -127,11 +117,12 @@ export default function Homepage() {
       });
   
       const data = await response.json();
-  
+      console.log(data)
       if (data.locations) {
         const allLocations = [];
         Object.keys(data.locations).forEach((category) => {
           const categoryData = data.locations[category];
+          console.log(categoryData)
 
           Object.keys(categoryData).forEach((id) => {
             const location = categoryData[id];
@@ -151,14 +142,16 @@ export default function Homepage() {
               popularityStatus = "verypop";
             }
             // Add location with calculated marker name
-            allLocations.push({
-              id,
-              category,
-              coordinates: location.location_data.coordinates,
-              markerName: `${popularityStatus}-${category}`,
-              userGroups : location.user_groups,
-              address : location.location_data.address || `${location.location_data.name}, ${location.location_data.postal_code}`
-            });
+            if (location.location_data != undefined) {
+                allLocations.push({
+                  id,
+                  category,
+                  coordinates: location.location_data.coordinates,
+                  markerName: `${popularityStatus}-${category}`,
+                  userGroups : location.user_groups,
+                  address : location.location_data.address || `${location.location_data.name}, ${location.location_data.postal_code}`
+                });
+            }
           });
         });
   
@@ -215,7 +208,7 @@ export default function Homepage() {
       setGroups(userGroups); // Update the state
       };
 
-      fetchGroups();
+      // fetchGroups();
   }, []);
   
 

@@ -101,7 +101,6 @@ export default function MessageGroup() {
     if (!newMessage.trim()) return; // Prevent empty messages
   
     const msgTimestamp = dayjs().toISOString(); // Get current timestamp
-    console.log(locationType)
     const payload = {
       timeslot: groupTime,
       msg_timestamp: msgTimestamp,
@@ -140,6 +139,36 @@ export default function MessageGroup() {
       console.error("Error sending message:", error);
     }
   };
+
+  const exitGroup = async () => {
+    const [date, time] = groupTime.split("T")
+    const payload = {
+      date: date,
+      time: time,
+      user_id: userId,
+      user_group: currentGroup.user_group, 
+      location_type: currentGroup.location_type, 
+      location_id: currentGroup.location._id 
+    };
+  
+    try {
+      const response = await fetch(`${import.meta.env.VITE_PROTOCOL}${import.meta.env.VITE_HOST}${import.meta.env.VITE_PORT}/exit_user_group`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+      });
+  
+      if (response.ok) {
+        alert("Exited the group")
+        window.location.reload();
+
+    };
+    } catch (error) {
+      console.error("Error exiting group:", error);
+    }
+  }
 
   return (
     <div className="p-6">
@@ -208,6 +237,11 @@ export default function MessageGroup() {
                     </button>
                     <button
                       className="btn btn-ghost w-full py-3 text-themeGreen font-bold rounded-full"
+                      onClick={() => {
+                        setGroupTime(time)
+                        setCurrentGroup(details)
+                        exitGroup()
+                      }}
                     >
                       Exit group
                     </button>
