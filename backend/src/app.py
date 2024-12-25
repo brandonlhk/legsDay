@@ -176,9 +176,6 @@ class SaveChatRequest(BaseModel):
     location_type: str
     location_id: str
     msg_content: str
-    
-class GetVideos(BaseModel):
-    category: str
 
 def calculate_distance(lat1, lon1, lat2, lon2):
     return geodesic((lat1, lon1), (lat2, lon2)).km
@@ -414,9 +411,9 @@ async def settings(request_data: SettingsRequest):
 async def nearest(request_data: DistanceRequest):
     add = request_data.address
     date = request_data.date
-    # time = request_data.time
-    schedule_collection = client['events_collection']['schedule_database']
-    nearest = defaultdict()
+
+    # Initialize the nearest locations dictionary
+    nearest = {}
 
     try:
         # Fetch location data for the provided address
@@ -429,50 +426,43 @@ async def nearest(request_data: DistanceRequest):
     except Exception as e:
         return {"message": "Error fetching location data", "error": str(e)}
 
+    # Access the schedule collection and find events for the specific date
+    schedule_collection = client['events_collection']['schedule_database']
+    events = schedule_collection.find({date: {"$exists": True}})
 
-    for hour in range(7, 23):  # 7 AM to 10 PM
-        # Construct the datetime for each hour (combine date + hour)
-        timeslot_time = datetime.strptime(f"{date} {hour}:00", "%Y-%m-%d %H:%M")
-        timeslot = schedule_collection.find_one({"date": date, "hour": timeslot_time.isoformat()})
+    # Iterate through all locations and filter by distance
+    for entry in events:
+        for timeslot, time_data in entry[date].items():  # Iterate over each timeslot
+            for location_type, location_info in time_data.items():
+                for loc_id, loc_data in location_info.items():
+                    user_groups = loc_data['user_groups']
+                    loc_dict = client['events_collection'][f'{location_type}_database'].find_one({'_id': ObjectId(loc_id)}, 
+                                            {'_id': 0})
+                    loc_coordinates = loc_dict.get('coordinates')
 
-        # Get all locations (gyms, parks, fitness corners)
-        location_data = get_locations(timeslot)
+                    # Calculate the distance from the provided coordinates
+                    distance = calculate_distance(lat, lon, loc_coordinates[1], loc_coordinates[0])
+                    print(entry)
+                    print(distance)
 
-        # Dictionary to hold locations within 1km
-        nearest[timeslot_time.isoformat()] = {
-            'gym': {},
-            'parks': {},
-            'fitness_corner': {}
-        }
+                    # If the location is within 1 km, add it to the nearest dictionary
+                    if distance <= 1:
+                        if timeslot not in nearest:
+                            nearest[timeslot] = {}
 
-        # Iterate through all locations and filter by distance
-        for location_type, locations in location_data.items():
-            for location in locations:
-                loc_id = location['id']
-                loc_coordinates = location['location_data']['coordinates']
-                distance = calculate_distance(lat, lon, loc_coordinates[1], loc_coordinates[0])
+                        if location_type not in nearest[timeslot]:
+                            nearest[timeslot][location_type] = {}
 
-                if distance <= 1:  # Only consider locations within 1km
-                    nearest[timeslot_time.isoformat()][location_type][loc_id] = {
-                        'location_data': location['location_data'],
-                        'user_groups': location['user_groups']  # Assuming user_groups is a dictionary
-                    }
+                        nearest[timeslot][location_type][loc_id] = {
+                            'location_data': loc_dict,
+                            'user_groups': user_groups
+                        }
+
     return {
         "message": "Fetched locations within 1km",
-        "locations": dict(nearest)
+        "locations": nearest  # Returning the nearest locations
     }
 
-@app.get("/get_fitness_corners")
-async def fitness():
-    all_fitness_corners = list(client['events_collection']['fitness_corner_database'].find({})) 
-    for i, fc in enumerate(all_fitness_corners):
-        _id = str(fc['_id'])
-        all_fitness_corners[i]['_id'] = _id
-
-    return {
-        "message": "Fetched fitness corners",
-        "fitness_corners": all_fitness_corners
-    }
 
 @app.get("/get_parks")
 async def parks():
@@ -584,52 +574,168 @@ async def join_user_group(request_data: JoinUserGroupRequest):
     location_type = request_data.location_type
     location_id = request_data.location_id
 
-    # Fetch the document based on the date and time
-    schedule_collection = client['events_collection']['schedule_database']
+    # Convert the date and time to a datetime string
     date_time_str = f"{date} {time}"
     timeslot_time = datetime.strptime(date_time_str, "%Y-%m-%d %H:%M:%S").isoformat()
-    timeslot = schedule_collection.find_one({"date": date, "hour": timeslot_time})
 
-    # Add the user to the appropriate user group
-    location_data = timeslot[location_type][location_id]
-    if user_id not in location_data['user_groups'][user_group]['users']:
-        location_data['user_groups'][user_group]['users'].append(user_id)
-    chat = location_data['user_groups'][user_group]['chat']
+    # Initialize the chat collection
+    chat_collection = client['events_collection']['chats']
 
-    # Now update the MongoDB document with the new data
-    result = schedule_collection.update_one(
-        {
-            "date": date, 
-            "hour": timeslot_time # Match the exact datetime for the update
-        },
-        {"$set": {f"{location_type}.{location_id}": location_data}},  # Update the specific location data
-        upsert=False  # Do not create a new document; we're updating an existing one
-    )
+    # Look for an existing chat
+    chat = chat_collection.find_one({
+        "timeslot": timeslot_time,
+        "location_type": location_type,
+        "location_id": location_id,
+        "user_group": user_group
+    })
 
-    location_collection = client['events_collection'][f'{location_type}_database']
+    # If no chat exists, create a new one
+    if not chat:
+        chat_result = chat_collection.insert_one({
+            "timeslot": timeslot_time,
+            "location_type": location_type,
+            "location_id": location_id,
+            "user_group": user_group,
+            "messages": [],  # Empty message list initially
+        })
+        chat_id = str(chat_result.inserted_id)
+    else:
+        chat_id = str(chat["_id"])
+
+    # Initialize the schedule collection
+    schedule_collection = client['events_collection']['schedule_database']
+
+    # Try to find the existing timeslot, if it exists
+    query = {
+        f"{date}.{timeslot_time}": {"$exists": True},  # Ensure the timeslot exists
+        f"{date}.{timeslot_time}.{location_type}": {"$exists": True},  # Ensure the location_type exists
+        f"{date}.{timeslot_time}.{location_type}.{location_id}": {"$exists": True},  # Ensure the location_id exists
+    }
+
+    # Find the timeslot document based on the query
+    timeslot = schedule_collection.find_one(query)
+    
+    if not timeslot:
+        # If the timeslot for the date doesn't exist, create it dynamically
+        timeslot = {
+            date: {
+                timeslot_time: {
+                    location_type: {
+                        location_id: {
+                            "user_groups": {
+                                user_group: {
+                                    "users": [user_id],  # Start with the user in the group
+                                    "chat_id": chat_id
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        # Insert the new timeslot for the date
+        schedule_result = schedule_collection.insert_one(timeslot)
+        if schedule_result.acknowledged:
+            result_message = f"Timeslot created for {user_group} at {date}T{time}, and user {user_id} was added."
+        else:
+            result_message = "Error in creating timeslot"
+    else:
+        # If the timeslot exists, check if the location and group exist
+        print(timeslot)
+        location_data = timeslot.get(date, {}).get(timeslot_time, {}).get(location_type, {}).get(location_id, None)
+
+        if location_data is None:
+            # Initialize the location or group if it doesn't exist
+            timeslot[date][timeslot_time][location_type] = {
+                location_id: {
+                    "user_groups": {
+                        user_group: {
+                            "users": [user_id],
+                            "chat_id": chat_id
+                        }
+                    }
+                }
+            }
+        else:
+            # If the location and user group exist, update the data
+            location_data = timeslot[date][timeslot_time][location_type][location_id]
+            
+            if user_group not in location_data['user_groups']:
+                # Initialize the user group if it doesn't exist
+                location_data['user_groups'][user_group] = {
+                    'users': [user_id],
+                    'chat_id': chat_id
+                }
+            else:
+                # If the user group exists, add the user if not already present
+                if user_id not in location_data['user_groups'][user_group]['users']:
+                    location_data['user_groups'][user_group]['users'].append(user_id)
+
+        schedule_result = schedule_collection.update_one(
+            {f"{date}.{timeslot_time}.{location_type}.{location_id}": {"$exists": True}},  # Match the timeslot and location
+            {
+                "$set": {
+                    f"{date}.{timeslot_time}.{location_type}.{location_id}.user_groups.{user_group}": location_data['user_groups'][user_group]
+                }
+            },
+            upsert=False
+         )
+
+        if schedule_result.modified_count > 0:
+            result_message = f"Timeslot {date}T{time} successfully updated for user {user_id} in group {user_group}"
+        else:
+            result_message = f"User {user_id} is already in the group {user_group} for the given timeslot"
+    print(result_message)
     user = user_collection.find_one({'_id': ObjectId(user_id)})
-    loc = location_collection.find_one({'_id': ObjectId(location_id)})
 
     if not user:
-        return {"message": f"Invalid UserID"}
+        raise HTTPException(status_code=404, detail="User not found.")
 
-    existing_user_groups = user['user_groups']
-    existing_user_groups.append({timeslot_time: {'user_group': user_group, 'location_type': location_type, 'location': loc, 'chat': chat, 'checked_in': False}})
+    existing_user_groups = user.get('user_groups', [])
 
-    user_result = user_collection.update_one(
-        {"_id": ObjectId(user_id)},
-        {"$set": {f"user_groups": existing_user_groups}},  
-        upsert=False  # Do not create a new document; we're updating an existing one}
-    )
+    user_group_entry = {
+            timeslot_time: {
+                'user_group': user_group,
+                'location_type': location_type,
+                'location_id': location_id,
+                'location_data': client['events_collection'][f'{location_type}_database'].find_one(
+                                            {'_id': ObjectId(location_id)}, 
+                                            {'_id': 0}  # Exclude the _id field
+                                        ),
+                'chat_id': chat_id,
+                'checked_in': False # But this here cn be false or True, it doesn't matter
+            }
+        }
 
-    if result.modified_count == 0:
-        return {"message": f"User {user_id} already in {user_group} for {date}T{time}."}
-    elif result.modified_count > 0:
-        return {"message": f"User {user_id} successfully added to {user_group} for {date}T{time}."}
+    is_group_present = False
+
+    for group in existing_user_groups:
+        for timeslot_key, timeslot_value in group.items():
+            if timeslot_key==timeslot_time:
+                if timeslot_value.get('user_group') == user_group and timeslot_value.get('location_id') == location_id:
+                    is_group_present = True
+                    print(f"Not adding: User {user_id} is already in the group '{user_group}' for location '{location_id}' at timeslot {timeslot_key}.")
+                    break  # 
+
+    if not is_group_present:
+        # If not found, append the user group entry
+        existing_user_groups.append(user_group_entry)
+
+        # Update the user's user_groups in the user collection
+        user_collection.update_one(
+            {"_id": ObjectId(user_id)},
+            {"$set": {"user_groups": existing_user_groups}},
+            upsert=False  # No need to create a new document; we're updating an existing one
+        )
+
+        result_message = f"User {user_id} successfully added to the group {user_group} for timeslot {timeslot_time}."
     else:
-        raise HTTPException(status_code=500, detail="Error updating the document in MongoDB.")
+        result_message = f"User {user_id} is already a member of {user_group} at {location_id} for timeslot {timeslot_time}."
 
-@app.post("/exit_user_group")
+    return {"message": result_message}
+
+
+@app.delete("/exit_user_group")
 async def exit_user_group(request_data: JoinUserGroupRequest):
     date = request_data.date
     time = request_data.time
@@ -638,36 +744,57 @@ async def exit_user_group(request_data: JoinUserGroupRequest):
     location_type = request_data.location_type
     location_id = request_data.location_id
 
-    # Fetch the document based on the date and time
-    schedule_collection = client['events_collection']['schedule_database']
+    # Convert the date and time to a datetime string
     date_time_str = f"{date} {time}"
     timeslot_time = datetime.strptime(date_time_str, "%Y-%m-%d %H:%M:%S").isoformat()
 
-    # Fetch the timeslot data from the schedule collection
-    timeslot = schedule_collection.find_one({"date": date, "hour": timeslot_time})
+    # Fetch the document based on the date and time
+    schedule_collection = client['events_collection']['schedule_database']
+
+    # Try to find the existing timeslot, if it exists
+    query = {
+        f"{date}.{timeslot_time}": {"$exists": True},  # Ensure the timeslot exists
+        f"{date}.{timeslot_time}.{location_type}": {"$exists": True},  # Ensure the location_type exists
+        f"{date}.{timeslot_time}.{location_type}.{location_id}": {"$exists": True},  # Ensure the location_id exists
+    }
+
+    # Find the timeslot document based on the query
+    timeslot = schedule_collection.find_one(query)
 
     if not timeslot:
         raise HTTPException(status_code=404, detail="Timeslot not found.")
 
-    # Remove the user from the specified user group in the schedule database
-    location_data = timeslot.get(location_type, {}).get(location_id, {})
-    if user_id in location_data.get('user_groups', {}).get(user_group, {}).get('users', []):
-        location_data['user_groups'][user_group]['users'].remove(user_id)
+    location_data = timeslot.get(date, {}).get(timeslot_time, {}).get(location_type, {}).get(location_id, None)
+
+    if not location_data or user_group not in location_data.get('user_groups', {}):
+        raise HTTPException(status_code=404, detail="User group not found in the location.")
+
+    # Remove the user from the user group in the schedule database
+    user_list = location_data['user_groups'][user_group]['users']
+    print(user_list, user_id, user_id in user_list)
+    
+    if user_id in user_list:
+        user_list.remove(user_id)
+        location_data['user_groups'][user_group]['users'] = user_list
     else:
         raise HTTPException(status_code=404, detail="User not found in the user group.")
 
     # Update the schedule database to reflect the changes
     result = schedule_collection.update_one(
         {
-            "date": date, 
-            "hour": timeslot_time  # Match the exact datetime for the update
+            f"{date}.{timeslot_time}.{location_type}.{location_id}": {"$exists": True}
         },
         {
-            "$set": {f"{location_type}.{location_id}": location_data}  # Update the specific location data
+            "$set": {
+                f"{date}.{timeslot_time}.{location_type}.{location_id}": location_data  # Update the specific location data
+            }
         },
-        upsert=False  # Do not create a new document; we are updating an existing one
+        upsert=False  # We should not create a new document here, just update
     )
 
+    print(result.modified_count)
+
+    # Fetch the user document
     user = user_collection.find_one({'_id': ObjectId(user_id)})
 
     if not user:
@@ -682,7 +809,7 @@ async def exit_user_group(request_data: JoinUserGroupRequest):
             # If the group and timeslot match, remove the user
             if not timestamp_str == timeslot_time and group_data['user_group'] == user_group:
                 updated_user_groups.append(group_dict)
-
+    print(existing_user_groups, updated_user_groups)
     # Update the user document with the new user_groups list
     user_result = user_collection.update_one(
         {"_id": ObjectId(user_id)},
@@ -696,81 +823,109 @@ async def exit_user_group(request_data: JoinUserGroupRequest):
     elif result.modified_count > 0:
         return {"message": f"User {user_id} successfully removed from {user_group} for {date}T{time}."}
     else:
-        raise HTTPException(status_code=500, detail="Error updating the document in MongoDB.")
+        raise HTTPException(status_code=500, detail="User DB was not updated correctly.")
 
+        
 @app.post("/save_chat")
 async def save_chat(request_data: SaveChatRequest):
-    timeslot = request_data.timeslot
-    msg_timestamp = request_data.msg_timestamp
+    # Retrieve the necessary fields from the request data
+    timeslot = request_data.timeslot  # In the format "yyyy-mm-ddTxx:xx:xx"
     user_id = request_data.user_id
     user_group = request_data.user_group
     location_type = request_data.location_type
     location_id = request_data.location_id
     msg_content = request_data.msg_content
+    msg_timestamp = request_data.msg_timestamp
 
-    # Fetch the document based on the date and time
-    date = timeslot.split("T")[0].strip()
-    schedule_collection = client['events_collection']['schedule_database']
-    timeslot_data = schedule_collection.find_one({"date": date, "hour": timeslot})
+    # Convert the timeslot to ISO format (ensure consistency)
+    try:
+        datetime_obj = datetime.strptime(timeslot, "%Y-%m-%dT%H:%M:%S")
+        timeslot_iso = datetime_obj.isoformat()  # Standard ISO format: "yyyy-mm-ddTHH:MM:SS"
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Invalid date or time format.")
 
-    location_data = timeslot_data[location_type][location_id]
-    location_data['user_groups'][user_group]['chat'].append({msg_timestamp: {user_id: msg_content}})
-    # print(location_data['user_groups'][user_group]['chat'], timeslot)
-    # Now update the MongoDB document with the new data
-    result = schedule_collection.update_one(
-        {
-            "date": date, 
-            "hour": timeslot # Match the exact datetime for the update
-        },
-        {"$set": {f"{location_type}.{location_id}": location_data}},  # Update the specific location data
-        upsert=False  # Do not create a new document; we're updating an existing one
+    # Fetch the chat document for the given timeslot, location, and user group
+    chat_collection = client['events_collection']['chats']
+    chat = chat_collection.find_one({
+        "timeslot": timeslot_iso,
+        "location_type": location_type,
+        "location_id": location_id,
+        "user_group": user_group
+    })
+
+    # If the chat doesn't exist, we cannot save a message, so return an error
+    if not chat:
+        raise HTTPException(status_code=404, detail="Chat not found for this user group.")
+
+    # Create the new chat message object
+    chat_message = {
+        "timestamp": msg_timestamp,
+        "user_id": user_id,
+        "message": msg_content,
+        "name": ""  # Placeholder for user name, will be fetched below
+    }
+
+    # Fetch the user's name based on user_id
+    user = user_collection.find_one({"_id": ObjectId(user_id)})
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found.")
+
+    # Add the user's name to the chat message
+    chat_message["name"] = user['name']
+
+    # Update the chat collection by appending the new message to the existing array
+    chat_collection.update_one(
+        {"_id": chat["_id"]},  # Identify the specific chat document
+        {"$push": {"messages": chat_message}}  # Append the new message to the 'messages' array
     )
-    user = user_collection.find_one({'_id': ObjectId(user_id)})
-    user_name = user['name']
 
-    # Iterate over the user's groups to find the matching user group and timeslot
-    updated_user_groups = []
-    for group_dict in user['user_groups']:
-        for timestamp_str, group_data in group_dict.items():
-            if timestamp_str == timeslot:
-                # If the timestamp matches, append the message to the user's group chat
-                group_data['chat'].append({msg_timestamp: {user_id: {'message': msg_content, 'name': user_name}}})
-        updated_user_groups.append(group_dict)
-
-    # Update the user document with the new chat
-    user_collection.update_one(
-        {"_id": ObjectId(user_id)},
-        {"$set": {"user_groups": updated_user_groups}},
-        upsert=False  # Do not create a new user, just update the existing one
-    )
-
-    return {"message": f"User {user_id} successfully added to {timeslot}'s {user_group} chat."}
-
+    return {"message": f"Chat message saved successfully for {user_group} at {timeslot_iso}."}
 
 @app.post("/get_user_groups")
 async def get_user_groups(request_data: GetUserGroupRequest):
     user_id = request_data.user_id
     current_datetime = datetime.now(pytz.timezone('Asia/Singapore'))
 
+    # Fetch the user document
     user = user_collection.find_one({'_id': ObjectId(user_id)})
-    all_user_groups = user['user_groups']
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found.")
+    
+    all_user_groups = user.get('user_groups', [])
     user_groups = []
 
+    # Iterate through each group dictionary in the user's groups
     for group_dict in all_user_groups:
         for timestamp_str, group_data in group_dict.items():
-            # Convert ObjectId to string for the location field
-            if isinstance(group_data['location'], dict):
-                group_data['location']['_id'] = str(group_data['location']['_id'])
+            # Convert the timestamp string to a datetime object
+            try:
+                timestamp = datetime.fromisoformat(timestamp_str).replace(tzinfo=pytz.timezone('Asia/Singapore'))
+            except ValueError:
+                continue  # Skip invalid timestamps
             
-            # Check if the timestamp is after the current datetime
-            timestamp = datetime.fromisoformat(timestamp_str).replace(tzinfo=pytz.timezone('Asia/Singapore'))
+            # If the timestamp is in the future, process the group
             if timestamp > current_datetime:
-                print(group_dict)
-                user_groups.append(group_dict)
+                # Fetch additional location data from the schedule database if necessary
+                location_data = group_data.get('location', {})
+                if isinstance(location_data, dict) and '_id' in location_data:
+                    location_data['_id'] = str(location_data['_id'])
+
+                # Add the group to the user_groups list if it's in the future
+                user_groups.append({
+                    "timestamp": timestamp.isoformat(),
+                    "user_group": group_data.get('user_group', ''),
+                    "location_type": group_data.get('location_type', ''),
+                    "location_id": group_data.get('location_id', ''),
+                    "chat_id": group_data.get('chat_id', None),
+                    "checked_in": group_data.get('checked_in', False),
+                    "location": location_data
+                })
+
     return {
         "message": f"Fetched user groups for user {user_id}",
         "user_groups": user_groups
     }
+
 
 @app.post("/check_in")
 async def check_in(request_data: CheckInRequest):
@@ -788,13 +943,16 @@ async def check_in(request_data: CheckInRequest):
     # Find if the user already has the group entry with the provided timeslot and location
     existing_group_entry = None
     for entry in user['user_groups']:
-        if timeslot_time in entry:
-            group_info = entry[timeslot_time]
-            if (group_info.get('user_group') == user_group and
-                group_info.get('location_type') == location_type and
-                str(group_info.get('location', {}).get('_id')) == location_id):
-                existing_group_entry = entry
-                break
+        # For each group entry, we check if the group matches the user_group and timeslot
+        for timestamp_str, group_info in entry.items():
+            if timestamp_str == timeslot_time:
+                if (group_info.get('user_group') == user_group and
+                    group_info.get('location_type') == location_type and
+                    str(group_info.get('location_id') == location_id)):
+                    existing_group_entry = entry
+                    break
+        if existing_group_entry:
+            break
 
     if existing_group_entry:
         # If an entry exists, update just the `checked_in` field for that timeslot
@@ -803,11 +961,11 @@ async def check_in(request_data: CheckInRequest):
                 "_id": ObjectId(user_id),
                 f"user_groups.{user['user_groups'].index(existing_group_entry)}.{timeslot_time}.user_group": user_group,
                 f"user_groups.{user['user_groups'].index(existing_group_entry)}.{timeslot_time}.location_type": location_type,
-                f"user_groups.{user['user_groups'].index(existing_group_entry)}.{timeslot_time}.location._id": ObjectId(location_id),
+                f"user_groups.{user['user_groups'].index(existing_group_entry)}.{timeslot_time}.location_id": location_id,
             },
             {
                 "$set": {
-                    f"user_groups.{user['user_groups'].index(existing_group_entry)}.{timeslot_time}.checked_in": True  # Update just the `checked_in` field
+                    f"user_groups.{user['user_groups'].index(existing_group_entry)}.{timeslot_time}.checked_in": True  # Update the `checked_in` field
                 }
             }
         )
@@ -818,46 +976,3 @@ async def check_in(request_data: CheckInRequest):
             return {"message": f"User {user_id} was already checked in for {user_group} at this time."}
     else:
         return {"message": f"User {user_id} does not have {user_group} at {request_data.date}T{request_data.time} with the specified location."}
-    
-@app.post("/get_videos")
-async def check_in(request_data: GetVideos):
-    video_category = request_data.category
-    
-    # for now, hardcoded videos
-    bodyweight = [
-        "https://www.youtube.com/watch?app=desktop&v=9CPC8wrAu14",
-        "https://www.youtube.com/watch?v=jrHiJ8heFTw",
-        "https://www.youtube.com/watch?v=WtYQ7fOjvJc",
-        "https://www.youtube.com/watch?v=6yevi8iUC4U",
-        "https://www.youtube.com/watch?v=f2fCMFvwRR0&list"
-    ]
-    
-    mobility = [
-        "https://www.youtube.com/watch?v=SotLyRb8XjE"
-    ]
-    
-    general_strength = [
-        "https://www.youtube.com/watch?v=m1UF4RgGoY0&t=115s",
-        "https://www.youtube.com/watch?v=EKUNGQ4LmH8",
-        "https://www.youtube.com/watch?v=2Wh0_klqShw",
-        "https://www.youtube.com/watch?v=ZM8yPWiQuyE"
-    ]
-    
-    powerlifting = [
-        "https://www.youtube.com/watch?v=OPEDjl88P-4"
-    ]
-    
-    
-    if (video_category == "bodyweight"):
-        return {"videos" : bodyweight}
-    
-    if (video_category == "mobility"):
-        return {"videos" : mobility}
-    
-    if (video_category == "general_strength"):
-        return {"videos" : general_strength}
-    
-    if (video_category == "powerlifting"):
-        return {"videos" : powerlifting}
-        
-    
