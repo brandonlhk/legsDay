@@ -178,6 +178,7 @@ class SaveChatRequest(BaseModel):
     location_id: str
     msg_content: str
 
+
 def calculate_distance(lat1, lon1, lat2, lon2):
     return geodesic((lat1, lon1), (lat2, lon2)).km
 
