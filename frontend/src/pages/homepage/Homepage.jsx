@@ -220,13 +220,13 @@ export default function Homepage() {
   const today = dayjs(); // Today's date
   const currentHour = today.hour()
   const [selectedDate, setSelectedDate] = useState(
-    currentHour >= 22 ? today.add(1, "day").format("YYYY-MM-DD") : today.format("YYYY-MM-DD")
+    currentHour >= 21 ? today.add(1, "day").format("YYYY-MM-DD") : today.format("YYYY-MM-DD")
   );
-  const startDay = currentHour >= 22 ? today.add(1, "day") : today;
+  const startDay = currentHour >= 21 ? today.add(1, "day") : today;
   const dates = Array.from({ length: 7 }, (_, index) =>
     startDay.add(index, "day").format("YYYY-MM-DD"));
   const startHour = 7; // Start at 7 AM
-  const endHour = 22; // End at 10 PM (22 in 24-hour format)
+  const endHour = 21; // End at 10 PM (22 in 24-hour format)
   const isAfterEndHour = currentHour >= endHour;
 
 
@@ -264,7 +264,7 @@ export default function Homepage() {
 
   const calculatePosition = () => {
     const min = 7; // Start time
-    const max = 22; // End time
+    const max = 21; // End time
     const position = ((timeValue - min) / (max - min)) * 100; // Percentage
     return position;
   };
@@ -603,7 +603,7 @@ export default function Homepage() {
                 <input
                   type="range"
                   min="7"
-                  max="22" // End time (10 PM)
+                  max="21" // End time (10 PM)
                   value={timeValue}
                   step="1" // Step increments of 1 hour
                   className="range  w-full range-xs"

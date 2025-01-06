@@ -170,6 +170,37 @@ export default function MessageGroup() {
     }
   }
 
+  const handleCheckIn = async (time, details) => {
+    try {
+      const response = await fetch(`${import.meta.env.VITE_PROTOCOL}${import.meta.env.VITE_HOST}${import.meta.env.VITE_PORT}/check_in`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          user_id: userId,
+          date: dayjs(time).format("YYYY-MM-DD"),
+          time: dayjs(time).format("HH:mm:ss"),
+          user_group: details.user_group,
+          location_type: details.location_type,
+          location_id: details.location._id,
+        }),
+      });
+  
+      const data = await response.json();
+  
+      if (data.checked_in) {
+        alert("Checked in successfully!");
+        window.location.reload()
+      } else {
+        alert(data.message);
+      }
+    } catch (error) {
+      console.error("Error during check-in:", error);
+      alert("Failed to check in. Please try again.");
+    }
+  }
+
   return (
     <div className="p-6">
 
@@ -222,8 +253,20 @@ export default function MessageGroup() {
                         {details.location.address || details.location.name + ", " + details.location.postal_code}
                       </span>
                     </p>
+
                     <button
-                      className="w-full py-3 font-bold rounded-full bg-themeGreen text-black mt-6"
+                      className={`w-full py-3 font-bold rounded-full ${
+                        details.checked_in ? "bg-gray-400" : "bg-themeGreen"
+                      } text-black mt-6`}
+                      disabled={details.checked_in}
+                      onClick={() => {
+                        handleCheckIn(time, details);
+                      }}
+                    >
+                      {details.checked_in ? "Check-in Complete" : "Check in"}
+                    </button>
+                    <button
+                      className="w-full py-3 font-bold rounded-full border border-themeGreen text-black mt-3"
                       onClick={() => {
                         setView("viewGroup");
                         setGroupTime(time)

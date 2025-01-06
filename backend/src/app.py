@@ -78,6 +78,7 @@ class DistanceRequest(BaseModel):
     address: str
     '''date needs to be in yyyy-mm-dd format'''
     date: str
+    time: str
 
 class ParkRequest(BaseModel):
     _id: str
@@ -414,9 +415,12 @@ async def settings(request_data: SettingsRequest):
 async def nearest(request_data: DistanceRequest):
     add = request_data.address
     date = request_data.date
-    # time = request_data.time
+    time = request_data.time
+
     schedule_collection = client['events_collection']['schedule_database']
-    nearest = defaultdict()
+    date_time_str = f"{date} {time}"
+    timeslot_time = datetime.strptime(date_time_str, "%Y-%m-%d %H:%M:%S").isoformat()
+    timeslot = schedule_collection.find_one({"date": date, "hour": timeslot_time})
 
     try:
         # Fetch location data for the provided address
@@ -429,38 +433,34 @@ async def nearest(request_data: DistanceRequest):
     except Exception as e:
         return {"message": "Error fetching location data", "error": str(e)}
 
+    # Get all locations (gyms, parks, fitness corners)
+    location_data = get_locations(timeslot)
+    # print(location_data)
 
-    for hour in range(7, 23):  # 7 AM to 10 PM
-        # Construct the datetime for each hour (combine date + hour)
-        timeslot_time = datetime.strptime(f"{date} {hour}:00", "%Y-%m-%d %H:%M")
-        timeslot = schedule_collection.find_one({"date": date, "hour": timeslot_time.isoformat()})
+    # Dictionary to hold locations within 1km
+    locations_within_1km = {
+        'gym': {},
+        'parks': {},
+        'fitness_corner': {}
+    }
 
-        # Get all locations (gyms, parks, fitness corners)
-        location_data = get_locations(timeslot)
+    # Iterate through all locations and filter by distance
+    for location_type, locations in location_data.items():
+        for location in locations:
+            loc_id = location['id']
+            loc_coordinates = location['location_data']['coordinates']
+            distance = calculate_distance(lat, lon, loc_coordinates[1], loc_coordinates[0])
 
-        # Dictionary to hold locations within 1km
-        nearest[timeslot_time.isoformat()] = {
-            'gym': {},
-            'parks': {},
-            'fitness_corner': {}
-        }
-
-        # Iterate through all locations and filter by distance
-        for location_type, locations in location_data.items():
-            for location in locations:
-                loc_id = location['id']
-                loc_coordinates = location['location_data']['coordinates']
-                distance = calculate_distance(lat, lon, loc_coordinates[1], loc_coordinates[0])
-
-                if distance <= 1:  # Only consider locations within 1km
-                    nearest[timeslot_time.isoformat()][location_type][loc_id] = {
-                        'location_data': location['location_data'],
-                        'user_groups': location['user_groups']  # Assuming user_groups is a dictionary
-                    }
+            if distance <= 1:  # Only consider locations within 1km
+                locations_within_1km[location_type][loc_id] = {
+                    'location_data': location['location_data'],
+                    'user_groups': location['user_groups']  # Assuming user_groups is a dictionary
+                }
     return {
         "message": "Fetched locations within 1km",
-        "locations": dict(nearest)
+        "locations": locations_within_1km
     }
+
 
 @app.get("/get_fitness_corners")
 async def fitness():
@@ -813,11 +813,11 @@ async def check_in(request_data: CheckInRequest):
         )
 
         if result.modified_count > 0:
-            return {"message": f"User {user_id} successfully checked in to {user_group} for {request_data.date}T{request_data.time}."}
+            return {"message": "Checked in successfully", "checked_in": True}
         else:
-            return {"message": f"User {user_id} was already checked in for {user_group} at this time."}
+            return {"message": "Already checked in", "checked_in": True}
     else:
-        return {"message": f"User {user_id} does not have {user_group} at {request_data.date}T{request_data.time} with the specified location."}
+        return {"message": f"User {user_id} does not have {user_group} at {request_data.date}T{request_data.time} with the specified location.", "checked_in": False}
     
 @app.post("/get_videos")
 async def check_in(request_data: GetVideos):
