@@ -55,7 +55,7 @@ export default function Signin() {
             <img src="auth.png" alt="workout icon" className="object-contain mx-auto"/>
 
             <div className="mt-6">
-              <p className="font-bold text-4xl">Sign in to Own Time Own Target</p>
+              <p className="font-bold text-4xl">Sign in to WorkoutKakis</p>
 
               {/* email */}
               <label className="form-control w-full mt-6">

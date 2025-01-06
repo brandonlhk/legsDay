@@ -19,11 +19,9 @@ export default function Start() {
         {/* Text Section */}
         <div className="lg:w-1/2 text-center px-4">
           <h1 className="font-bold text-4xl lg:text-5xl mb-4">
-            Own Time
-            <br />
-            Own Target
+            WorkoutKakis
           </h1>
-          <p className="text-gray-600 text-lg lg:text-xl mb-8">
+          <p className="text-lg lg:text-xl mb-8 text-balance">
             Connect with others and stay active at your own pace.
           </p>
 
