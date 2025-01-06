@@ -78,6 +78,7 @@ class DistanceRequest(BaseModel):
     address: str
     '''date needs to be in yyyy-mm-dd format'''
     date: str
+    time: str
 
 class ParkRequest(BaseModel):
     _id: str
@@ -1003,8 +1004,8 @@ async def check_in(request_data: CheckInRequest):
         )
 
         if result.modified_count > 0:
-            return {"message": f"User {user_id} successfully checked in to {user_group} for {request_data.date}T{request_data.time}."}
+            return {"message": "Checked in successfully", "checked_in": True}
         else:
-            return {"message": f"User {user_id} was already checked in for {user_group} at this time."}
+            return {"message": "Already checked in", "checked_in": True}
     else:
         return {"message": f"User {user_id} does not have {user_group} at {request_data.date}T{request_data.time} with the specified location."}
