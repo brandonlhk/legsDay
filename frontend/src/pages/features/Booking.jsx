@@ -319,7 +319,7 @@ export default function Booking() {
     {view === "agree" && (
         <>
             <div className="divider"></div>
-            <h2 className="text-xl font-bold">Terms of Engagement of Group Workout Sessions on OTOT App</h2>
+            <h2 className="text-xl font-bold">Terms of Engagement of Group Workout Sessions on WorkoutKakis</h2>
             <p>Before proceeding, please read and agree to the following guidelines to ensure a positive and supportive community experience:</p>
             <p className="mt-3"><span className="font-bold">Respect is Key:</span> Treat everyone with kindness and respect. We are all here to learn, grow, and support each other.</p>
             <p className="mt-3"><span className="font-bold">Inclusivity matters:</span> This is a safe space for everyone, regardless of fitness level, background, or identity. Encourage and uplift one another.</p>
