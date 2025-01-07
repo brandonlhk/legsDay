@@ -180,6 +180,39 @@ class SaveChatRequest(BaseModel):
 def calculate_distance(lat1, lon1, lat2, lon2):
     return geodesic((lat1, lon1), (lat2, lon2)).km
 
+def parks():
+    all_fitness_corners = list(client['events_collection']['parks_database'].find({})) 
+    for i, fc in enumerate(all_fitness_corners):
+        _id = str(fc['_id'])
+        all_fitness_corners[i]['_id'] = _id
+
+    return {
+        "message": "Fetched parks",
+        "parks": all_fitness_corners
+    }
+
+def gyms():
+    all_fitness_corners = list(client['events_collection']['gym_database'].find({})) 
+    for i, fc in enumerate(all_fitness_corners):
+        _id = str(fc['_id'])
+        all_fitness_corners[i]['_id'] = _id
+
+    return {
+        "message": "Fetched gyms",
+        "gyms": all_fitness_corners
+    }
+
+def fitness():
+    all_fitness_corners = list(client['events_collection']['fitness_corner_database'].find({})) 
+    for i, fc in enumerate(all_fitness_corners):
+        _id = str(fc['_id'])
+        all_fitness_corners[i]['_id'] = _id
+
+    return {
+        "message": "Fetched fitness corners",
+        "fitness_corners": all_fitness_corners
+    }
+
 # Function to fetch location data from the databases
 def get_locations(timeslot):
     location_data = {
@@ -414,6 +447,9 @@ async def nearest(request_data: DistanceRequest):
 
     # Initialize the nearest locations dictionary
     nearest = {}
+    all_gyms = gyms()['gyms']  # Assuming this fetches a list of gyms from your MongoDB
+    all_fitness = fitness()['fitness_corners']  # Assuming this fetches fitness locations
+    all_parks = parks()['parks']  # Assuming this fetches parks locations
 
     try:
         # Fetch location data for the provided address
@@ -429,21 +465,21 @@ async def nearest(request_data: DistanceRequest):
     # Access the schedule collection and find events for the specific date
     schedule_collection = client['events_collection']['schedule_database']
     events = schedule_collection.find({date: {"$exists": True}})
+    visited = set()
 
-    # Iterate through all locations and filter by distance
+    # Iterate through all events and locations, integrating them into the nearest dictionary
     for entry in events:
         for timeslot, time_data in entry[date].items():  # Iterate over each timeslot
             for location_type, location_info in time_data.items():
                 for loc_id, loc_data in location_info.items():
-                    user_groups = loc_data['user_groups']
+                    user_groups = loc_data.get('user_groups', {})
                     loc_dict = client['events_collection'][f'{location_type}_database'].find_one({'_id': ObjectId(loc_id)}, 
                                             {'_id': 0})
                     loc_coordinates = loc_dict.get('coordinates')
+                    loc_name = loc_dict.get('name')
 
                     # Calculate the distance from the provided coordinates
                     distance = calculate_distance(lat, lon, loc_coordinates[1], loc_coordinates[0])
-                    print(entry)
-                    print(distance)
 
                     # If the location is within 1 km, add it to the nearest dictionary
                     if distance <= 1:
@@ -455,38 +491,34 @@ async def nearest(request_data: DistanceRequest):
 
                         nearest[timeslot][location_type][loc_id] = {
                             'location_data': loc_dict,
-                            'user_groups': user_groups
+                            'user_groups': user_groups if user_groups else {}
                         }
+                        visited.add(loc_name)
+
+    nearest['empty_events'] = {'gym': {}, 'fitness_corner': {}, 'parks': {}}
+    # Now include the locations from gyms, fitness, and parks that are within 1 km
+    for location_type, all_locations in {'gym': all_gyms, 'fitness': all_fitness, 'parks': all_parks}.items():
+        for loc in all_locations:
+            loc_coordinates = loc['coordinates']
+            location_name = loc['name']
+            # Calculate the distance from the provided coordinates
+            distance = calculate_distance(lat, lon, loc_coordinates[1], loc_coordinates[0])
+
+            # If the location is within 1 km, add it to the nearest dictionary
+            if distance <= 1:
+                loc_id = str(loc['_id'])  # Assuming the ID is stored like this in MongoDB
+                # Add the location data to the nearest dictionary (without timeslot)
+                if location_name not in visited:
+                    nearest['empty_events'][location_type][loc_id] = {
+                        'location_data': loc,
+                        'user_groups': {}  # Since gyms, parks, and fitness might not have user groups
+                    }
 
     return {
         "message": "Fetched locations within 1km",
         "locations": nearest  # Returning the nearest locations
     }
 
-
-@app.get("/get_parks")
-async def parks():
-    all_fitness_corners = list(client['events_collection']['parks_database'].find({})) 
-    for i, fc in enumerate(all_fitness_corners):
-        _id = str(fc['_id'])
-        all_fitness_corners[i]['_id'] = _id
-
-    return {
-        "message": "Fetched parks",
-        "parks": all_fitness_corners
-    }
-
-@app.get("/get_gyms")
-async def fitness():
-    all_fitness_corners = list(client['events_collection']['gym_database'].find({})) 
-    for i, fc in enumerate(all_fitness_corners):
-        _id = str(fc['_id'])
-        all_fitness_corners[i]['_id'] = _id
-
-    return {
-        "message": "Fetched gyms",
-        "gyms": all_fitness_corners
-    }
 
 @app.delete("/workout_reset/{user_id}")
 async def reset_workout_counter(user_id: str):
