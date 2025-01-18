@@ -444,9 +444,7 @@ async def nearest(request_data: DistanceRequest):
     date = request_data.date
 
     # Initialize the nearest locations dictionary
-    nearest = {}
-    event_nearest = {}
-    empty_nearest = {}
+    nearest = []
     all_gyms = gyms()['gyms']  # Assuming this fetches a list of gyms from your MongoDB
     all_fitness = fitness()['fitness_corners']  # Assuming this fetches fitness locations
     all_parks = parks()['parks']  # Assuming this fetches parks locations
@@ -464,38 +462,24 @@ async def nearest(request_data: DistanceRequest):
 
     # Access the schedule collection and find events for the specific date
     schedule_collection = client['events_collection']['schedule_database']
-    events = schedule_collection.find({date: {"$exists": True}})
+    events = schedule_collection.find({
+    "datetime": {"$regex": f"^{date}", "$options": "i"}}, {"_id": 0})
     visited = set()
 
     # Iterate through all events and locations, integrating them into the nearest dictionary
     for entry in events:
-        for timeslot, time_data in entry[date].items():  # Iterate over each timeslot
-            for location_type, location_info in time_data.items():
-                for loc_id, loc_data in location_info.items():
-                    user_groups = loc_data.get('user_groups', [])
-                    loc_dict = client['events_collection'][f'{location_type}_database'].find_one({'_id': ObjectId(loc_id)}, 
-                                            {'_id': 0})
-                    loc_coordinates = loc_dict.get('coordinates')
-                    loc_name = loc_dict.get('name')
+        loc_coordinates = entry['location_data']['coordinates']
+        loc_name = entry['location_data']['name']
 
-                    # Calculate the distance from the provided coordinates
-                    distance = calculate_distance(lat, lon, loc_coordinates[1], loc_coordinates[0])
+        # Calculate the distance from the provided coordinates
+        distance = calculate_distance(lat, lon, loc_coordinates[1], loc_coordinates[0])
 
-                    # If the location is within 1 km, add it to the nearest dictionary
-                    if distance <= 1:
-                        if timeslot not in nearest:
-                            nearest[timeslot] = {}
+        # If the location is within 1 km, add it to the nearest dictionary
+        if distance <= 1:
+            nearest.append(entry)
 
-                        if location_type not in nearest[timeslot]:
-                            event_nearest[timeslot][location_type] = {}
-
-                        event_nearest[timeslot][location_type][loc_id] = {
-                            'location_data': loc_dict,
-                            'user_groups': user_groups if user_groups else {}
-                        }
-                        visited.add(loc_name)
-
-    empty_nearest = {'gym': {}, 'fitness_corner': {}, 'parks': {}}
+            visited.add(loc_name)
+    
     # Now include the locations from gyms, fitness, and parks that are within 1 km
     for location_type, all_locations in {'gym': all_gyms, 'fitness_corner': all_fitness, 'parks': all_parks}.items():
         for loc in all_locations:
@@ -509,12 +493,17 @@ async def nearest(request_data: DistanceRequest):
                 loc_id = str(loc['_id'])  # Assuming the ID is stored like this in MongoDB
                 # Add the location data to the nearest dictionary (without timeslot)
                 if location_name not in visited:
-                    empty_nearest[location_type][loc_id] = {
+                    single_data = {
+                        'datetime': None,
+                        'location_type': location_type,
+                        'location_id': loc_id,
                         'location_data': loc,
-                        'user_groups': [] 
+                        'user_ids': [],
+                        'chat_id': None,
+                        'checked_in': None
                     }
 
-    nearest = event_nearest | empty_nearest
+                    nearest.append(single_data)
 
     return {
         "message": "Fetched locations within 1km",
