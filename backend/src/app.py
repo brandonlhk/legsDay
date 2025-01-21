@@ -447,7 +447,7 @@ async def nearest(request_data: DistanceRequest):
     date = request_data.date
 
     # Initialize the nearest locations dictionary
-    nearest = []
+    nearest = {}
     all_gyms = gyms()['gyms']  # Assuming this fetches a list of gyms from your MongoDB
     all_fitness = fitness()['fitness_corners']  # Assuming this fetches fitness locations
     all_parks = parks()['parks']  # Assuming this fetches parks locations
@@ -473,40 +473,44 @@ async def nearest(request_data: DistanceRequest):
     for entry in events:
         loc_coordinates = entry['location_data']['coordinates']
         loc_name = entry['location_data']['name']
+        location_id = entry['location_id']
 
         # Calculate the distance from the provided coordinates
         distance = calculate_distance(lat, lon, loc_coordinates[1], loc_coordinates[0])
 
         # If the location is within 1 km, add it to the nearest dictionary
         if distance <= 1:
-            nearest.append(entry)
+            booking_dict = {entry['datetime']: {'user_ids': entry['user_ids'], 'chat_id': entry['chat_id'], 'checked_in': entry['checked_in']}}
+            if nearest.get(location_id):
+                nearest[location_id]['bookings'].append(booking_dict)
 
-            visited.add(loc_name)
+            else:
+                visited.add(loc_name)
+                nearest[location_id] = {
+                    'location_type':entry['location_type'],
+                    'location_data': entry['location_data'],
+                    'bookings': [booking_dict]
+                }
+                
     
     # Now include the locations from gyms, fitness, and parks that are within 1 km
     for location_type, all_locations in {'gym': all_gyms, 'fitness_corner': all_fitness, 'parks': all_parks}.items():
         for loc in all_locations:
             loc_coordinates = loc['coordinates']
             location_name = loc['name']
-            # Calculate the distance from the provided coordinates
-            distance = calculate_distance(lat, lon, loc_coordinates[1], loc_coordinates[0])
+            if location_name not in visited:
+                # Calculate the distance from the provided coordinates
+                distance = calculate_distance(lat, lon, loc_coordinates[1], loc_coordinates[0])
 
-            # If the location is within 1 km, add it to the nearest dictionary
-            if distance <= 1:
-                loc_id = str(loc['_id'])  # Assuming the ID is stored like this in MongoDB
-                # Add the location data to the nearest dictionary (without timeslot)
-                if location_name not in visited:
-                    single_data = {
-                        'datetime': None,
-                        'location_type': location_type,
-                        'location_id': loc_id,
+                # If the location is within 1 km, add it to the nearest dictionary
+                if distance <= 1:
+                    loc_id = str(loc['_id'])  # Assuming the ID is stored like this in MongoDB
+                    del loc['_id']
+                    nearest[loc_id] = {
                         'location_data': loc,
-                        'user_ids': [],
-                        'chat_id': None,
-                        'checked_in': None
+                        'location_type': location_type,
+                        'bookings': []
                     }
-
-                    nearest.append(single_data)
 
     return {
         "message": "Fetched locations within 1km",
