@@ -131,7 +131,7 @@ class CheckInRequest(BaseModel):
     time: str
     location_type: str
     location_id: str
-    user_group: str
+    booking_name: str
 
 # Haversine formula to calculate the great-circle distance
 def haversine(lat1, lon1, lat2, lon2):
@@ -158,7 +158,7 @@ class JoinUserGroupRequest(BaseModel):
     '''date needs to be in yyyy-mm-dd format. time needs to be in xx:xx:xx format'''
     date : str
     time : str
-    user_group: str
+    booking_name: str
     user_id : str
     location_id : str
     location_type: str
@@ -175,7 +175,7 @@ class SaveChatRequest(BaseModel):
     location_type: str
     location_id: str
     msg_content: str
-    user_group: str
+    booking_name: str
 
 
 def calculate_distance(lat1, lon1, lat2, lon2):
@@ -595,7 +595,7 @@ async def all_locations():
 async def join_user_group(request_data: JoinUserGroupRequest):
     date = request_data.date
     time = request_data.time
-    user_group = request_data.user_group
+    booking_name = request_data.booking_name
     user_id = request_data.user_id
     location_type = request_data.location_type
     location_id = request_data.location_id
@@ -606,7 +606,7 @@ async def join_user_group(request_data: JoinUserGroupRequest):
     location_type: 'gym',
     location_id: 'xxxxxxxx'
     location_data: {},
-    user_group: str,
+    booking_name: str,
     user_ids: [user_id],
     chat_id: 'xxxxxxx',
     checked_in: {user_id: False}
@@ -630,7 +630,7 @@ async def join_user_group(request_data: JoinUserGroupRequest):
         "timeslot": timeslot_time,
         "location_type": location_type,
         "location_id": location_id,
-        "user_group": user_group
+        "booking_name": booking_name
     })
 
     # If no chat exists, create a new one
@@ -639,22 +639,22 @@ async def join_user_group(request_data: JoinUserGroupRequest):
             "timeslot": timeslot_time,
             "location_type": location_type,
             "location_id": location_id,
-            "user_group": user_group,
+            "booking_name": booking_name,
             "messages": [],  # Empty message list initially
         })
         chat_id = str(chat_result.inserted_id)
     else:
         chat_id = str(chat["_id"])
 
-    # Update user's user_groups
-    existing_user_groups = user.get('user_groups', [])
+    # Update user's booking_names
+    existing_booking_names = user.get('booking_names', [])
 
     # Create the user group entry (simplified)
-    user_group_entry = {
+    booking_name_entry = {
                 'datetime': timeslot_time,
                 'location_type': location_type,
                 'location_id': location_id,
-                'user_group': user_group,
+                'booking_name': booking_name,
                 'location_data': client['events_collection'][f'{location_type}_database'].find_one(
                             {'_id': ObjectId(location_id)}, 
                             {'_id': 0}  # Exclude the _id field
@@ -666,22 +666,22 @@ async def join_user_group(request_data: JoinUserGroupRequest):
     # Check if the user is already in the group
     is_group_present = False
 
-    for group in existing_user_groups:
-        if group['datetime'] == timeslot_time:
+    for group in existing_booking_names:
+        if group.get('datetime', '') == timeslot_time:
             is_group_present = True
-            return {'message': f'{user_id} already joined {user_group} at {timeslot_time} at {location_id}'}
+            return {'message': f'{user_id} already joined {booking_name} at {timeslot_time} at {location_id}'}
 
     # Add the user group entry
-    existing_user_groups.append(user_group_entry)
+    existing_booking_names.append(booking_name_entry)
 
-    # Update the user's user_groups in the user collection
+    # Update the user's booking_names in the user collection
     user_collection.update_one(
         {"_id": ObjectId(user_id)},
-        {"$set": {"user_groups": existing_user_groups}},
+        {"$set": {"booking_names": existing_booking_names}},
         upsert=False
     )
 
-    result_message = f"User {user_id} successfully added to the group {user_group} at {location_id} for timeslot {timeslot_time}."
+    result_message = f"User {user_id} successfully added to the group {booking_name} at {location_id} for timeslot {timeslot_time}."
 
     # Initialize the schedule collection
     schedule_collection = client['events_collection']['schedule_database']
@@ -691,7 +691,7 @@ async def join_user_group(request_data: JoinUserGroupRequest):
     "datetime": timeslot_time,
     "location_type": location_type,
     "location_id": location_id,
-    "user_group": user_group
+    "booking_name": booking_name
     }
 
     # Find the timeslot document based on the query
@@ -703,7 +703,7 @@ async def join_user_group(request_data: JoinUserGroupRequest):
             "datetime": timeslot_time,  # Use the timeslot_time as datetime
             "location_type": location_type,
             "location_id": location_id,
-            "user_group": user_group,
+            "booking_name": booking_name,
             "location_data": client['events_collection'][f'{location_type}_database'].find_one(
                             {'_id': ObjectId(location_id)}, 
                             {'_id': 0}  # Exclude the _id field
@@ -728,7 +728,7 @@ async def join_user_group(request_data: JoinUserGroupRequest):
             "datetime": timeslot_time,  # Match the timeslot datetime
             "location_type": location_type,
             "location_id": location_id,
-            "user_group": user_group,
+            "booking_name": booking_name,
         },
         {
             "$set": {
@@ -752,7 +752,7 @@ async def exit_user_group(request_data: JoinUserGroupRequest):
     date = request_data.date
     time = request_data.time
     user_id = request_data.user_id
-    user_group = request_data.user_group
+    booking_name = request_data.booking_name
     location_type = request_data.location_type
     location_id = request_data.location_id
 
@@ -768,7 +768,7 @@ async def exit_user_group(request_data: JoinUserGroupRequest):
         "datetime": timeslot_time,
         "location_type": location_type,
         "location_id": location_id,
-        "user_group": user_group
+        "booking_name": booking_name
     }
 
     # Find the timeslot document based on the query
@@ -793,7 +793,7 @@ async def exit_user_group(request_data: JoinUserGroupRequest):
             "datetime": timeslot_time,  # Match the timeslot datetime
             "location_type": location_type,
             "location_id": location_id,
-            "user_group": user_group
+            "booking_name": booking_name
         },
         {
             "$set": {
@@ -812,26 +812,26 @@ async def exit_user_group(request_data: JoinUserGroupRequest):
     if not user:
         raise HTTPException(status_code=404, detail="User not found.")
 
-    # Remove the user from their user_groups in the user collection
-    existing_user_groups = user['user_groups']
-    updated_user_groups = []
+    # Remove the user from their booking_names in the user collection
+    existing_booking_names = user['booking_names']
+    updated_booking_names = []
 
-    for group_dict in existing_user_groups:
+    for group_dict in existing_booking_names:
         if not group_dict['datetime'] == timeslot_time:
-            updated_user_groups.append(group_dict)
-    print(existing_user_groups, updated_user_groups)
-    # Update the user document with the new user_groups list
+            updated_booking_names.append(group_dict)
+    print(existing_booking_names, updated_booking_names)
+    # Update the user document with the new booking_names list
     user_result = user_collection.update_one(
         {"_id": ObjectId(user_id)},
-        {"$set": {"user_groups": updated_user_groups}},
+        {"$set": {"booking_names": updated_booking_names}},
         upsert=False  # Do not create a new document; we are updating an existing one
     )
 
     # Check if the schedule document was modified
     if user_result.modified_count == 0:
-        return {"message": f"User {user_id} was not found for {user_group} in {location_id} for {date}T{time}."}
+        return {"message": f"User {user_id} was not found for {booking_name} in {location_id} for {date}T{time}."}
     elif user_result.modified_count > 0:
-        return {"message": f"User {user_id} successfully removed from {user_group} in {location_id} for {date}T{time}."}
+        return {"message": f"User {user_id} successfully removed from {booking_name} in {location_id} for {date}T{time}."}
     else:
         raise HTTPException(status_code=500, detail="User DB was not updated correctly.")
 
@@ -840,7 +840,7 @@ async def exit_user_group(request_data: JoinUserGroupRequest):
 async def save_chat(request_data: SaveChatRequest):
     # Retrieve the necessary fields from the request data
     timeslot = request_data.timeslot  # In the format "yyyy-mm-ddTxx:xx:xx"
-    user_group = request_data.user_group
+    booking_name = request_data.booking_name
     user_id = request_data.user_id
     location_type = request_data.location_type
     location_id = request_data.location_id
@@ -860,7 +860,7 @@ async def save_chat(request_data: SaveChatRequest):
         "timeslot": timeslot_iso,
         "location_type": location_type,
         "location_id": location_id,
-        "user_group": user_group
+        "booking_name": booking_name
     })
 
     # If the chat doesn't exist, we cannot save a message, so return an error
@@ -901,11 +901,11 @@ async def get_user_groups(request_data: GetUserGroupRequest):
     if not user:
         raise HTTPException(status_code=404, detail="User not found.")
     
-    all_user_groups = user.get('user_groups', [])
-    user_groups = []
+    all_booking_names = user.get('booking_names', [])
+    booking_names = []
 
     # Iterate through each group dictionary in the user's groups
-    for group_dict in all_user_groups:
+    for group_dict in all_booking_names:
         timestamp_str = group_dict['datetime']
         # Convert the timestamp string to a datetime object
         try:
@@ -920,12 +920,12 @@ async def get_user_groups(request_data: GetUserGroupRequest):
             # if isinstance(location_data, dict) and '_id' in location_data:
             #     location_data['_id'] = str(location_data['_id'])
 
-            # Add the group to the user_groups list if it's in the future
-            user_groups.append({
+            # Add the group to the booking_names list if it's in the future
+            booking_names.append({
                 "timestamp": timestamp.isoformat(),
                 "location_type": group_dict.get('location_type', ''),
                 "location_id": group_dict.get('location_id', ''),
-                "user_group": group_dict.get('user_group', ''),
+                "booking_name": group_dict.get('booking_name', ''),
                 "chat_id": group_dict.get('chat_id', None),
                 "checked_in": group_dict.get('checked_in', False),
                 "location": location_data
@@ -933,7 +933,7 @@ async def get_user_groups(request_data: GetUserGroupRequest):
 
     return {
         "message": f"Fetched user groups for user {user_id}",
-        "user_groups": user_groups
+        "user_groups": booking_names
     }
 
 
@@ -942,7 +942,7 @@ async def check_in(request_data: CheckInRequest):
     user_id = request_data.user_id
     timeslot_time = datetime.strptime(f'{request_data.date} {request_data.time}', "%Y-%m-%d %H:%M:%S").isoformat()
     location_type = request_data.location_type
-    user_group = request_data.user_group
+    booking_name = request_data.booking_name
     location_id = request_data.location_id
     schedule_collection = client['events_collection']['schedule_database']
 
@@ -953,7 +953,7 @@ async def check_in(request_data: CheckInRequest):
 
     # Find if the user already has the group entry with the provided timeslot and location
     existing_group_entry = None
-    for entry in user['user_groups']:
+    for entry in user['booking_names']:
         timestamp_str = entry['datetime']
         if timestamp_str == timeslot_time:
             if (
@@ -969,14 +969,14 @@ async def check_in(request_data: CheckInRequest):
         result = user_collection.update_one(
             {
                 "_id": ObjectId(user_id),
-                f"user_groups.{user['user_groups'].index(existing_group_entry)}.location_type": location_type,
-                f"user_groups.{user['user_groups'].index(existing_group_entry)}.location_id": location_id,
-                f"user_groups.{user['user_groups'].index(existing_group_entry)}.datetime": timeslot_time,
-                f"user_groups.{user['user_groups'].index(existing_group_entry)}.user_group": user_group,
+                f"booking_names.{user['booking_names'].index(existing_group_entry)}.location_type": location_type,
+                f"booking_names.{user['booking_names'].index(existing_group_entry)}.location_id": location_id,
+                f"booking_names.{user['booking_names'].index(existing_group_entry)}.datetime": timeslot_time,
+                f"booking_names.{user['booking_names'].index(existing_group_entry)}.booking_name": booking_name,
             },
             {
                 "$set": {
-                    f"user_groups.{user['user_groups'].index(existing_group_entry)}.checked_in": True  # Update the `checked_in` field
+                    f"booking_names.{user['booking_names'].index(existing_group_entry)}.checked_in": True  # Update the `checked_in` field
                 }
             }
         )
@@ -987,7 +987,7 @@ async def check_in(request_data: CheckInRequest):
                 "datetime": timeslot_time,
                 "location_type": location_type,
                 "location_id": location_id,
-                "user_group": user_group,
+                "booking_name": booking_name,
                 "user_ids": {"$in": [user_id]}  # Ensure the user is part of the group
             },
             {
@@ -1004,4 +1004,4 @@ async def check_in(request_data: CheckInRequest):
         else:
             return {"message": "Failed to update check-in status"}
     else:
-        return {"message": f"User {user_id} does not have {user_group} at {request_data.date}T{request_data.time} with the specified location."}
+        return {"message": f"User {user_id} does not have {booking_name} at {request_data.date}T{request_data.time} with the specified location."}
