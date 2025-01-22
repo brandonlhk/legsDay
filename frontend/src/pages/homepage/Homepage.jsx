@@ -91,8 +91,64 @@ export default function Homepage() {
   const [center, setCenter] = useState({ lat: 1.3521, lng: 103.8198 }); // Default center (Singapore)
   const [zoom, setZoom] = useState(12); // Default zoom
   const [currentLocation, setCurrentLocation] = useState(null); // Current user location
+  const [currentLocationData, setCurrentLocationData] = useState(null)
   const [locations, setLocations] = useState([]);
   const [locationQuery, setLocationQuery] = useState(""); // Search query
+
+  const renderMarkers = async (data) => {
+
+    const allLocations = [];
+    Object.keys(data.locations).forEach((id) => {
+      const locationData = data.locations[id];
+
+      let totalPopularity = 0
+      if (locationData.bookings.length != 0) {
+        let bookings = locationData.bookings
+
+        bookings.forEach((booking) => {
+          Object.keys(booking).forEach((timeslot) => {
+            let selectedTime = timeValue
+          
+            if (selectedTime <= 10) {
+              selectedTime = `0${timeValue}`
+            }
+
+            let selectedTimeSlot = `${selectedTime}:00:00`
+            if (selectedTimeSlot === timeslot.split("T")[1]) {
+              totalPopularity += booking[timeslot].user_ids.length
+            }
+          })
+        })
+      }
+
+      // Determine popularity status
+      let popularityStatus = "lesspop";
+      if (totalPopularity >= 1 && totalPopularity <= 10) {
+        popularityStatus = "pop";
+      } else if (totalPopularity >= 11) {
+        popularityStatus = "verypop";
+      }
+
+      // Add location with calculated marker name
+      allLocations.push({
+        id,
+        locationType : locationData.location_type,
+        coordinates: locationData.location_data.coordinates,
+        markerName: `${popularityStatus}-${locationData.location_type}`,
+        address : locationData.location_data.address || `${locationData.location_data.name}, ${locationData.location_data.postal_code}`
+      });
+      
+
+    });
+
+    // Update the map state
+    if (allLocations.length > 0) {
+      setLocations(allLocations);
+      setZoom(15);
+    } else {
+      alert("No locations found near your search.");
+    }
+  }
 
   const handleSearch = async () => {
     try {
@@ -105,7 +161,6 @@ export default function Homepage() {
       const requestBody = {
         address: currentPosition, // Use the user's search query for the address
         date: selectedDate, // Current date in YYYY-MM-DD format
-        time: `${timeValue}:00:00`, // Current time in HH:mm:ss format
       };
   
       const response = await fetch(`${import.meta.env.VITE_PROTOCOL}${import.meta.env.VITE_HOST}${import.meta.env.VITE_PORT}/get_nearest`, {
@@ -117,49 +172,11 @@ export default function Homepage() {
       });
   
       const data = await response.json();
-      if (data.locations) {
-        const allLocations = [];
-        Object.keys(data.locations).forEach((category) => {
-          const categoryData = data.locations[category];
+      console.log(data)
 
-          Object.keys(categoryData).forEach((id) => {
-            const location = categoryData[id];
-            const userGroups = location.user_groups || {};
-  
-            // Calculate total popularity
-            const totalPopularity = Object.values(userGroups).reduce(
-              (sum, group) => sum + (group.users?.length || 0),
-              0
-            );
-  
-            // Determine popularity status
-            let popularityStatus = "lesspop";
-            if (totalPopularity >= 3 && totalPopularity <= 10) {
-              popularityStatus = "pop";
-            } else if (totalPopularity >= 11) {
-              popularityStatus = "verypop";
-            }
-            // Add location with calculated marker name
-            if (location.location_data != undefined) {
-                allLocations.push({
-                  id,
-                  category,
-                  coordinates: location.location_data.coordinates,
-                  markerName: `${popularityStatus}-${category}`,
-                  userGroups : location.user_groups,
-                  address : location.location_data.address || `${location.location_data.name}, ${location.location_data.postal_code}`
-                });
-            }
-          });
-        });
-  
-        // Update the map state
-        if (allLocations.length > 0) {
-          setLocations(allLocations);
-          setZoom(15);
-        } else {
-          alert("No locations found near your search.");
-        }
+      if (data.locations) {
+        renderMarkers(data)
+        setCurrentLocationData(data)
         setLoading(false)
       } else {
         alert("No locations found.");
@@ -206,7 +223,7 @@ export default function Homepage() {
       setGroups(userGroups); // Update the state
       };
 
-      fetchGroups();
+      // fetchGroups();
   }, []);
   
 
@@ -369,6 +386,13 @@ export default function Homepage() {
     }
 
     useEffect(() => {
+
+      if (currentLocationData !== null) {
+        renderMarkers(currentLocationData)
+      }
+    }, [timeValue])
+
+    useEffect(() => {
       if (!didMount.current) {
         // Skip the first render
         didMount.current = true;
@@ -377,7 +401,7 @@ export default function Homepage() {
     
       // Call handleSearch on subsequent updates
       handleSearch();
-    }, [timeValue, selectedDate]);
+    }, [selectedDate]);
     const didMount = useRef(false); // Ref to track the first render
   
 
@@ -609,7 +633,6 @@ export default function Homepage() {
                   className="range  w-full range-xs"
                   onChange={(e) => {
                     const newValue = Number(e.target.value);
-
                     // If today, prevent moving slider to earlier times than currentHour
                     if (dayjs(selectedDate).isSame(dayjs(), "day") && newValue < currentHour) {
                       return; // Ignore invalid movement
