@@ -921,8 +921,7 @@ async def get_user_groups(request_data: GetUserGroupRequest):
             continue  # Skip invalid timestamps
         
         # If the timestamp is in the future, process the group
-        # if timestamp > current_datetime:
-        if timestamp:
+        if timestamp > current_datetime:
             # Fetch additional location data from the schedule database if necessary
             location_data = group_dict.get('location_data', {})
             chat_id = group_dict.get('chat_id', None)
