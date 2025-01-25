@@ -7,6 +7,8 @@ import dayjs from "dayjs"
 export default function Booking() {
     const marker = JSON.parse(localStorage.getItem("marker"))
     const timeslot = JSON.parse(localStorage.getItem("timeslot"))
+    const userId = localStorage.getItem("userId")
+    console.log(marker)
 
     // Extract and preprocess the start time (e.g., "7:00am")
     const startTime = timeslot.timeslot.split(" - ")[0].trim(); // Extract the starting time
@@ -14,13 +16,13 @@ export default function Booking() {
     const [hour, minute] = startTime.replace(/am|pm/i, "").split(":").map(Number); // Extract hour and minute
     const formattedHour = isPM && hour !== 12 ? hour + 12 : (!isPM && hour === 12 ? 0 : hour); // Handle PM and 12 AM edge cases
     const formattedTime = `${String(formattedHour).padStart(2, "0")}:${String(minute || 0).padStart(2, "0")}:00`; // Format to "HH:MM:SS"
-    const userAge = localStorage.getItem("age")
-    const userGender = localStorage.getItem("gender")
+
+    const timestampKey = `${timeslot.date}T${formattedTime}`
 
     const navigate = useNavigate()
     const [selectedWorkout, setSelectedWorkout] = useState(null);
-    const [selectedGroup, setSelectedGroup] = useState(null)
     const [videos, setVideos] = useState([])
+    const [chat, setChat] = useState([])
 
 
     // agree checkbox
@@ -35,17 +37,13 @@ export default function Booking() {
             navigate("/home")
         }
 
-        if (view === "chooseGroup") {
-            setView("selectWorkout")
-        }
-
         if (view === "agree") {
-            setView("chooseGroup")
+            setView("selectWorkout")
         }
     }
 
     const selectWorkout = () => {
-        setView("chooseGroup")
+        setView("agree")
     }
 
 
@@ -125,44 +123,48 @@ export default function Booking() {
       };
     // Filter workouts based on the category type
     const filteredWorkouts = workouts.filter(
-        (workout) => workout.type === categoryToType[marker.category]
+        (workout) => workout.type === categoryToType[marker.locationType]
     );
 
     const join = async () => {
         // Construct the join request payload
+        console.log(marker)
         console.log(selectedWorkout);
-        console.log(selectedGroup);
         const payloadForJoin = {
             date: timeslot.date, // Expected timeslot format: { date: "YYYY-MM-DD", time: "HH:mm" }
             time: formattedTime,
-            user_id: localStorage.getItem("userId"),
-            user_group: selectedGroup, // Group name selected by the user
+            user_id: userId,
+            booking_name: selectedWorkout.name, // Group name selected by the user
             location_id: marker.id, // Use the location ID from marker
-            location_type: marker.category, // Use the location type from marker (e.g., "gym", "park", etc.)
+            location_type: marker.locationType, // Use the location type from marker (e.g., "gym", "park", etc.)
         };
         
         let category = "bodyweight"
 
-        
-        if (selectedGroup.includes("mobility")) {
+        if (selectedWorkout.name.includes("mobility")) {
             category = "mobility"
         }
         
-        if (selectedGroup.includes("general_strength")) {
+        if (selectedWorkout.name.includes("general_strength")) {
             category = "general_strength"
         }
         
-        if (selectedGroup.includes("powerlifting")) {
+        if (selectedWorkout.name.includes("powerlifting")) {
             category = "powerlifting"
         }
 
         const payloadForVideos = {
             category : category
         }
+
+        const payloadForGroups = {
+            user_id : userId
+        }
     
         // Define the URLs for both requests
         const joinUrl = `${import.meta.env.VITE_PROTOCOL}${import.meta.env.VITE_HOST}${import.meta.env.VITE_PORT}/join_user_group`;
         const videosUrl = `${import.meta.env.VITE_PROTOCOL}${import.meta.env.VITE_HOST}${import.meta.env.VITE_PORT}/get_videos`;
+        const groupsUrl = `${import.meta.env.VITE_PROTOCOL}${import.meta.env.VITE_HOST}${import.meta.env.VITE_PORT}/get_user_groups`;
     
         try {
             // Create the join request
@@ -182,16 +184,31 @@ export default function Booking() {
                 },
                 body: JSON.stringify(payloadForVideos),
             });
+
+            // Create the videos request (template request for videos list)
+            const groupsRequest = fetch(groupsUrl, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify(payloadForGroups),
+            });
     
             // Execute both requests in parallel
             const [joinResponse, videosResponse] = await Promise.all([joinRequest, videosRequest]);
-    
+
+            // then excute this request
+            const groupResponse = await groupsRequest;
+            const groupData = await groupResponse.json()
+            const userGroupsData = groupData.user_groups
+            
             // Handle the join request response
-            if (joinResponse.ok) {
+            const status = await joinResponse.json() 
+            if (!status.message.includes("already joined")) {
                 console.log("Successfully joined the group.");
             } else {
-                console.error("Failed to join group:", await joinResponse.text());
-                alert("Failed to join the group. Please try again.");
+                console.error("Failed to join group:");
+                alert("You have joined another group in the same timeslot!");
                 return; // Stop further execution
             }
     
@@ -200,10 +217,11 @@ export default function Booking() {
                 const response = await videosResponse.json();
                 setVideos(response)
             } else {
-                console.error("Failed to fetch videos:", await videosResponse.text());
+                console.error("Failed to fetch videos");
                 alert("Failed to fetch videos. Please try again.");
             }
-    
+
+            getChatsFromResponse(userGroupsData)
             // Update the view after both requests succeed
             setView("complete");
         } catch (error) {
@@ -228,6 +246,16 @@ export default function Booking() {
                 // user_group: details.user_group, // Pass the raw user group
               },
         })
+    }
+
+    const getChatsFromResponse = (response) => {
+        console.log(response)
+        const matchingChats = response.filter(response => response.timestamp.split("+")[0] === timestampKey);
+
+        if (matchingChats.chat_data) {
+            console.log(matchingChats.chat_data.chat_history)
+            setChat(matchingChats.chat_data.chat_history)
+        } 
     }
 
   return (
@@ -300,7 +328,7 @@ export default function Booking() {
             <>
                 <div className="flex items-center gap-3 mb-2">
                     <FontAwesomeIcon icon={faUser} />
-                    <span className="text-gray-500">{selectedGroup}</span>
+                    <span className="text-gray-500">{selectedWorkout.name}</span>
                 </div>
             
             </>
@@ -383,18 +411,20 @@ export default function Booking() {
     {view === "complete" && (
 
         <div className="flex flex-col mb-6">
-            <p className="font-bold">Unsure of what exercises to do?</p>  
-            {videos.videos.map((link, index) => (
-                <a key={index} className="text-tertGreen" href={link} target="_blank" rel="noopener noreferrer"><FontAwesomeIcon icon={faBookOpen} size="" className="mr-2"/>View exercise guide</a>
-            ))}
+            <p className="font-bold">Unsure of what exercises to do?</p>
+            <div className="flex flex-col gap-y-1">
+                {videos.videos.map((link, index) => (
+                    <a key={index} className="text-tertGreen" href={link} target="_blank" rel="noopener noreferrer"><FontAwesomeIcon icon={faBookOpen} className="mr-2"/>View exercise guide</a>
+                ))}
+            </div>  
         </div>
     )}
 
     {/* JOIN CONVERSATION PAGE (SHOW CONVO) -  COMPLETE*/}
-    {view === "complete" && (
+    {/* {view === "complete" && (
         <div className="mb-28">
             <h2 className="text-lg font-bold">Join the conversation!</h2>
-            {marker.userGroups[selectedGroup].chat.length !== 0 && marker.userGroups[selectedGroup].chat.map((convo, index) => (
+            {chat.length !== 0 && marker.userGroups[selectedGroup].chat.map((convo, index) => (
                 <div key={index}>
                     {convo}
                 </div>
@@ -404,81 +434,7 @@ export default function Booking() {
                 <p className="text-center mt-3">There are no messages yet! Send one to introduce yourself!</p>
             )}
         </div>
-    )}
-
-
-    {/* CHOOSE GROUP - CHOOSEGROUP */}
-    {view === "chooseGroup" && (
-        <>
-            <h2 className="text-lg font-bold mb-4">Select a workout group to join</h2>
-            <div className="card w-full border border-gray-200">
-                <div className="card-body p-6 bg-blueGrey">
-                    <h2 className="text-lg font-bold">{selectedWorkout.name}</h2>
-                    <p>{selectedWorkout.description}</p>
-                    <p>Level of difficulty: {selectedWorkout.difficulty}</p>
-                </div>
-            </div>
-
-            <div className="mt-6 space-y-3 mb-24">
-            {Object.keys(marker.userGroups)
-                .filter((group) => {
-                    // Filter by selected workout tag
-                    if (!group.startsWith(selectedWorkout.tag)) return false;
-
-                    // Additional conditions based on user's gender and age
-                    if (group.includes("_seniors") && userAge < 65) return false; // Exclude seniors group if age < 65
-                    if (group.includes("_ladies") && userGender !== "F") return false; // Exclude ladies group if not female
-
-                    return true; // Include the group otherwise
-                })
-                .map((group, index) => (
-                    <div
-                    key={index}
-                    className={`p-4 border rounded-lg flex justify-between items-center cursor-pointer ${
-                        selectedGroup === group ? "border-green-500 bg-green-50" : "border-gray-200"
-                    }`}
-                    onClick={() => setSelectedGroup(group)} // Set the selected group
-                    >
-                    <div>
-                        <h3 className="text-lg font-semibold capitalize">
-                        {group
-                            .replace(/_/g, " ")
-                            .replace("general", "General Group")
-                            .replace("ladies", "Ladies Only Group")
-                            .replace("parents", "Parents Only Group")}
-                        </h3>
-                        <p className="text-sm text-gray-600">
-                        <FontAwesomeIcon icon={faUser} />
-                        <span className="ml-3">
-                            {marker.userGroups[group].users.length} pax has joined
-                        </span>
-                        </p>
-                    </div>
-                    </div>
-                ))}
-            </div>
-        </>
-    )}
-
-    {/* SELECT WORKOUT BUTTON - SELECTWORKOUT */}
-    {view === "chooseGroup" && (
-        <>
-            {/* Footer Button */}
-            <div className="mt-6 fixed bottom-0 left-0 w-full p-4 bg-white shadow-md">
-                <button
-                className={`w-full py-3 font-bold rounded-full ${
-                    selectedGroup
-                    ? "bg-themeGreen text-white"
-                    : "bg-blueGrey text-[#476380] cursor-not-allowed"
-                }`}
-                disabled={!selectedGroup}
-                onClick={() => setView("agree")}
-                >
-                Join Workout Group
-                </button>
-            </div>
-        </>
-    )}
+    )} */}
 
     {/* SELECT WORKOUT BUTTON - SELECTWORKOUT */}
     {view === "agree" && (
@@ -506,12 +462,7 @@ export default function Booking() {
             {/* Footer Button */}
             <div className="mt-6 fixed bottom-0 left-0 w-full p-4 bg-white shadow-md">
             <button
-            className={`w-full py-3 font-bold rounded-full ${
-                selectedGroup
-                ? "bg-themeGreen text-white"
-                : "bg-blueGrey text-[#476380] cursor-not-allowed"
-            }`}
-            disabled={!selectedGroup}
+            className={`w-full py-3 font-bold rounded-full bg-themeGreen`}
             onClick={joinConvo}
             >
                 Join Conversation 

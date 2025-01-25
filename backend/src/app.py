@@ -78,7 +78,6 @@ class DistanceRequest(BaseModel):
     address: str
     '''date needs to be in yyyy-mm-dd format'''
     date: str
-    time: str
 
 class ParkRequest(BaseModel):
     _id: str
@@ -177,7 +176,9 @@ class SaveChatRequest(BaseModel):
     location_id: str
     msg_content: str
     booking_name: str
-
+    
+class GetVideos(BaseModel):
+    category: str
 
 def calculate_distance(lat1, lon1, lat2, lon2):
     return geodesic((lat1, lon1), (lat2, lon2)).km
@@ -727,8 +728,7 @@ async def join_user_group(request_data: JoinUserGroupRequest):
     else:
         if user_id not in timeslot['user_ids']:
             timeslot['user_ids'].append(user_id)
-            timeslot['checked_in'][user_id] = False
-
+            timeslot['checked_in'][user_id] = False    
         schedule_result = schedule_collection.update_one(
         {
             "datetime": timeslot_time,  # Match the timeslot datetime
@@ -1016,3 +1016,46 @@ async def check_in(request_data: CheckInRequest):
             return {"message": "Failed to update check-in status"}
     else:
         return {"message": f"User {user_id} does not have {booking_name} at {request_data.date}T{request_data.time} with the specified location."}
+
+@app.post("/get_videos")
+async def check_in(request_data: GetVideos):
+    video_category = request_data.category
+    
+    # for now, hardcoded videos
+    bodyweight = [
+        "https://www.youtube.com/watch?app=desktop&v=9CPC8wrAu14",
+        "https://www.youtube.com/watch?v=jrHiJ8heFTw",
+        "https://www.youtube.com/watch?v=WtYQ7fOjvJc",
+        "https://www.youtube.com/watch?v=6yevi8iUC4U",
+        "https://www.youtube.com/watch?v=f2fCMFvwRR0&list"
+    ]
+    
+    mobility = [
+        "https://www.youtube.com/watch?v=SotLyRb8XjE"
+    ]
+    
+    general_strength = [
+        "https://www.youtube.com/watch?v=m1UF4RgGoY0&t=115s",
+        "https://www.youtube.com/watch?v=EKUNGQ4LmH8",
+        "https://www.youtube.com/watch?v=2Wh0_klqShw",
+        "https://www.youtube.com/watch?v=ZM8yPWiQuyE"
+    ]
+    
+    powerlifting = [
+        "https://www.youtube.com/watch?v=OPEDjl88P-4"
+    ]
+    
+    
+    if (video_category == "bodyweight"):
+        return {"videos" : bodyweight}
+    
+    if (video_category == "mobility"):
+        return {"videos" : mobility}
+    
+    if (video_category == "general_strength"):
+        return {"videos" : general_strength}
+    
+    if (video_category == "powerlifting"):
+        return {"videos" : powerlifting}
+        
+    

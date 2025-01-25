@@ -37,7 +37,10 @@ export default function Homepage() {
 
         if (response.ok) {
             const result = await response.json();
+            console.log(result)
+
             return result.user_groups
+
         } else {
             console.error("Failed to get groups:", await response.text());
         }
@@ -45,21 +48,6 @@ export default function Homepage() {
         console.error("Error getting groups:", error);
     }
   }
-
-  const formatUserGroupName = (userGroup) => {
-    // Split the string by underscores
-    const parts = userGroup.split("_");
-    
-    // Remove the last part
-    parts.pop();
-    
-    // Join the remaining parts into a readable name
-    const formattedName = parts
-      .map((word) => word.charAt(0).toUpperCase() + word.slice(1)) // Capitalize each word
-      .join(" "); // Join with spaces
-
-    return formattedName;
-  };
 
 
   // ------------------------------------------- END LOAD -------------------------------------  
@@ -223,7 +211,7 @@ export default function Homepage() {
       setGroups(userGroups); // Update the state
       };
 
-      // fetchGroups();
+      fetchGroups();
   }, []);
   
 
@@ -448,32 +436,25 @@ export default function Homepage() {
             <div className="carousel carousel-center rounded-box mt-3 w-full gap-6">
                 {groups !== null &&
                   groups.map((groupObj, index) => {
-                    // Access the date-time key and details object
-                    const [time, details] = Object.entries(groupObj)[0];
-                    const userGroup = formatUserGroupName(details.user_group);
-                    const groupType = details.user_group.split("_").pop();
+                    console.log(groupObj)
 
                     return (
                       <div key={index} className="carousel-item">
                         <div className="p-4 bg-blueGrey rounded-lg shadow-md w-[22rem]">
                           {/* Show the Group Name */}
-                          <h3 className="text-lg font-bold">{userGroup}</h3>
+                          <h3 className="text-lg font-bold">{groupObj.booking_name}</h3>
 
                           {/* Show the Group Details */}
                           <div className="mt-2">
-                            <p>
-                              <FontAwesomeIcon icon={faUser} className="mr-3" />
-                              <span className="text-gray-500">{groupType[0].toUpperCase() + groupType.substring(1,)} Group</span>
-                            </p>
 
                             <p>
                               <FontAwesomeIcon icon={faCalendarAlt} className="mr-3" />
-                              <span className="text-gray-500">{dayjs(time).format("dddd, MMM D, h:mm A")}</span>
+                              <span className="text-gray-500">{dayjs(groupObj.timestamp.split("+")[0]).format("dddd, MMM D, h:mm A")}</span>
                             </p>
 
                             <p className="flex items-center">
                               <FontAwesomeIcon icon={faMapMarkerAlt} className="mr-3 flex-shrink-0" />
-                              <span className="text-gray-500 truncate overflow-hidden whitespace-nowrap">{details.location.address || details.location.name + ", " + details.location.postal_code}</span>
+                              <span className="text-gray-500 truncate overflow-hidden whitespace-nowrap">{groupObj.location_data.address || groupObj.location_data.name + ", " + groupObj.location_data.postal_code}</span>
                             </p>
                               
 
@@ -483,12 +464,11 @@ export default function Homepage() {
                                 navigate("/message-groups", {
                                   state: {
                                     from : "direct",
-                                    time, // Pass the time
-                                    chat: details.chat || [], // Pass the chat array
-                                    location: details.location, // Pass the location details
-                                    userGroup, // Pass the formatted user group name
-                                    user_group: details.user_group, // Pass the raw user group,
-                                    location_type : details.location_type
+                                    time: groupObj.timestamp.split("+")[0], // Pass the time
+                                    chat: groupObj.chat_data.chat_history.messages || [], // Pass the chat array
+                                    location: groupObj.location_data, // Pass the location details
+                                    location_type : groupObj.location_type,
+                                    groupObj
                                   },
                                 })}
                               >

@@ -34,6 +34,7 @@ export default function Signin() {
 
       if (response.ok) {
         localStorage.setItem("userId", data.userid)
+        localStorage.setItem("name", data.name)
         localStorage.setItem("gender", data.gender)
         localStorage.setItem("workoutCounter", data.workoutCounter)
         localStorage.setItem("workoutFreq", data.workoutFreq)
