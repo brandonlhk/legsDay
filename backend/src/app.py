@@ -386,6 +386,7 @@ async def login(request_data: LoginRequest):
         return {
             "message": "Login successful",
             "userid": str(user['_id']),
+            "name": str(user['name']),
             "workoutFreq": str(user["frequency"]),
             "workoutCounter" : str(user["workout_counter"]),
             "gender" : str(user['gender']),
@@ -912,7 +913,7 @@ async def get_user_groups(request_data: GetUserGroupRequest):
 
     # Iterate through each group dictionary in the user's groups
     for group_dict in all_booking_names:
-        print(group_dict)
+        # print(group_dict)
         timestamp_str = group_dict['datetime']
         # Convert the timestamp string to a datetime object
         try:
