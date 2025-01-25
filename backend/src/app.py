@@ -35,19 +35,8 @@ user_db = client.user
 user_collection = user_db.users
 exercise_db = client['exercise_database']
 Client = OneMapClient(os.environ["EMAIL"], os.environ["PASSWORD"])
-
-class SubstitutionData(BaseModel):
-    exercise_id: str
-    name: str
-    body_part: str
-
-class SubstitutionRequest(BaseModel):
-    userid: str
-    substitution: SubstitutionData
     
-class RecommendationRequest(BaseModel):
-    userid: str
-    
+
 class LoginRequest(BaseModel):
     email: str
     password: str
@@ -78,48 +67,6 @@ class DistanceRequest(BaseModel):
     address: str
     '''date needs to be in yyyy-mm-dd format'''
     date: str
-    time: str
-
-class ParkRequest(BaseModel):
-    _id: str
-    name: str
-    coordinates: List[float]
-    inc_crc: str
-    fml_upd_d: str
-
-class GymRequest(BaseModel):
-    name: str
-    kml_id: str
-    coordinates: List[float]
-    dinc_crc: str
-    fml_upd_d: str
-    hyperlink: str
-    photo_url: str
-    postal_code: str
-    street_name: str
-    building_number: str
-    building_name: str
-    unit_number: str
-    floor: str
-    description: str
-
-class FitnessCornerRequest(BaseModel):
-    _id: str
-    name:str
-    coordinates: List[float]
-    global_id: str
-    subtype: int
-    inc_crc: str
-    fml_upd_d: str
-
-class AllGymsRequest(BaseModel):
-    data: List[GymRequest]
-
-class AllParksRequest(BaseModel):
-    data: List[ParkRequest]
-
-class AllFitnessCornerRequest(BaseModel):
-    data: List[FitnessCornerRequest]
 
 class WorkoutCounter(BaseModel):
     user_id: str
@@ -134,26 +81,6 @@ class CheckInRequest(BaseModel):
     location_id: str
     booking_name: str
 
-# Haversine formula to calculate the great-circle distance
-def haversine(lat1, lon1, lat2, lon2):
-    R = 6371.0  # Radius of the Earth in kilometers
-    lat1_rad = math.radians(lat1)
-    lon1_rad = math.radians(lon1)
-    lat2_rad = math.radians(lat2)
-    lon2_rad = math.radians(lon2)
-    
-    dlat = lat2_rad - lat1_rad
-    dlon = lon2_rad - lon1_rad
-    
-    a = math.sin(dlat / 2)**2 + math.cos(lat1_rad) * math.cos(lat2_rad) * math.sin(dlon / 2)**2
-    c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
-    
-    return R * c  # Distance in kilometers
-    
-class TimeslotRequest(BaseModel):
-    '''date needs to be in yyyy-mm-dd format. time needs to be in xx:xx:xx format'''
-    date: str
-    time: str
 
 class JoinUserGroupRequest(BaseModel):
     '''date needs to be in yyyy-mm-dd format. time needs to be in xx:xx:xx format'''
@@ -217,46 +144,6 @@ def fitness():
         "fitness_corners": all_fitness_corners
     }
 
-# Function to fetch location data from the databases
-def get_locations(timeslot):
-    location_data = {
-        'gym': [],
-        'parks': [],
-        'fitness_corner': []
-    }
-
-    # Fetch gym data
-    all_gyms = timeslot["gym"]
-    for gym_id, gym_data in all_gyms.items():
-        # coordinates= gym_data['coordinates']
-        location_data['gym'].append({
-            'id': gym_id,
-            'location_data': gym_data['location_data'],
-            'user_groups': gym_data['user_groups']
-        })
-
-    # Fetch park data
-    all_parks = timeslot["parks"]
-    for _id, data in all_parks.items():
-        # coordinates= data['coordinates']
-        location_data['parks'].append({
-            'id': _id,
-            'location_data': data['location_data'],
-            'user_groups': data['user_groups']
-        })
-
-
-    # Fetch fitness corner data
-    all_fitness_corners = timeslot["fitness_corner"]
-    for _id, data in all_fitness_corners.items():
-        # coordinates= data['location_data']['coordinates']
-        location_data['fitness_corner'].append({
-            'id': _id,
-            'location_data': data['location_data'],
-            'user_groups': data['user_groups']
-        })
-
-    return location_data
 
 # function to check if email input is valid 
 def is_email_valid(email: str):
@@ -266,73 +153,6 @@ def is_email_valid(email: str):
     else:
         return False
 
-def initialize_weights(ids: list):
-    return {id: float(1) for id in ids}
-
-def calculate_reps_and_sets(preferences, core_strength, upper_body_strength, lower_body_strength):
-        recommended_reps_and_sets = {'upper': defaultdict(str), 'lower': defaultdict(str), 'abs': defaultdict(str)}
-
-        core_strength = len(core_strength)
-        upper_body_strength = len(upper_body_strength)
-        lower_body_strength = len(lower_body_strength)
-        
-        strength_mapping = {0: 'advanced', 1: 'intermediate', 2: 'beginner', 3: 'beginner'}
-         
-        for body_part, exercises in preferences.items():
-            if body_part == 'upper':
-                strength_level = strength_mapping[upper_body_strength]
-            elif body_part == 'lower':
-                strength_level = strength_mapping[lower_body_strength]
-            else:
-                strength_level = strength_mapping[core_strength]
-
-            for exercise in exercises:
-                # Fetch the exercise document
-                exercise_data = exercise_db[body_part].find_one(ObjectId(exercise))  # Adjust the query as needed
-                
-                # Create reps_and_sets dictionary
-                recommended_reps = exercise_data[f'recommended_reps_{strength_level}']
-
-                recommended_reps_and_sets[body_part][exercise] = recommended_reps
-            
-        # print(recommended_reps_and_sets)
-        return recommended_reps_and_sets
-
-
-@app.post("/recommend")
-async def recommend_program(request_data: RecommendationRequest):
-    userid = request_data.userid
-
-    # Initialize the recommender
-    recommender = Recommender()
-
-    # Fetch user data and recommend a program
-    # try:
-    user_file = recommender.fetch_user_file(userid)
-    program = recommender.recommend_program(user_file)
-    response = {'message': 'program recommended successfully', 'data': program}
-
-    return response
-    # except Exception as e:
-    #     raise HTTPException(status_code=500, detail=f"An error occurred: {str(e)}")
-
-@app.post("/substitute")
-async def substitute_program(request_data: SubstitutionRequest):
-    userid = request_data.userid
-    substitution = request_data.substitution
-
-    # Initialize the recommender
-    recommender = Recommender()
-
-    # Fetch user data and recommend a program
-    try:
-        user_file = recommender.fetch_user_file(userid)
-        program = recommender.substitute(substitution.body_part, substitution.exercise_id, user_file)
-        response = {'message': 'program recommended successfully', 'data': program}
-
-        return response
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"An error occurred: {str(e)}")
 
 @app.post('/register')
 async def register(request_data: CreateAccountRequest):
@@ -577,29 +397,6 @@ async def increment_workout_counter(user_id: str):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
         
-@app.get("/get_all_locations")
-async def all_locations():
-    all_gyms = list(client['events_collection']['gym_database'].find({})) 
-    for i, fc in enumerate(all_gyms):
-        _id = str(fc['_id'])
-        all_gyms[i]['_id'] = _id
-
-    all_parks = list(client['events_collection']['parks_database'].find({})) 
-    for i, fc in enumerate(all_parks):
-        _id = str(fc['_id'])
-        all_parks[i]['_id'] = _id
-
-    all_fitness_corners = list(client['events_collection']['fitness_corner_database'].find({})) 
-    for i, fc in enumerate(all_fitness_corners):
-        _id = str(fc['_id'])
-        all_fitness_corners[i]['_id'] = _id
-
-    return {
-        "message": "Fetched all locations",
-        "gyms": all_gyms,
-        "fitness_corners": all_fitness_corners,
-        "parks": all_parks
-    }
 
 @app.post("/join_user_group")
 async def join_user_group(request_data: JoinUserGroupRequest):
