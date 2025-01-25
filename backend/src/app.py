@@ -559,17 +559,19 @@ async def increment_workout_counter(user_id: str):
         counter = user["workout_counter"]
         today = datetime.now().strftime("%Y-%m-%d")
         
-        # Verify date is current
-        if counter["date"] != today:
-            raise HTTPException(status_code=400, detail="Counter needs to be reset for today")
+        # # Verify date is current (not used in current iteration)
+        # if counter["date"] != today:
+        #     raise HTTPException(status_code=400, detail="Counter needs to be reset for today")
         
         # Increment counter
-        user_collection.update_one(
-            {"_id": user_id},
-                {"$inc": {"workout_counter.counter": 1}}
+        result = user_collection.update_one(
+            {"_id": ObjectId(user_id)},
+            {"$inc": {"workout_counter": 1}}
             )
-        
-        return {"message": "Counter incremented successfully"}
+
+        if result.modified_count > 0:
+            return {"message": "Counter incremented successfully"}
+        return {'message': f"User Collection for {user_id} was not updated. Something went wrong somethere"}
     except HTTPException as he:
         raise he
     except Exception as e:
