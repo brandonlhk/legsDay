@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useLocation  } from "react-router-dom";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faCalendarAlt, faMapMarkerAlt, faUser, faPaperPlane } from "@fortawesome/free-solid-svg-icons";
+import { faCalendarAlt, faMapMarkerAlt, faPaperPlane } from "@fortawesome/free-solid-svg-icons";
 import dayjs from "dayjs";
 
 export default function MessageGroup() {
@@ -30,6 +30,17 @@ export default function MessageGroup() {
       setGroupTime(time)
       setChatMessages(chat)
       setCurrentGroup(groupObj)
+    }
+
+    if ( from === "joinConvo") {
+      const groupData = JSON.parse(sessionStorage.getItem("groupData"));
+      console.log(groupData)
+      setView("viewGroup");
+      setGroupTime(groupData.timestamp.split("+")[0])
+      setLocationId(groupData.location_id)
+      setCurrentGroup(groupData);
+      setLocationType(groupData.location_type)
+      setChatMessages(groupData.chat_data.chat_history.messages); // Load initial chat messages
     }
   }, []);
 

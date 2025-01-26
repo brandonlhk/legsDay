@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faCalendarAlt, faMapMarkerAlt, faUser, faSignal, faFileLines, faCircleCheck, faBookOpen } from "@fortawesome/free-solid-svg-icons";
 import { useNavigate } from 'react-router-dom';
@@ -234,10 +234,9 @@ export default function Booking() {
     const joinConvo = () => {
         // i need to send the selectedgroup, marker, timeslot save it on localstorage first
         //marker and timeslot already in 
-        localStorage.setItem("selectedGroup", selectedGroup)
         navigate("/message-groups", {
             state: {
-                from : "nav",
+                from : "joinConvo",
                 //need to add these but for now, we go direct
                 // time, // Pass the time
                 // chat: details.chat || [], // Pass the chat array
@@ -249,14 +248,26 @@ export default function Booking() {
     }
 
     const getChatsFromResponse = (response) => {
-        console.log(response)
-        const matchingChats = response.filter(response => response.timestamp.split("+")[0] === timestampKey);
-
-        if (matchingChats.chat_data) {
-            console.log(matchingChats.chat_data.chat_history)
-            setChat(matchingChats.chat_data.chat_history)
-        } 
-    }
+        console.log(response);
+    
+        // Find the object where the timestamp matches
+        const matchingChats = response.find(item => item.timestamp.split("+")[0] === timestampKey);
+    
+        // Check if a matching chat exists
+        if (matchingChats) {
+            // Save the entire matching object (item) to sessionStorage
+            sessionStorage.setItem("groupData", JSON.stringify(matchingChats));
+    
+            // Log the chat history messages and update the state
+            if (matchingChats.chat_data) {
+                console.log(matchingChats.chat_data.chat_history.messages);
+                setChat(matchingChats.chat_data.chat_history.messages);
+            }
+        } else {
+            console.log("No matching chats found.");
+        }
+    };
+    
 
   return (
     <div className="p-6">
@@ -421,20 +432,20 @@ export default function Booking() {
     )}
 
     {/* JOIN CONVERSATION PAGE (SHOW CONVO) -  COMPLETE*/}
-    {/* {view === "complete" && (
+    {view === "complete" && (
         <div className="mb-28">
             <h2 className="text-lg font-bold">Join the conversation!</h2>
-            {chat.length !== 0 && marker.userGroups[selectedGroup].chat.map((convo, index) => (
+            {chat.length !== 0 && chat.map((convo, index) => (
                 <div key={index}>
                     {convo}
                 </div>
             ))}
 
-            {marker.userGroups[selectedGroup].chat.length === 0 && (
+            {chat.length === 0 && (
                 <p className="text-center mt-3">There are no messages yet! Send one to introduce yourself!</p>
             )}
         </div>
-    )} */}
+    )}
 
     {/* SELECT WORKOUT BUTTON - SELECTWORKOUT */}
     {view === "agree" && (
