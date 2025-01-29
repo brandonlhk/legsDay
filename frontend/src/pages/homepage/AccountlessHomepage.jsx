@@ -35,8 +35,8 @@ export default function Homepage() {
     setSelectedMarker(location);
     setSelectedMarkerId(location.id)
     setView("timeslots"); // Switch to timeslot view
-    console.log("change to timeslots")
-    console.log(location)
+    // console.log("change to timeslots")
+    // console.log(location)
   }
 
   const handleBack = () => {

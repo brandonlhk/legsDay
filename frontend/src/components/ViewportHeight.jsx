@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import DesktopWarning from "./DesktopWarning"
 
 const ViewportHeight = ({ children }) => {
   const [isMobile, setIsMobile] = useState(false);
@@ -31,6 +32,7 @@ const ViewportHeight = ({ children }) => {
 
   return (
     <div className={`${isMobile ? 'min-h-[calc(100*var(--vh))]' : 'h-screen'}`}>
+      <DesktopWarning />
       {children}
     </div>
   );

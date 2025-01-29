@@ -8,7 +8,7 @@ export default function Booking() {
     const marker = JSON.parse(localStorage.getItem("marker"))
     const timeslot = JSON.parse(localStorage.getItem("timeslot"))
     const userId = localStorage.getItem("userId")
-    console.log(marker)
+    // console.log(marker)
 
     // Extract and preprocess the start time (e.g., "7:00am")
     const startTime = timeslot.timeslot.split(" - ")[0].trim(); // Extract the starting time
@@ -128,8 +128,8 @@ export default function Booking() {
 
     const join = async () => {
         // Construct the join request payload
-        console.log(marker)
-        console.log(selectedWorkout);
+        // console.log(marker)
+        // console.log(selectedWorkout);
         const payloadForJoin = {
             date: timeslot.date, // Expected timeslot format: { date: "YYYY-MM-DD", time: "HH:mm" }
             time: formattedTime,
@@ -205,7 +205,7 @@ export default function Booking() {
             // Handle the join request response
             const status = await joinResponse.json() 
             if (!status.message.includes("already joined")) {
-                console.log("Successfully joined the group.");
+                // console.log("Successfully joined the group.");
             } else {
                 console.error("Failed to join group:");
                 alert("You have joined another group in the same timeslot!");
@@ -248,7 +248,7 @@ export default function Booking() {
     }
 
     const getChatsFromResponse = (response) => {
-        console.log(response);
+        // console.log(response);
     
         // Find the object where the timestamp matches
         const matchingChats = response.find(item => item.timestamp.split("+")[0] === timestampKey);
@@ -260,11 +260,10 @@ export default function Booking() {
     
             // Log the chat history messages and update the state
             if (matchingChats.chat_data) {
-                console.log(matchingChats.chat_data.chat_history.messages);
                 setChat(matchingChats.chat_data.chat_history.messages);
             }
         } else {
-            console.log("No matching chats found.");
+            // console.log("No matching chats found.");
         }
     };
     

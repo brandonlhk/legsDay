@@ -34,7 +34,7 @@ export default function MessageGroup() {
 
     if ( from === "joinConvo") {
       const groupData = JSON.parse(sessionStorage.getItem("groupData"));
-      console.log(groupData)
+      // console.log(groupData)
       setView("viewGroup");
       setGroupTime(groupData.timestamp.split("+")[0])
       setLocationId(groupData.location_id)
@@ -64,7 +64,7 @@ export default function MessageGroup() {
 
       if (response.ok) {
         const result = await response.json();
-        console.log(result)
+        // console.log(result)
         return result.user_groups;
       } else {
         console.error("Failed to get groups:", await response.text());
@@ -178,18 +178,19 @@ export default function MessageGroup() {
   
       if (data.checked_in) {
 
-        // try {
-        //   const response = await fetch(`${import.meta.env.VITE_PROTOCOL}${import.meta.env.VITE_HOST}${import.meta.env.VITE_PORT}/workout_increment/${userId}`, {
-        //     method: "PUT",
-        //     headers: {
-        //       "Content-Type": "application/json",
-        //     }
-        //   });
-        //   console.log(await response.json())
+        try {
+          const response = await fetch(`${import.meta.env.VITE_PROTOCOL}${import.meta.env.VITE_HOST}${import.meta.env.VITE_PORT}/workout_increment/${userId}`, {
+            method: "PUT",
+            headers: {
+              "Content-Type": "application/json",
+            }
+          });
+          let currentCount = localStorage.getItem("workoutCounter")
+          localStorage.setItem("workoutCounter", Number(currentCount) +1)
 
-        // } catch (error) {
-        //   console.error("Can't update counter")
-        // }
+        } catch (error) {
+          console.error("Can't update counter")
+        }
 
         alert("Checked in successfully!");
         window.location.reload()
@@ -227,7 +228,7 @@ export default function MessageGroup() {
           {groups !== null &&
             groups.map((groupObj, index) => {
 
-              console.log(groupObj)
+              // console.log(groupObj)
               let location = groupObj.location_data
 
               return (

@@ -11,7 +11,6 @@ export default function Homepage() {
 
   // ------------------------------------------- LOAD -------------------------------------------
   const [name, setName] = useState(localStorage.getItem("name"))
-  const [workoutFreq, setWorkoutFreq] = useState(localStorage.getItem("workoutFreq"))
   const [workoutProg, setWorkoutProg] = useState(localStorage.getItem("workoutCounter"))
   const [groups, setGroups] = useState(null); // State to store user groups
   const userId = localStorage.getItem("userId")
@@ -37,7 +36,7 @@ export default function Homepage() {
 
         if (response.ok) {
             const result = await response.json();
-            console.log(result)
+            // console.log(result)
 
             return result.user_groups
 
@@ -160,7 +159,7 @@ export default function Homepage() {
       });
   
       const data = await response.json();
-      console.log(data)
+      // console.log(data)
 
       if (data.locations) {
         renderMarkers(data)
@@ -403,9 +402,8 @@ export default function Homepage() {
             <FontAwesomeIcon icon={faTrophy} className="w-6 h-6" />
             <div className="w-full">
               <p className="text-lg text-gray-500">
-                Workout completed this week <span className="text-black font-medium">{workoutProg} of {workoutFreq}</span>
+                Total Workouts Completed: <span className="text-black font-medium">{workoutProg}</span>
               </p>
-              <progress className="progress h-3 w-full bg-white" value={(workoutProg/workoutFreq) * 100} max="100"></progress>
             </div>
           </div>
         </header>
@@ -436,7 +434,7 @@ export default function Homepage() {
             <div className="carousel carousel-center rounded-box mt-3 w-full gap-6">
                 {groups !== null &&
                   groups.map((groupObj, index) => {
-                    console.log(groupObj)
+                    // console.log(groupObj)
 
                     return (
                       <div key={index} className="carousel-item">
