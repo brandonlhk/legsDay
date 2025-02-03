@@ -15,8 +15,7 @@ import Register from "./pages/auth/Register"
 import NotFound from "./pages/NotFound"
 
 // homepages
-import Homepage from "./pages/homepage/Homepage"
-import Preview from "./pages/homepage/AccountlessHomepage"
+import Homepage from "./pages/Homepage"
 // import Settings from "./pages/Settings"
 
 // features
@@ -43,7 +42,6 @@ export default function App() {
 
             {/* homepages */}
             <Route path="/home" element={<Homepage />}/>
-            <Route path="/preview" element={<Preview />}/>
             {/* <Route path="/settings" element={<Settings />}/> */}
 
             {/* features */}

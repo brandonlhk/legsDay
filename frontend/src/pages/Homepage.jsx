@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { useNavigate } from 'react-router-dom';
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faTrophy, faSearch, faUser, faCalendarAlt, faMapMarkerAlt } from "@fortawesome/free-solid-svg-icons";
-import Map from "../../components/Map";
+import Map from "../components/Map";
 import dayjs from "dayjs"; 
 
 
@@ -80,7 +80,9 @@ export default function Homepage() {
   const [currentLocation, setCurrentLocation] = useState(null); // Current user location
   const [currentLocationData, setCurrentLocationData] = useState(null)
   const [locations, setLocations] = useState([]);
-  const [locationQuery, setLocationQuery] = useState(""); // Search query
+  const [locationQuery, setLocationQuery] = useState(
+    JSON.parse(sessionStorage.getItem("userLocation")) || ""
+  );
 
   const renderMarkers = async (data) => {
 
@@ -144,6 +146,9 @@ export default function Homepage() {
       if (locationQuery === "") {
         currentPosition = "MacRitchie"
       }
+      else {
+        sessionStorage.setItem("userLocation", JSON.stringify(currentPosition));
+      }
       fetchCoordinates(currentPosition)
       const requestBody = {
         address: currentPosition, // Use the user's search query for the address
@@ -162,6 +167,7 @@ export default function Homepage() {
       // console.log(data)
 
       if (data.locations) {
+        
         renderMarkers(data)
         setCurrentLocationData(data)
         setLoading(false)
