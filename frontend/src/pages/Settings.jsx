@@ -151,49 +151,6 @@ export default function Settings() {
                 {/* DIVIDER */}
                 <div className="divider before:bg-purple after:bg-purple"></div>
 
-                {/* User fitness level */}
-                <label className="form-control w-full">
-                    <div className="label">
-                        <span className="label-text font-bold text-xl">How would you describe your fitness experience?</span>
-                    </div>
-                    <select className="select select-bordered relative" value={level} onChange={(event) => setLevel(event.target.value)}>
-                        <option value="Beginner">Beginner</option>
-                        <option value="Intermediate">Intermediate</option>
-                        <option value="Advanced">Advanced</option>
-                    </select>
-                </label>
-
-                {/* User fitness level */}
-                <label className="form-control w-full mt-3">
-                    <div className="label">
-                        <span className="label-text font-bold text-xl">How many days do you plan to do strength training a week?</span>
-                    </div>
-                    <select className="select select-bordered relative" value={days} onChange={(event) => setDays(event.target.value)}>
-                        <option value="2">2 days</option>
-                        <option value="3">3 days (recommended)</option>
-                        <option value="4">4 days</option>
-                        <option value="5">5 days</option>
-                        <option value="6">6 days</option>
-                        <option value="7">7 days</option>
-                    </select>
-                </label>
-
-                {/* User fitness level */}
-                <label className="form-control w-full mt-3">
-                    <div className="label">
-                        <span className="label-text font-bold text-xl">How long do you plan to work out each day?</span>
-                    </div>
-                    <select className="select select-bordered relative" value={duration} onChange={(event) => setDuration(event.target.value)}>
-                        <option value="15">15 min / day</option>
-                        <option value="30">30 min / day (recommended)</option>
-                        <option value="45">45 min / day</option>
-                        <option value="60">60 min / day</option>
-                    </select>
-                </label>
-
-                {/* DIVIDER */}
-                <div className="divider before:bg-purple after:bg-purple"></div>
-
                 {/* Injuries */}
                 <div className="flex flex-col">
                     <p className="font-bold text-xl">Do you have any past or existing injuries?</p>

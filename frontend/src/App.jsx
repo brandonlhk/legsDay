@@ -15,8 +15,7 @@ import Register from "./pages/auth/Register"
 import NotFound from "./pages/NotFound"
 
 // homepages
-import Homepage from "./pages/homepage/Homepage"
-import Preview from "./pages/homepage/AccountlessHomepage"
+import Homepage from "./pages/Homepage"
 // import Settings from "./pages/Settings"
 
 // features
@@ -25,34 +24,33 @@ import Message from "./pages/features/MessageGroup"
 
 export default function App() {
   return (
-    <Router>
-      <ViewportHeight>
-      <Routes>
-          <Route path="*" element={<NotFound />}/>
-          <Route path="/" element={<Start />}/>
+      <Router>
+        <ViewportHeight>
+        <Routes>
+            <Route path="*" element={<NotFound />}/>
+            <Route path="/" element={<Start />}/>
 
-          {/* auth */}
-          <Route path="/signin" element={<Signin />}/>
-          <Route path="/register" element={<Register />}/>
+            {/* auth */}
+            <Route path="/signin" element={<Signin />}/>
+            <Route path="/register" element={<Register />}/>
 
-          {/* onboard */}
-          <Route path="/healthinfo" element={<HealthInfo />}/>
-          <Route path="/onboard" element={<Onboard />}/>
-          <Route path="/loading" element={<Loading />}/>
-          <Route path="/recommendations" element={<Recommendations />}/>
+            {/* onboard */}
+            <Route path="/healthinfo" element={<HealthInfo />}/>
+            <Route path="/onboard" element={<Onboard />}/>
+            <Route path="/loading" element={<Loading />}/>
+            <Route path="/recommendations" element={<Recommendations />}/>
 
-          {/* homepages */}
-          <Route path="/home" element={<Homepage />}/>
-          <Route path="/preview" element={<Preview />}/>
-          {/* <Route path="/settings" element={<Settings />}/> */}
+            {/* homepages */}
+            <Route path="/home" element={<Homepage />}/>
+            {/* <Route path="/settings" element={<Settings />}/> */}
 
-          {/* features */}
-          <Route path="/booking" element={<Booking />}/>
-          <Route path="/message-groups" element={<Message />}/>
+            {/* features */}
+            <Route path="/booking" element={<Booking />}/>
+            <Route path="/message-groups" element={<Message />}/>
 
 
-      </Routes>
-      </ViewportHeight>
-    </Router>
+        </Routes>
+        </ViewportHeight>
+      </Router>
   );
 }

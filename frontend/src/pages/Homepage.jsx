@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { useNavigate } from 'react-router-dom';
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faTrophy, faSearch, faUser, faCalendarAlt, faMapMarkerAlt } from "@fortawesome/free-solid-svg-icons";
-import Map from "../../components/Map";
+import Map from "../components/Map";
 import dayjs from "dayjs"; 
 
 
@@ -11,7 +11,6 @@ export default function Homepage() {
 
   // ------------------------------------------- LOAD -------------------------------------------
   const [name, setName] = useState(localStorage.getItem("name"))
-  const [workoutFreq, setWorkoutFreq] = useState(localStorage.getItem("workoutFreq"))
   const [workoutProg, setWorkoutProg] = useState(localStorage.getItem("workoutCounter"))
   const [groups, setGroups] = useState(null); // State to store user groups
   const userId = localStorage.getItem("userId")
@@ -37,7 +36,10 @@ export default function Homepage() {
 
         if (response.ok) {
             const result = await response.json();
+            // console.log(result)
+
             return result.user_groups
+
         } else {
             console.error("Failed to get groups:", await response.text());
         }
@@ -45,21 +47,6 @@ export default function Homepage() {
         console.error("Error getting groups:", error);
     }
   }
-
-  const formatUserGroupName = (userGroup) => {
-    // Split the string by underscores
-    const parts = userGroup.split("_");
-    
-    // Remove the last part
-    parts.pop();
-    
-    // Join the remaining parts into a readable name
-    const formattedName = parts
-      .map((word) => word.charAt(0).toUpperCase() + word.slice(1)) // Capitalize each word
-      .join(" "); // Join with spaces
-
-    return formattedName;
-  };
 
 
   // ------------------------------------------- END LOAD -------------------------------------  
@@ -91,8 +78,66 @@ export default function Homepage() {
   const [center, setCenter] = useState({ lat: 1.3521, lng: 103.8198 }); // Default center (Singapore)
   const [zoom, setZoom] = useState(12); // Default zoom
   const [currentLocation, setCurrentLocation] = useState(null); // Current user location
+  const [currentLocationData, setCurrentLocationData] = useState(null)
   const [locations, setLocations] = useState([]);
-  const [locationQuery, setLocationQuery] = useState(""); // Search query
+  const [locationQuery, setLocationQuery] = useState(
+    JSON.parse(sessionStorage.getItem("userLocation")) || ""
+  );
+
+  const renderMarkers = async (data) => {
+
+    const allLocations = [];
+    Object.keys(data.locations).forEach((id) => {
+      const locationData = data.locations[id];
+
+      let totalPopularity = 0
+      if (locationData.bookings.length != 0) {
+        let bookings = locationData.bookings
+
+        bookings.forEach((booking) => {
+          Object.keys(booking).forEach((timeslot) => {
+            let selectedTime = timeValue
+          
+            if (selectedTime <= 10) {
+              selectedTime = `0${timeValue}`
+            }
+
+            let selectedTimeSlot = `${selectedTime}:00:00`
+            if (selectedTimeSlot === timeslot.split("T")[1]) {
+              totalPopularity += booking[timeslot].user_ids.length
+            }
+          })
+        })
+      }
+
+      // Determine popularity status
+      let popularityStatus = "lesspop";
+      if (totalPopularity >= 1 && totalPopularity <= 10) {
+        popularityStatus = "pop";
+      } else if (totalPopularity >= 11) {
+        popularityStatus = "verypop";
+      }
+
+      // Add location with calculated marker name
+      allLocations.push({
+        id,
+        locationType : locationData.location_type,
+        coordinates: locationData.location_data.coordinates,
+        markerName: `${popularityStatus}-${locationData.location_type}`,
+        address : locationData.location_data.address || `${locationData.location_data.name}, ${locationData.location_data.postal_code}`
+      });
+      
+
+    });
+
+    // Update the map state
+    if (allLocations.length > 0) {
+      setLocations(allLocations);
+      setZoom(15);
+    } else {
+      alert("No locations found near your search.");
+    }
+  }
 
   const handleSearch = async () => {
     try {
@@ -101,11 +146,13 @@ export default function Homepage() {
       if (locationQuery === "") {
         currentPosition = "MacRitchie"
       }
+      else {
+        sessionStorage.setItem("userLocation", JSON.stringify(currentPosition));
+      }
       fetchCoordinates(currentPosition)
       const requestBody = {
         address: currentPosition, // Use the user's search query for the address
         date: selectedDate, // Current date in YYYY-MM-DD format
-        time: `${timeValue}:00:00`, // Current time in HH:mm:ss format
       };
   
       const response = await fetch(`${import.meta.env.VITE_PROTOCOL}${import.meta.env.VITE_HOST}${import.meta.env.VITE_PORT}/get_nearest`, {
@@ -117,49 +164,12 @@ export default function Homepage() {
       });
   
       const data = await response.json();
-      if (data.locations) {
-        const allLocations = [];
-        Object.keys(data.locations).forEach((category) => {
-          const categoryData = data.locations[category];
+      // console.log(data)
 
-          Object.keys(categoryData).forEach((id) => {
-            const location = categoryData[id];
-            const userGroups = location.user_groups || {};
-  
-            // Calculate total popularity
-            const totalPopularity = Object.values(userGroups).reduce(
-              (sum, group) => sum + (group.users?.length || 0),
-              0
-            );
-  
-            // Determine popularity status
-            let popularityStatus = "lesspop";
-            if (totalPopularity >= 3 && totalPopularity <= 10) {
-              popularityStatus = "pop";
-            } else if (totalPopularity >= 11) {
-              popularityStatus = "verypop";
-            }
-            // Add location with calculated marker name
-            if (location.location_data != undefined) {
-                allLocations.push({
-                  id,
-                  category,
-                  coordinates: location.location_data.coordinates,
-                  markerName: `${popularityStatus}-${category}`,
-                  userGroups : location.user_groups,
-                  address : location.location_data.address || `${location.location_data.name}, ${location.location_data.postal_code}`
-                });
-            }
-          });
-        });
-  
-        // Update the map state
-        if (allLocations.length > 0) {
-          setLocations(allLocations);
-          setZoom(15);
-        } else {
-          alert("No locations found near your search.");
-        }
+      if (data.locations) {
+        
+        renderMarkers(data)
+        setCurrentLocationData(data)
         setLoading(false)
       } else {
         alert("No locations found.");
@@ -369,6 +379,13 @@ export default function Homepage() {
     }
 
     useEffect(() => {
+
+      if (currentLocationData !== null) {
+        renderMarkers(currentLocationData)
+      }
+    }, [timeValue])
+
+    useEffect(() => {
       if (!didMount.current) {
         // Skip the first render
         didMount.current = true;
@@ -377,7 +394,7 @@ export default function Homepage() {
     
       // Call handleSearch on subsequent updates
       handleSearch();
-    }, [timeValue, selectedDate]);
+    }, [selectedDate]);
     const didMount = useRef(false); // Ref to track the first render
   
 
@@ -391,9 +408,8 @@ export default function Homepage() {
             <FontAwesomeIcon icon={faTrophy} className="w-6 h-6" />
             <div className="w-full">
               <p className="text-lg text-gray-500">
-                Workout completed this week <span className="text-black font-medium">{workoutProg} of {workoutFreq}</span>
+                Total Workouts Completed: <span className="text-black font-medium">{workoutProg}</span>
               </p>
-              <progress className="progress h-3 w-full bg-white" value={(workoutProg/workoutFreq) * 100} max="100"></progress>
             </div>
           </div>
         </header>
@@ -424,32 +440,25 @@ export default function Homepage() {
             <div className="carousel carousel-center rounded-box mt-3 w-full gap-6">
                 {groups !== null &&
                   groups.map((groupObj, index) => {
-                    // Access the date-time key and details object
-                    const [time, details] = Object.entries(groupObj)[0];
-                    const userGroup = formatUserGroupName(details.user_group);
-                    const groupType = details.user_group.split("_").pop();
+                    // console.log(groupObj)
 
                     return (
                       <div key={index} className="carousel-item">
                         <div className="p-4 bg-blueGrey rounded-lg shadow-md w-[22rem]">
                           {/* Show the Group Name */}
-                          <h3 className="text-lg font-bold">{userGroup}</h3>
+                          <h3 className="text-lg font-bold">{groupObj.booking_name}</h3>
 
                           {/* Show the Group Details */}
                           <div className="mt-2">
-                            <p>
-                              <FontAwesomeIcon icon={faUser} className="mr-3" />
-                              <span className="text-gray-500">{groupType[0].toUpperCase() + groupType.substring(1,)} Group</span>
-                            </p>
 
                             <p>
                               <FontAwesomeIcon icon={faCalendarAlt} className="mr-3" />
-                              <span className="text-gray-500">{dayjs(time).format("dddd, MMM D, h:mm A")}</span>
+                              <span className="text-gray-500">{dayjs(groupObj.timestamp.split("+")[0]).format("dddd, MMM D, h:mm A")}</span>
                             </p>
 
                             <p className="flex items-center">
                               <FontAwesomeIcon icon={faMapMarkerAlt} className="mr-3 flex-shrink-0" />
-                              <span className="text-gray-500 truncate overflow-hidden whitespace-nowrap">{details.location.address || details.location.name + ", " + details.location.postal_code}</span>
+                              <span className="text-gray-500 truncate overflow-hidden whitespace-nowrap">{groupObj.location_data.address || groupObj.location_data.name + ", " + groupObj.location_data.postal_code}</span>
                             </p>
                               
 
@@ -459,12 +468,11 @@ export default function Homepage() {
                                 navigate("/message-groups", {
                                   state: {
                                     from : "direct",
-                                    time, // Pass the time
-                                    chat: details.chat || [], // Pass the chat array
-                                    location: details.location, // Pass the location details
-                                    userGroup, // Pass the formatted user group name
-                                    user_group: details.user_group, // Pass the raw user group,
-                                    location_type : details.location_type
+                                    time: groupObj.timestamp.split("+")[0], // Pass the time
+                                    chat: groupObj.chat_data.chat_history.messages || [], // Pass the chat array
+                                    location: groupObj.location_data, // Pass the location details
+                                    location_type : groupObj.location_type,
+                                    groupObj
                                   },
                                 })}
                               >
@@ -609,7 +617,6 @@ export default function Homepage() {
                   className="range  w-full range-xs"
                   onChange={(e) => {
                     const newValue = Number(e.target.value);
-
                     // If today, prevent moving slider to earlier times than currentHour
                     if (dayjs(selectedDate).isSame(dayjs(), "day") && newValue < currentHour) {
                       return; // Ignore invalid movement

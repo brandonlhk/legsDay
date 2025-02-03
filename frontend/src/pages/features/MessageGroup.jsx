@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useLocation  } from "react-router-dom";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faCalendarAlt, faMapMarkerAlt, faUser, faPaperPlane } from "@fortawesome/free-solid-svg-icons";
+import { faCalendarAlt, faMapMarkerAlt, faPaperPlane } from "@fortawesome/free-solid-svg-icons";
 import dayjs from "dayjs";
 
 export default function MessageGroup() {
@@ -18,30 +18,32 @@ export default function MessageGroup() {
   const [locationId, setLocationId] = useState("")
   const [locationType, setLocationType] = useState("")
 
-
   const { from } = state;
   const [chatMessages, setChatMessages] = useState([]); // Messages for the selected group
   
   useEffect(() => {
     if (from === "direct") {
-      const { time, chat, location, userGroup, user_group, location_type } = state;
+      const { time, chat, location, location_type, groupObj } = state;
       setLocationId(location._id)
       setLocationType(location_type)
       setView("viewGroup");
       setGroupTime(time)
       setChatMessages(chat)
-      setCurrentGroup({chat: chat, location, user_group})
+      setCurrentGroup(groupObj)
+    }
+
+    if ( from === "joinConvo") {
+      const groupData = JSON.parse(sessionStorage.getItem("groupData"));
+      // console.log(groupData)
+      setView("viewGroup");
+      setGroupTime(groupData.timestamp.split("+")[0])
+      setLocationId(groupData.location_id)
+      setCurrentGroup(groupData);
+      setLocationType(groupData.location_type)
+      setChatMessages(groupData.chat_data.chat_history.messages); // Load initial chat messages
     }
   }, []);
 
-
-  const formatUserGroupName = (userGroup) => {
-    const parts = userGroup.split("_");
-    parts.pop();
-    return parts
-      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-      .join(" ");
-  };
 
   const getGroups = async () => {
     const payload = {
@@ -62,7 +64,7 @@ export default function MessageGroup() {
 
       if (response.ok) {
         const result = await response.json();
-        console.log(result)
+        // console.log(result)
         return result.user_groups;
       } else {
         console.error("Failed to get groups:", await response.text());
@@ -72,20 +74,6 @@ export default function MessageGroup() {
     }
   };
 
-  const transformedChatMessages = chatMessages.map((chat) => {
-    // Extract the timestamp
-    const timestamp = Object.keys(chat)[0]; // Get the first key, which is the timestamp
-  
-    // Extract the user and message
-    const nestedObject = chat[timestamp]; // Get the object under the timestamp key
-    const [user, message] = Object.entries(nestedObject)[0]; // Extract user ID and message
-
-    const name = message.name
-    const content = message.message
-    console.log(content)
-
-    return { name, content, timestamp };
-  });
 
   useEffect(() => {
     const fetchGroups = async () => {
@@ -105,7 +93,7 @@ export default function MessageGroup() {
       timeslot: groupTime,
       msg_timestamp: msgTimestamp,
       user_id: userId,
-      user_group: currentGroup.user_group, 
+      booking_name: currentGroup.booking_name, 
       location_type: locationType, 
       location_id: locationId, 
       msg_content: newMessage, 
@@ -123,11 +111,10 @@ export default function MessageGroup() {
       if (response.ok) {
         // Append message to chat state
         const newChatMessage = {
-          [dayjs(msgTimestamp).toISOString()]: { userId :{
-              name, // Store the user's name in the object
-              message: newMessage, // Store the message content in the object
-          }
-          },
+          timestamp: dayjs(msgTimestamp).toISOString(), // Add the timestamp as a field
+          name,
+          user_id: userId,
+          message : newMessage
         };
   
         setChatMessages((prevChat) => [...prevChat, newChatMessage]); // Append new message
@@ -140,20 +127,20 @@ export default function MessageGroup() {
     }
   };
 
-  const exitGroup = async (time, details) => {
-    const [date, timePart] = time.split("T")
+  const exitGroup = async (date, time, details) => {
+
     const payload = {
-      date: date,
-      time: timePart,
+      date,
+      time,
       user_id: userId,
-      user_group: details.user_group,
+      booking_name: details.booking_name,
       location_type: details.location_type,
-      location_id: details.location._id,
+      location_id: details.location_id,
   };
   
     try {
       const response = await fetch(`${import.meta.env.VITE_PROTOCOL}${import.meta.env.VITE_HOST}${import.meta.env.VITE_PORT}/exit_user_group`, {
-        method: "POST",
+        method: "DELETE",
         headers: {
           "Content-Type": "application/json",
         },
@@ -170,7 +157,7 @@ export default function MessageGroup() {
     }
   }
 
-  const handleCheckIn = async (time, details) => {
+  const handleCheckIn = async (date, time, details) => {
     try {
       const response = await fetch(`${import.meta.env.VITE_PROTOCOL}${import.meta.env.VITE_HOST}${import.meta.env.VITE_PORT}/check_in`, {
         method: "POST",
@@ -179,17 +166,32 @@ export default function MessageGroup() {
         },
         body: JSON.stringify({
           user_id: userId,
-          date: dayjs(time).format("YYYY-MM-DD"),
-          time: dayjs(time).format("HH:mm:ss"),
-          user_group: details.user_group,
+          date,
+          time,
+          booking_name: details.booking_name,
           location_type: details.location_type,
-          location_id: details.location._id,
+          location_id: details.location_id,
         }),
       });
   
       const data = await response.json();
   
       if (data.checked_in) {
+
+        try {
+          const response = await fetch(`${import.meta.env.VITE_PROTOCOL}${import.meta.env.VITE_HOST}${import.meta.env.VITE_PORT}/workout_increment/${userId}`, {
+            method: "PUT",
+            headers: {
+              "Content-Type": "application/json",
+            }
+          });
+          let currentCount = localStorage.getItem("workoutCounter")
+          localStorage.setItem("workoutCounter", Number(currentCount) +1)
+
+        } catch (error) {
+          console.error("Can't update counter")
+        }
+
         alert("Checked in successfully!");
         window.location.reload()
       } else {
@@ -225,55 +227,47 @@ export default function MessageGroup() {
           <h2 className="text-2xl font-bold mb-4">Workout Groups</h2>
           {groups !== null &&
             groups.map((groupObj, index) => {
-              const [time, details] = Object.entries(groupObj)[0];
-              const userGroup = formatUserGroupName(details.user_group);
-              const groupType = details.user_group.split("_").pop();
 
-              // console.log(details)
+              // console.log(groupObj)
+              let location = groupObj.location_data
 
               return (
                 <div key={index} className="p-6 mb-4 rounded-lg bg-[#F5F7FA]">
-                  <h3 className="text-lg font-bold">{userGroup}</h3>
+                  <h3 className="text-lg font-bold">{groupObj.booking_name}</h3>
                   <div className="group-details">
-                    <p>
-                      <FontAwesomeIcon icon={faUser} className="mr-3" />
-                      <span className="text-gray-500">
-                        {groupType[0].toUpperCase() + groupType.substring(1)} group
-                      </span>
-                    </p>
                     <p>
                       <FontAwesomeIcon icon={faCalendarAlt} className="mr-3" />
                       <span className="text-gray-500">
-                        {dayjs(time).format("dddd, MMM D, h:mm A")}
+                        {dayjs(groupObj.timestamp.split("+")[0]).format("dddd, MMM D, h:mm A")}
                       </span>
                     </p>
                     <p>
                       <FontAwesomeIcon icon={faMapMarkerAlt} className="mr-3" />
                       <span className="text-gray-500">
-                        {details.location.address || details.location.name + ", " + details.location.postal_code}
+                        {location.address || location.name + ", " + location.postal_code}
                       </span>
                     </p>
 
                     <button
                       className={`w-full py-3 font-bold rounded-full ${
-                        details.checked_in ? "bg-gray-400" : "bg-themeGreen"
+                        groupObj.checked_in ? "bg-gray-400" : "bg-themeGreen"
                       } text-black mt-6`}
-                      disabled={details.checked_in}
+                      disabled={groupObj.checked_in}
                       onClick={() => {
-                        handleCheckIn(time, details);
+                        handleCheckIn(groupObj.timestamp.split("+")[0].split("T")[0], groupObj.timestamp.split("+")[0].split("T")[1], groupObj);
                       }}
                     >
-                      {details.checked_in ? "Check-in Complete" : "Check in"}
+                      {groupObj.checked_in ? "Check-in Complete" : "Check in"}
                     </button>
                     <button
                       className="w-full py-3 font-bold rounded-full border border-themeGreen text-black mt-3"
                       onClick={() => {
                         setView("viewGroup");
-                        setGroupTime(time)
-                        setLocationId(details.location._id)
-                        setCurrentGroup(details);
-                        setLocationType(details.location_type)
-                        setChatMessages(details.chat || []); // Load initial chat messages
+                        setGroupTime(groupObj.timestamp.split("+")[0])
+                        setLocationId(groupObj.location_id)
+                        setCurrentGroup(groupObj);
+                        setLocationType(groupObj.location_type)
+                        setChatMessages(groupObj.chat_data.chat_history.messages); // Load initial chat messages
                       }}
                     >
                       Message Group
@@ -281,7 +275,7 @@ export default function MessageGroup() {
                     <button
                       className="btn btn-ghost w-full py-3 text-themeGreen font-bold rounded-full"
                       onClick={() => {
-                        exitGroup(time, details)
+                        exitGroup(groupObj.timestamp.split("+")[0].split("T")[0], groupObj.timestamp.split("+")[0].split("T")[1], groupObj)
                       }}
                     >
                       Exit group
@@ -298,29 +292,24 @@ export default function MessageGroup() {
       {/* Chat View */}
       {view === "viewGroup" && currentGroup && (
         <>
-          <h2 className="text-2xl font-bold mb-4">{formatUserGroupName(currentGroup.user_group)} Group Chat</h2>
+          <h2 className="text-2xl font-bold mb-4">{currentGroup.booking_name} Group Chat</h2>
           <div className="mb-4 bg-gray-100 rounded-lg p-4">
-            <p>
-              <FontAwesomeIcon icon={faUser} className="mr-3" />
-              {currentGroup.user_group.split("_").pop()[0].toUpperCase() +
-                currentGroup.user_group.split("_").pop().substring(1)}{" "} Group
-            </p>
             <p>
               <FontAwesomeIcon icon={faCalendarAlt} className="mr-3" />
               {dayjs(groupTime).format("dddd, MMM D, h:mm A")}
             </p>
             <p>
               <FontAwesomeIcon icon={faMapMarkerAlt} className="mr-3" />
-              {currentGroup.location.address || currentGroup.location.name + ", " + currentGroup.location.postal_code}
+              {currentGroup.location_data.address || currentGroup.location_data.name + ", " + currentGroup.location_data.postal_code}
             </p>
           </div>
 
           {/* Chat Messages */}
           <div className="mb-4 h-64 overflow-y-auto bg-gray-50 p-4 rounded-lg">
-            {transformedChatMessages.map((message, index) => (
+            {chatMessages.map((message, index) => (
               <div key={index} className="mb-2">
                 <p className="font-bold">{message.name}</p>
-                <p className="text-sm">{message.content}</p>
+                <p className="text-sm">{message.message}</p>
                 <p className="text-xs text-gray-400">{dayjs(message.timestamp).format("DD MMM, h:mm A")}</p>
               </div>
             ))}
