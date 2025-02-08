@@ -34,7 +34,7 @@ export default function MessageGroup() {
 
     if ( from === "joinConvo") {
       const groupData = JSON.parse(sessionStorage.getItem("groupData"));
-      // console.log(groupData)
+      console.log(groupData)
       setView("viewGroup");
       setGroupTime(groupData.timestamp.split("+")[0])
       setLocationId(groupData.location_id)
@@ -260,7 +260,7 @@ export default function MessageGroup() {
                       {groupObj.checked_in ? "Check-in Complete" : "Check in"}
                     </button>
                     <button
-                      className="w-full py-3 font-bold rounded-full border border-themeGreen text-black mt-3"
+                      className="w-full py-3 font-bold rounded-full border border-themeGreen text-black my-3"
                       onClick={() => {
                         setView("viewGroup");
                         setGroupTime(groupObj.timestamp.split("+")[0])
@@ -273,7 +273,9 @@ export default function MessageGroup() {
                       Message Group
                     </button>
                     <button
-                      className="btn btn-ghost w-full py-3 text-themeGreen font-bold rounded-full"
+                      className={`btn btn-ghost w-full py-3 text-themeGreen font-bold rounded-full 
+                        ${groupObj.checked_in ? "" : ""}`}
+                      disabled={groupObj.checked_in}
                       onClick={() => {
                         exitGroup(groupObj.timestamp.split("+")[0].split("T")[0], groupObj.timestamp.split("+")[0].split("T")[1], groupObj)
                       }}

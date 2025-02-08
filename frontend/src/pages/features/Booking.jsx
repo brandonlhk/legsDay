@@ -196,22 +196,14 @@ export default function Booking() {
     
             // Execute both requests in parallel
             const [joinResponse, videosResponse] = await Promise.all([joinRequest, videosRequest]);
-
-            // then excute this request
-            const groupResponse = await groupsRequest;
-            const groupData = await groupResponse.json()
-            const userGroupsData = groupData.user_groups
             
             // Handle the join request response
             const status = await joinResponse.json() 
-            if (!status.message.includes("already joined")) {
-                // console.log("Successfully joined the group.");
-            } else {
-                console.error("Failed to join group:");
+            if (status.message.includes("already joined")) {
                 alert("You have joined another group in the same timeslot!");
                 return; // Stop further execution
             }
-    
+
             // Handle the videos request response
             if (videosResponse.ok) {
                 const response = await videosResponse.json();
@@ -220,6 +212,11 @@ export default function Booking() {
                 console.error("Failed to fetch videos");
                 alert("Failed to fetch videos. Please try again.");
             }
+
+            // then excute this request
+            const groupResponse = await groupsRequest;
+            const groupData = await groupResponse.json()
+            const userGroupsData = groupData.user_groups
 
             getChatsFromResponse(userGroupsData)
             // Update the view after both requests succeed
@@ -232,27 +229,20 @@ export default function Booking() {
     
 
     const joinConvo = () => {
-        // i need to send the selectedgroup, marker, timeslot save it on localstorage first
-        //marker and timeslot already in 
         navigate("/message-groups", {
             state: {
                 from : "joinConvo",
-                //need to add these but for now, we go direct
-                // time, // Pass the time
-                // chat: details.chat || [], // Pass the chat array
-                // location: details.location, // Pass the location details
-                // userGroup, // Pass the formatted user group name
-                // user_group: details.user_group, // Pass the raw user group
               },
         })
     }
 
     const getChatsFromResponse = (response) => {
-        // console.log(response);
-    
+        // console.log(response)
+
         // Find the object where the timestamp matches
         const matchingChats = response.find(item => item.timestamp.split("+")[0] === timestampKey);
-    
+        // console.log(matchingChats)
+
         // Check if a matching chat exists
         if (matchingChats) {
             // Save the entire matching object (item) to sessionStorage
@@ -262,8 +252,6 @@ export default function Booking() {
             if (matchingChats.chat_data) {
                 setChat(matchingChats.chat_data.chat_history.messages);
             }
-        } else {
-            // console.log("No matching chats found.");
         }
     };
     
