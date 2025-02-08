@@ -142,16 +142,14 @@ export default function Homepage() {
   const handleSearch = async () => {
     try {
       setLoading(true)
-      let currentPosition = locationQuery
-      if (locationQuery === "") {
-        currentPosition = "MacRitchie"
+      fetchCoordinates(locationQuery)
+
+      if (locationQuery != "") {
+        sessionStorage.setItem("userLocation", locationQuery)
       }
-      else {
-        sessionStorage.setItem("userLocation", JSON.stringify(currentPosition));
-      }
-      fetchCoordinates(currentPosition)
+
       const requestBody = {
-        address: currentPosition, // Use the user's search query for the address
+        address: locationQuery, // Use the user's search query for the address
         date: selectedDate, // Current date in YYYY-MM-DD format
       };
   
@@ -164,7 +162,6 @@ export default function Homepage() {
       });
   
       const data = await response.json();
-      // console.log(data)
 
       if (data.locations) {
         
@@ -184,25 +181,7 @@ export default function Homepage() {
     hasFetchedLocation.current = true; // Mark as called
 
     if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          const userLocation = {
-            lat: position.coords.latitude,
-            lng: position.coords.longitude,
-          };
-
-          // Set location states
-          setCurrentLocation(userLocation);
-          setCenter(userLocation);
-          setZoom(15);
-
-          handleSearch(); // Trigger search after setting location
-        },
-        (error) => {
-          console.error("Error fetching location:", error);
-          handleSearch(); // Trigger search even on error
-        }
-      );
+      handleSearch();
     } else {
       alert("Geolocation is not supported by your browser.");
     }
@@ -210,7 +189,11 @@ export default function Homepage() {
 
 
   useEffect(() => {
-    fetchCurrentLocation(); // Runs once on mount
+
+    if (locationQuery != "") {
+      fetchCurrentLocation(); // Runs once on mount
+    }
+
     const fetchGroups = async () => {
       const userGroups = await getGroups(); // Wait for the async function
       setGroups(userGroups); // Update the state
@@ -746,16 +729,13 @@ export default function Homepage() {
             {/* nav */}
             <footer className="fixed bottom-0 left-0 w-full bg-white shadow-md py-2 flex justify-around btm-nav text-sm">
               <button className="active"><span className="btm-nav-label">Home</span></button>
-              <button><span className="btm-nav-label">Library</span></button>
               <button onClick={() => {
                 navigate("/message-groups", {
                   state: {
                     from : "nav"
                   },
                 }) 
-
               }}><span className="btm-nav-label">Workout Groups</span></button>
-              <button><span className="btm-nav-label">Settings</span></button>
             </footer>
           </>
         )}

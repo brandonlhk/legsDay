@@ -67,7 +67,6 @@ class DistanceRequest(BaseModel):
     address: str
     '''date needs to be in yyyy-mm-dd format'''
     date: str
-    time: str
 
 class WorkoutCounter(BaseModel):
     user_id: str

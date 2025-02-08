@@ -336,14 +336,8 @@ export default function MessageGroup() {
         <button onClick={() => navigate("/home")}>
           <span className="btm-nav-label">Home</span>
         </button>
-        <button>
-          <span className="btm-nav-label">Library</span>
-        </button>
         <button className="active">
           <span className="btm-nav-label">Workout Groups</span>
-        </button>
-        <button>
-          <span className="btm-nav-label">Settings</span>
         </button>
       </footer>
     </div>
