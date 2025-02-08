@@ -651,7 +651,7 @@ export default function Homepage() {
         {view === "all_markers" && (
           <>
             {/* Recommended Workout */}
-            <section className="mb-6">
+            <section className="mb-20">
               <h2 className="text-xl font-bold">Recommended Workout</h2>
               
                 {/* carousel */}
@@ -711,17 +711,6 @@ export default function Homepage() {
                 </div>
 
 
-              </div>
-            </section>
-
-            {/* Other Activities Section */}
-            <section className="mb-20">
-              <h2 className="text-xl font-bold">Other Activities</h2>
-              <div className="rounded-lg bg-[#F5F7FA] mt-3 p-4">
-                <p className="text-md font-semibold">Unlock your unique path to better health with our free health assessment.</p>
-                <button className="btn bg-themeGreen w-full rounded-full my-3">
-                  Take Health Assessment
-                </button>
               </div>
             </section>
 
