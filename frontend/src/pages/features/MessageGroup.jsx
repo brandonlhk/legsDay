@@ -36,7 +36,7 @@ export default function MessageGroup() {
       const groupData = JSON.parse(sessionStorage.getItem("groupData"));
       console.log(groupData)
       setView("viewGroup");
-      setGroupTime(groupData.timestamp.split("+")[0])
+      setGroupTime(groupData.datetime)
       setLocationId(groupData.location_id)
       setCurrentGroup(groupData);
       setLocationType(groupData.location_type)
@@ -179,7 +179,7 @@ export default function MessageGroup() {
       if (data.checked_in) {
 
         try {
-          const response = await fetch(`${import.meta.env.VITE_PROTOCOL}${import.meta.env.VITE_HOST}${import.meta.env.VITE_PORT}/workout_increment/${userId}`, {
+          await fetch(`${import.meta.env.VITE_PROTOCOL}${import.meta.env.VITE_HOST}${import.meta.env.VITE_PORT}/workout_increment/${userId}`, {
             method: "PUT",
             headers: {
               "Content-Type": "application/json",

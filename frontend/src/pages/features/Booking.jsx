@@ -156,15 +156,10 @@ export default function Booking() {
         const payloadForVideos = {
             category : category
         }
-
-        const payloadForGroups = {
-            user_id : userId
-        }
     
         // Define the URLs for both requests
         const joinUrl = `${import.meta.env.VITE_PROTOCOL}${import.meta.env.VITE_HOST}${import.meta.env.VITE_PORT}/join_user_group`;
         const videosUrl = `${import.meta.env.VITE_PROTOCOL}${import.meta.env.VITE_HOST}${import.meta.env.VITE_PORT}/get_videos`;
-        const groupsUrl = `${import.meta.env.VITE_PROTOCOL}${import.meta.env.VITE_HOST}${import.meta.env.VITE_PORT}/get_user_groups`;
     
         try {
             // Create the join request
@@ -184,24 +179,22 @@ export default function Booking() {
                 },
                 body: JSON.stringify(payloadForVideos),
             });
-
-            // Create the videos request (template request for videos list)
-            const groupsRequest = fetch(groupsUrl, {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify(payloadForGroups),
-            });
     
             // Execute both requests in parallel
             const [joinResponse, videosResponse] = await Promise.all([joinRequest, videosRequest]);
             
             // Handle the join request response
             const status = await joinResponse.json() 
+            console.log(status)
+
             if (status.message.includes("already joined")) {
                 alert("You have joined another group in the same timeslot!");
                 return; // Stop further execution
+            }
+
+            if (status.event_details) {
+                sessionStorage.setItem("groupData", JSON.stringify(status.event_details));
+                setChat(status.event_details.chat_data.chat_history.messages);
             }
 
             // Handle the videos request response
@@ -213,12 +206,6 @@ export default function Booking() {
                 alert("Failed to fetch videos. Please try again.");
             }
 
-            // then excute this request
-            const groupResponse = await groupsRequest;
-            const groupData = await groupResponse.json()
-            const userGroupsData = groupData.user_groups
-
-            getChatsFromResponse(userGroupsData)
             // Update the view after both requests succeed
             setView("complete");
         } catch (error) {
@@ -235,25 +222,6 @@ export default function Booking() {
               },
         })
     }
-
-    const getChatsFromResponse = (response) => {
-        // console.log(response)
-
-        // Find the object where the timestamp matches
-        const matchingChats = response.find(item => item.timestamp.split("+")[0] === timestampKey);
-        // console.log(matchingChats)
-
-        // Check if a matching chat exists
-        if (matchingChats) {
-            // Save the entire matching object (item) to sessionStorage
-            sessionStorage.setItem("groupData", JSON.stringify(matchingChats));
-    
-            // Log the chat history messages and update the state
-            if (matchingChats.chat_data) {
-                setChat(matchingChats.chat_data.chat_history.messages);
-            }
-        }
-    };
     
 
   return (

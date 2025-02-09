@@ -551,6 +551,22 @@ async def join_user_group(request_data: JoinUserGroupRequest):
         else:
             result_message = f"User {user_id} is already in the group for the given timeslot."
 
+    # return chat data as well
+    chat_data = chat_collection.find_one({'_id': ObjectId(chat_id)}, {'_id': 0, 'messages': 1})
+    booking_name_entry = { # find chat_data
+            'datetime': timeslot_time,
+            'location_type': location_type,
+            'location_id': location_id,
+            'booking_name': booking_name,
+            'location_data': client['events_collection'][f'{location_type}_database'].find_one(
+                        {'_id': ObjectId(location_id)}, 
+                        {'_id': 0}  # Exclude the _id field
+                    ),
+            "chat_data": {'chat_id': chat_id,
+                            'chat_history': chat_data},
+            'checked_in': False
+        }
+    
     return {"message": result_message,
     "event_details":  booking_name_entry}
 
