@@ -456,7 +456,7 @@ async def join_user_group(request_data: JoinUserGroupRequest):
     # Update user's booking_names
     existing_booking_names = user.get('booking_names', [])
 
-    # Create the user group entry (simplified)
+    # Create the user group entry
     booking_name_entry = {
                 'datetime': timeslot_time,
                 'location_type': location_type,
@@ -476,7 +476,8 @@ async def join_user_group(request_data: JoinUserGroupRequest):
     for group in existing_booking_names:
         if group.get('datetime', '') == timeslot_time:
             is_group_present = True
-            return {'message': f'{user_id} already joined {booking_name} at {timeslot_time} at {location_id}'}
+            return {'message': f'{user_id} already joined {booking_name} at {timeslot_time} at {location_id}',
+            'event_details': group}
 
     # Add the user group entry
     existing_booking_names.append(booking_name_entry)
@@ -550,7 +551,8 @@ async def join_user_group(request_data: JoinUserGroupRequest):
         else:
             result_message = f"User {user_id} is already in the group for the given timeslot."
 
-    return {"message": result_message}
+    return {"message": result_message,
+    "event_details":  booking_name_entry}
 
 
 @app.delete("/exit_user_group")
