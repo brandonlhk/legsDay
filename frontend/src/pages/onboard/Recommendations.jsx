@@ -76,7 +76,7 @@ export default function Recommendations() {
                     <div className="card-body p-6">
                       <h2 className="card-title text-xl font-semibold flex justify-between items-center">{data.workout}</h2>
                       <img src={data.img} alt="" />
-                      <p className="font-semibold">Strengthens muscles with bodyweight exercises like push-ups and squats, improving endurance and core stability without equipment.</p>
+                      <p className="font-semibold">{data.info}</p>
                     </div>
                   </div>
                 ))}
