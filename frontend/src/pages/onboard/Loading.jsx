@@ -27,14 +27,9 @@ export default function Loading() {
 
     //page 1
     localStorage.setItem("name", receivedData[0])
-    localStorage.setItem("age", receivedData[1])
-    localStorage.setItem("gender", receivedData[2])
-    localStorage.setItem("race", receivedData[3])
-
-    localStorage.setItem("workoutFreq", receivedData[4]) //page 2
-    localStorage.setItem("core", JSON.stringify(receivedData[5])) //page 5
-    localStorage.setItem("lowerbody", JSON.stringify(receivedData[6])) //page 6
-    localStorage.setItem("upperbody", JSON.stringify(receivedData[7])) //page 7
+    localStorage.setItem("core", JSON.stringify(receivedData[1])) //page 5
+    localStorage.setItem("lowerbody", JSON.stringify(receivedData[2])) //page 6
+    localStorage.setItem("upperbody", JSON.stringify(receivedData[3])) //page 7
 
     return (
         <div className="min-h-screen flex flex-col justify-center items-center">

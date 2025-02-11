@@ -157,10 +157,6 @@ def is_email_valid(email: str):
 @app.post('/register')
 async def register(request_data: CreateAccountRequest):
     name = request_data.name
-    age = request_data.age
-    gender = request_data.gender
-    race = request_data.race
-    frequency = request_data.workoutFreq
     core_strength = request_data.core
     upper_body_strength = request_data.upperBody
     lower_body_strength = request_data.lowerBody
@@ -176,10 +172,6 @@ async def register(request_data: CreateAccountRequest):
         "email": email,
         "password": hashed_password,
         "name": name,
-        "age": age,
-        "gender": gender,
-        "race": race,
-        "frequency": frequency,
         "upper_body_strength": upper_body_strength,
         "lower_body_strength": lower_body_strength,
         "core_strength": core_strength,
@@ -209,10 +201,7 @@ async def login(request_data: LoginRequest):
             "message": "Login successful",
             "userid": str(user['_id']),
             "name": str(user['name']),
-            "workoutFreq": str(user["frequency"]),
             "workoutCounter" : str(user["workout_counter"]),
-            "gender" : str(user['gender']),
-            "age": str(user['age'])
         }
     else:
         raise HTTPException(status_code=401, detail="Invalid email or password")

@@ -11,11 +11,7 @@ export default function Onboard() {
 
     // page 1
     const [name, setName] = useState("")
-    const [age, setAge] = useState("")
-    const [gender, setGender] = useState("") 
-    const [race, setRace] = useState("")
 
-    const [workoutFreq, setWorkoutFreq] = useState("") //page 2
     const [core, setCore] = useState([]) //page 3
     const [lowerBody, setLowerBody] = useState([]) //page 4
     const [upperBody, setUpperBody] = useState([]) // page 5
@@ -33,14 +29,12 @@ export default function Onboard() {
     const canProceed = () => {
         switch (page) {
             case 0:
-                return name && age && gender && race; // Check if all fields on page 1 are filled
+                return name // Check if all fields on page 1 are filled
             case 1:
-                return workoutFreq; // Check if activity level is selected
-            case 2:
                 return core.length > 0; // Check if core strength selection is made
-            case 3:
+            case 2:
                 return lowerBody.length > 0; // Check if lower body strength selection is made
-            case 4:
+            case 3:
                 return upperBody.length > 0; // Check if upper body strength selection is made
             default:
                 return false;
@@ -55,7 +49,7 @@ export default function Onboard() {
                 behavior: 'smooth'
             });
             setPage((pageIndex) => pageIndex + 1);
-            setProgressVal((prevProgress) => prevProgress + 20);
+            setProgressVal((prevProgress) => prevProgress + 25);
         } else {
             alert("Please fill in all fields before continuing.");
         }
@@ -119,11 +113,11 @@ export default function Onboard() {
 
     // send data to next page
     useEffect(() => {
-    if (page === 5) {
-        const data = [name, age, gender, race, workoutFreq, core, lowerBody, upperBody]
+    if (page === 4) {
+        const data = [name, core, lowerBody, upperBody]
         return navigate("/loading", {state: {data: data}})
     }
-    }, [page, navigate, age, gender, workoutFreq, core, lowerBody, upperBody, name, race])
+    }, [page, navigate, core, lowerBody, upperBody, name])
 
     return (
         <div>
@@ -158,92 +152,11 @@ export default function Onboard() {
                             </div>
                             <input type="text" placeholder="Type here" className="input input-bordered w-full" value={name} onChange={(event) => setName(event.target.value)}/>
                         </label>
-                        {/* age */}
-                        <label className="form-control w-full">
-                            <div className="label">
-                                <span className="label-text font-bold text-xl">Age</span>
-                            </div>
-                            <input type="text" placeholder="Type here" className="input input-bordered w-full" value={age} onChange={(event) => setAge(event.target.value)}/>
-                        </label>
-
-                        {/* Gender */}
-                        <label className="form-control w-full">
-                            <div className="label">
-                                <span className="label-text font-bold text-xl">Gender</span>
-                            </div>
-                            <select className="select select-bordered relative" value={gender} onChange={(event) => setGender(event.target.value)}>
-                                <option disabled selected value="">Pick one option</option>
-                                <option value="M">Male</option>
-                                <option value="F">Female</option>
-                            </select>
-                        </label>
-
-                        {/* Gender */}
-                        <label className="form-control w-full">
-                            <div className="label">
-                                <div>
-                                    <span className="label-text font-bold text-xl">Race</span>
-                                    <div className="tooltip tooltip-right ml-2" data-tip="Providing your race helps us personalise your health assessment based on factors that may influence health risks and outcomes.">
-                                        <FontAwesomeIcon 
-                                            icon={faCircleInfo}
-                                            className="text-tertGreen"
-                                            
-                                        />
-                                    </div>
-                                </div>
-                            </div>
-                            <select className="select select-bordered relative mb-6" value={race} onChange={(event) => setRace(event.target.value)}>
-                                <option disabled selected value="">Pick one option</option>
-                                <option value="chinese">Chinese</option>
-                                <option value="malay">Malay</option>
-                                <option value="indian">Indian</option>
-                                <option value="eurasian">Eurasian</option>
-                                <option value="others">Others</option>
-                            </select>
-                        </label>
                     </div>
                 </div>}
 
                 {/* Second page */}
                 {page === 1 && <div>
-                    {/* Header */}
-                    <p className="text-lg mt-3 text-pretty">Workout Goals Settings</p>
-                    <p className="text-3xl font-bold">How many day(s) do you plan to workout a week?</p>
-                
-                    {/* Inputs */}
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-3 mb-6 lg:max-w-2xl" >
-                        {/* 2 days */}
-                        {[
-                            {"days" : "1", "info" : "1 day"},
-                            {"days" : "2", "info" : "2 days"},
-                            {"days" : "3", "info" : "3 days (Recommended)"},
-                            {"days" : "4", "info" : "4 days"},
-                            {"days" : "5", "info" : "5 days"},
-                            {"days" : "6", "info" : "6 days"},
-                            {"days" : "7", "info" : "7 days"},
-                        ].map((part, index) => (
-
-                        <div key={index} className={`card w-full shadow-md ${workoutFreq === part.days ? "border-themeGreen border-2": "border-slate-300 border"}`} 
-                        onClick={() => setWorkoutFreq(part.days)}>
-
-                        <div className="card-body h-12 flex justify-center">
-                            <div className="form-control">
-                                <label className="label cursor-pointer flex justify-start">
-                                 <div >
-                                    <span className="label-text font-bold text-black text-lg">{part.info}</span>
-                                 </div>
-                                 <input type="radio" name="days" className="radio" value={part.days} checked={workoutFreq === part.days} hidden/>
-                                </label>
-                            </div>
-                        </div>
-                    </div>
-                        ))}
-
-                    </div>
-                </div>}
-
-                {/* Fifth page */}
-                {page === 2 && <div>
                     {/* Header */}
                     <p className="text-lg mt-3 text-pretty">Core Strength Assessment</p>
                     <p className="text-3xl font-bold">Do you face difficulties in any of the following:</p>
@@ -273,8 +186,8 @@ export default function Onboard() {
                     </div>
                 </div>}
 
-                {/* Sixth page */}
-                {page === 3 && <div>
+                {/* Third page */}
+                {page === 2 && <div>
                     {/* Header */}
                     <p className="text-lg mt-3 text-pretty">Lower Body Strength Assessment</p>
                     <p className="text-3xl font-bold">Do you face difficulties in any of the following:</p>
@@ -304,8 +217,8 @@ export default function Onboard() {
                     </div>
                 </div>}
 
-                {/* Seventh page */}
-                {page === 4 && <div>
+                {/* Fourth page */}
+                {page === 3 && <div>
                     {/* Header */}
                     <p className="text-lg mt-3 text-pretty">Upper Body Strength Assessment</p>
                     <p className="text-3xl font-bold">Do you face difficulties in any of the following:</p>

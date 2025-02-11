@@ -21,10 +21,6 @@ export default function Signin() {
   const register = async () => {
     const requestData = {
       name: localStorage.getItem("name"), 
-      age: localStorage.getItem("age"), 
-      gender: localStorage.getItem("gender"), 
-      race: localStorage.getItem("race"), 
-      workoutFreq: localStorage.getItem("workoutFreq"), 
       core: JSON.parse(localStorage.getItem("core")),
       upperBody: JSON.parse(localStorage.getItem("upperBody")), 
       lowerBody: JSON.parse(localStorage.getItem("lowerBody")), 

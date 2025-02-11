@@ -31,7 +31,6 @@ export default function Signin() {
       })
 
       const data = await response.json()
-
       if (response.ok) {
         localStorage.setItem("userId", data.userid)
         localStorage.setItem("name", data.name)
@@ -40,10 +39,10 @@ export default function Signin() {
         localStorage.setItem("age", data.age)
         navigate("/home")
       } else {
-        setError(data.message)
+        setError(data.detail)
       }
     } catch (error) {
-      setError("Email or password is wrong")
+      setError("Something went wrong when signing in, try again!")
     }
   }
 

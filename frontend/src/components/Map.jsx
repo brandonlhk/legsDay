@@ -34,7 +34,7 @@ export default function Map({ locations, center, zoom, currentLocation, selected
           }}
           key={location.id}
           position={{ lat: location.coordinates[1], lng: location.coordinates[0] }}
-          onClick={() =>{ console.log(location); onMarkerClick(location); setSelectedMarkerId(location.id)}}
+          onClick={() =>{ onMarkerClick(location); setSelectedMarkerId(location.id)}}
           animation={location.id === selectedMarkerId ? window.google.maps.Animation.BOUNCE : null}
         />
       ))}
@@ -45,7 +45,7 @@ export default function Map({ locations, center, zoom, currentLocation, selected
           position={currentLocation}
           title="Your Current Location"
           icon={{
-            url: "http://maps.google.com/mapfiles/ms/icons/blue-dot.png",
+            url: "https://maps.google.com/mapfiles/ms/icons/blue-dot.png",
           }}
         />
       )}

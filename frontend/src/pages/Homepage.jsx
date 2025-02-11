@@ -386,7 +386,7 @@ export default function Homepage() {
       {/* HEADER - ALL_MARKERS */}
       {view === "all_markers" && (
         <header className="mb-6 bg-[#E5EBF1] p-6 rounded-b-3xl">
-          <h1 className="text-3xl font-bold mt-3">Welcome back, {name}!</h1>
+          <h1 className="text-3xl font-bold mt-3">Welcome back, {name.split(" ")[0]}!</h1>
           <div className="flex gap-3 mt-3">
             <FontAwesomeIcon icon={faTrophy} className="w-6 h-6" />
             <div className="w-full">
