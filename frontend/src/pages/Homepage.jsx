@@ -453,7 +453,6 @@ export default function Homepage() {
                                     from : "direct",
                                     time: groupObj.timestamp.split("+")[0], // Pass the time
                                     chat: groupObj.chat_data.chat_history.messages || [], // Pass the chat array
-                                    location: groupObj.location_data, // Pass the location details
                                     location_type : groupObj.location_type,
                                     groupObj
                                   },

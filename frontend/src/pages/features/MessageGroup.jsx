@@ -23,8 +23,8 @@ export default function MessageGroup() {
   
   useEffect(() => {
     if (from === "direct") {
-      const { time, chat, location, location_type, groupObj } = state;
-      setLocationId(location._id)
+      const { time, chat, location_type, groupObj } = state;
+      setLocationId(groupObj.location_id)
       setLocationType(location_type)
       setView("viewGroup");
       setGroupTime(time)
