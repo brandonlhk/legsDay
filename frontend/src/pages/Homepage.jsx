@@ -145,7 +145,7 @@ export default function Homepage() {
       fetchCoordinates(locationQuery)
 
       if (locationQuery != "") {
-        sessionStorage.setItem("userLocation", locationQuery)
+        sessionStorage.setItem("userLocation", JSON.stringify(locationQuery))
       }
 
       const requestBody = {
