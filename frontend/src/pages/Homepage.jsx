@@ -162,7 +162,6 @@ export default function Homepage() {
       });
   
       const data = await response.json();
-
       if (data.locations) {
         
         renderMarkers(data)

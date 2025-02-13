@@ -386,19 +386,26 @@ export default function Booking() {
         </div>
     )}
 
-    {/* JOIN CONVERSATION PAGE (SHOW CONVO) -  COMPLETE*/}
+    {/* JOIN CONVERSATION PAGE (SHOW CONVO) - COMPLETE */}
     {view === "complete" && (
         <div className="mb-28">
             <h2 className="text-lg font-bold">Join the conversation!</h2>
-            {chat.length !== 0 && chat.map((convo, index) => (
-                <div key={index}>
-                    {convo}
-                </div>
-            ))}
 
-            {chat.length === 0 && (
-                <p className="text-center mt-3">There are no messages yet! Send one to introduce yourself!</p>
-            )}
+            <div className="my-4 bg-gray-100 rounded-lg p-4">
+                {chat.length !== 0 && chat.map((convo, index) => (
+                    <div key={index} className="mb-2">
+                        <p>
+                            <strong>{convo.name}</strong>:
+                        </p>
+                        <p>{convo.message}</p>
+                        <small>{dayjs(convo.timestamp).format("DD MMM, h:mm A")} </small>
+                    </div>
+                ))}
+
+                {chat.length === 0 && (
+                    <p className="text-center mt-3">There are no messages yet! Send one to introduce yourself!</p>
+                )}
+            </div>
         </div>
     )}
 
