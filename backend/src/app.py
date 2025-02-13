@@ -272,6 +272,10 @@ async def nearest(request_data: DistanceRequest):
             "Authorization": os.environ['TOKEN']
         }
         res = requests.get(url, headers=headers).json()
+        
+        if not res['results']:
+            raise HTTPException(status_code=404, detail="Location not found")
+        
         lat, lon = res['results'][0]['LATITUDE'], res['results'][0]['LONGITUDE']
     except Exception as e:
         return {"message": "Error fetching location data", "error": str(e)}
@@ -282,11 +286,18 @@ async def nearest(request_data: DistanceRequest):
     "datetime": {"$regex": f"^{date}", "$options": "i"}}, {"_id": 0})
     visited = set()
 
+    seen_location_names = set()
+    seen_addresses = set()  
+
     # Iterate through all events and locations, integrating them into the nearest dictionary
     for entry in events:
         loc_coordinates = entry['location_data']['coordinates']
         loc_name = entry['location_data']['name']
         location_id = entry['location_id']
+        loc_address = entry['location_data'].get('address', '')  
+
+        if loc_name in seen_location_names or (loc_address and loc_address in seen_addresses):
+            continue
 
         # Calculate the distance from the provided coordinates
         distance = calculate_distance(lat, lon, loc_coordinates[1], loc_coordinates[0])
@@ -296,21 +307,27 @@ async def nearest(request_data: DistanceRequest):
             booking_dict = {entry['datetime']: {'user_ids': entry['user_ids'], 'chat_id': entry['chat_id'], 'checked_in': entry['checked_in']}}
             if nearest.get(location_id):
                 nearest[location_id]['bookings'].append(booking_dict)
-
             else:
                 visited.add(loc_name)
+                seen_location_names.add(loc_name)
+                if loc_address:
+                    seen_addresses.add(loc_address)
                 nearest[location_id] = {
                     'location_type':entry['location_type'],
                     'location_data': entry['location_data'],
                     'bookings': [booking_dict]
                 }
                 
-    
     # Now include the locations from gyms, fitness, and parks that are within 1 km
     for location_type, all_locations in {'gym': all_gyms, 'fitness_corner': all_fitness, 'parks': all_parks}.items():
         for loc in all_locations:
             loc_coordinates = loc['coordinates']
             location_name = loc['name']
+            loc_address = loc.get('address', '')  
+            
+            if location_name in seen_location_names or (loc_address and loc_address in seen_addresses):
+                continue
+                
             if location_name not in visited:
                 # Calculate the distance from the provided coordinates
                 distance = calculate_distance(lat, lon, loc_coordinates[1], loc_coordinates[0])
@@ -319,6 +336,9 @@ async def nearest(request_data: DistanceRequest):
                 if distance <= 1:
                     loc_id = str(loc['_id'])  # Assuming the ID is stored like this in MongoDB
                     del loc['_id']
+                    seen_location_names.add(location_name)
+                    if loc_address:
+                        seen_addresses.add(loc_address)
                     nearest[loc_id] = {
                         'location_data': loc,
                         'location_type': location_type,
