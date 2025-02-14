@@ -368,16 +368,12 @@ export default function Homepage() {
     }, [timeValue])
 
     useEffect(() => {
-      if (!didMount.current) {
-        // Skip the first render
-        didMount.current = true;
-        return;
+      if (locationQuery == "") {
+        return
       }
-    
-      // Call handleSearch on subsequent updates
+
       handleSearch();
     }, [selectedDate]);
-    const didMount = useRef(false); // Ref to track the first render
   
 
   return (
@@ -741,7 +737,7 @@ export default function Homepage() {
                 <button
                     key={index}
                     onClick={() => handleTimeslotSelect(selectedDate, timeslot)}
-                    className={`p-3 rounded-md border font-bold text-sm ${
+                    className={`p-3 rounded-md border font-bold text-[0.9rem] ${
                       selectedTimeslot.date === selectedDate && selectedTimeslot.timeslot === timeslot
                         ? "border-green-500 border-2"
                         : "border-gray-200 text-gray-700 border-2"
