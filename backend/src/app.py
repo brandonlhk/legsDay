@@ -193,7 +193,7 @@ async def login(request_data: LoginRequest):
 
     # Find the user in the database
     user = user_collection.find_one({"email": email})
-    print(user)
+    # print(user)
 
     # Check if user exists and password is correct
     if user and check_password_hash(user['password'], password):
@@ -612,7 +612,7 @@ async def exit_user_group(request_data: JoinUserGroupRequest):
 
     # Remove the user from the user group in the schedule database
     user_list = timeslot["user_ids"]
-    print(user_list, user_id, user_id in user_list)
+    # print(user_list, user_id, user_id in user_list)
     
     if user_id in user_list:
         user_list.remove(user_id)
@@ -637,7 +637,7 @@ async def exit_user_group(request_data: JoinUserGroupRequest):
         upsert=False  # Do not insert a new document, just update the existing one
     )
 
-    print(schedule_result.modified_count)
+    # print(schedule_result.modified_count)
 
     # Fetch the user document
     user = user_collection.find_one({'_id': ObjectId(user_id)})
@@ -652,7 +652,7 @@ async def exit_user_group(request_data: JoinUserGroupRequest):
     for group_dict in existing_booking_names:
         if not group_dict['datetime'] == timeslot_time:
             updated_booking_names.append(group_dict)
-    print(existing_booking_names, updated_booking_names)
+    # print(existing_booking_names, updated_booking_names)
     # Update the user document with the new booking_names list
     user_result = user_collection.update_one(
         {"_id": ObjectId(user_id)},
