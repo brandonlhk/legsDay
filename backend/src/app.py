@@ -488,7 +488,7 @@ async def join_user_group(request_data: JoinUserGroupRequest):
     for group in existing_booking_names:
         if group.get('datetime', '') == timeslot_time:
             is_group_present = True
-            return {'message': f'{user_id} already joined {booking_name} at {timeslot_time} at {location_id}',
+            return {'message': f'{user_id} already joined a group session at {timeslot_time}',
             'event_details': group}
 
     # Add the user group entry
