@@ -283,7 +283,7 @@ async def nearest(request_data: DistanceRequest):
     # Access the schedule collection and find events for the specific date
     schedule_collection = client['events_collection']['schedule_database']
     events = schedule_collection.find({
-    "datetime": {"$regex": f"^{date}", "$options": "i"}}, {"_id": 0})
+    "datetime": {"$regex": f"^{date}", "$options": "i"}})
     visited = set()
 
     seen_location_names = set()
@@ -296,17 +296,20 @@ async def nearest(request_data: DistanceRequest):
         location_id = entry['location_id']
         loc_address = entry['location_data'].get('address', '')  
 
-        if loc_name in seen_location_names or (loc_address and loc_address in seen_addresses):
-            continue
+        # if loc_name in seen_location_names or (loc_address in seen_addresses):
+        #     continue
 
         # Calculate the distance from the provided coordinates
         distance = calculate_distance(lat, lon, loc_coordinates[1], loc_coordinates[0])
 
         # If the location is within 1 km, add it to the nearest dictionary
         if distance <= 1:
-            booking_dict = {entry['datetime']: {'user_ids': entry['user_ids'], 'chat_id': entry['chat_id'], 'checked_in': entry['checked_in']}}
+            booking_dict = {'booking_name': entry['booking_name'], 'user_ids': entry['user_ids'], 'chat_id': entry['chat_id'], 'checked_in': entry['checked_in']}
             if nearest.get(location_id):
-                nearest[location_id]['bookings'].append(booking_dict)
+                if nearest[location_id]['bookings'].get(entry['datetime']):
+                    nearest[location_id]['bookings'][entry['datetime']].append(booking_dict)
+                else:
+                    nearest[location_id]['bookings'][entry['datetime']] = [booking_dict]
             else:
                 visited.add(loc_name)
                 seen_location_names.add(loc_name)
@@ -315,7 +318,7 @@ async def nearest(request_data: DistanceRequest):
                 nearest[location_id] = {
                     'location_type':entry['location_type'],
                     'location_data': entry['location_data'],
-                    'bookings': [booking_dict]
+                    'bookings': {entry['datetime']: [booking_dict]}
                 }
                 
     # Now include the locations from gyms, fitness, and parks that are within 1 km
