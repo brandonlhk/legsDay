@@ -249,7 +249,7 @@ export default function Booking() {
                 <img className="w-full" src={selectedWorkout.image} alt="" />
                 <h2 className="text-lg font-bold">{selectedWorkout.name}</h2>
                 <p>{selectedWorkout.description}</p>
-                <p>Level of difficulty: {selectedWorkout.difficulty}</p>
+                <p className="text-gray-600 mt-3">Level of difficulty: {selectedWorkout.difficulty}</p>
             </div>
         </>
       )}
@@ -294,7 +294,7 @@ export default function Booking() {
             <>
                 <div className="flex items-center gap-3 mb-2">
                     <FontAwesomeIcon icon={faUser} />
-                    <span className="text-gray-500">{selectedWorkout.name}</span>
+                    <span className="text-gray-500">Users booked: {Number(marker.bookings[selectedWorkout.name] + 1)}</span>
                 </div>
             
             </>
@@ -338,17 +338,34 @@ export default function Booking() {
             {/* Workout Options */}
             <h2 className="text-lg font-bold mb-4">Select a preferred workout</h2>
             <div className="flex flex-col items-center space-y-4 mb-24">
-                {filteredWorkouts.map((workout) => (
-                    <div className={`card w-[22rem] border border-gray-200 ${selectedWorkout && selectedWorkout.id === workout.id ? "border-green-500 shadow-md" : "border-gray-200"}`} key={workout.id} 
-                    onClick={() => setSelectedWorkout(workout)}>
-                    <div className="card-body p-6">
-                    <h2 className="card-title text-xl font-semibold flex justify-between items-center">{workout.name} 
-                    </h2>
-                    <img src={workout.image} alt="" />
-                    <p className="font-semibold">{workout.description}</p>
+                {filteredWorkouts.map((workout) => {
+                    // Get the booking count from the marker's bookings using the workout name.
+                    // If there's no booking for this workout, default to 0.
+                    const bookingCount = marker.bookings[workout.name] || 0;
+
+                    return (
+                    <div
+                        className={`card w-[22rem] border border-gray-200 ${
+                        selectedWorkout && selectedWorkout.id === workout.id
+                            ? "border-green-500 shadow-md"
+                            : "border-gray-200"
+                        }`}
+                        key={workout.id}
+                        onClick={() => setSelectedWorkout(workout)}
+                    >
+                        <div className="card-body p-6">
+                        <h2 className="card-title text-xl font-semibold flex justify-between items-center">
+                            {workout.name}
+                        </h2>
+                        <img src={workout.image} alt={workout.name} />
+                        <p className="font-semibold">{workout.description}</p>
+                        <p className="text-sm text-gray-600">
+                            Users Booked: {bookingCount}
+                        </p>
+                        </div>
                     </div>
-                </div>
-                ))}
+                    );
+                })}
             </div>
         </>
     )}

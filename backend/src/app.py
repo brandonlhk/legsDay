@@ -345,7 +345,7 @@ async def nearest(request_data: DistanceRequest):
                     nearest[loc_id] = {
                         'location_data': loc,
                         'location_type': location_type,
-                        'bookings': []
+                        'bookings': {}
                     }
 
     return {
@@ -732,7 +732,8 @@ async def get_user_groups(request_data: GetUserGroupRequest):
     user_id = request_data.user_id
     current_datetime = datetime.now(pytz.timezone('Asia/Singapore'))
     chat_collection = client['events_collection']['chats']
-
+    schedule_collection = client['events_collection']['schedule_database']
+    
     # Fetch the user document
     user = user_collection.find_one({'_id': ObjectId(user_id)})
     if not user:
@@ -757,6 +758,21 @@ async def get_user_groups(request_data: GetUserGroupRequest):
             location_data = group_dict.get('location_data', {})
             chat_id = group_dict.get('chat_id', None)
             chat_data = chat_collection.find_one({'_id': ObjectId(chat_id)}, {'_id': 0, 'messages': 1})
+            
+            query = {
+                "datetime": timestamp_str,
+                "location_type": group_dict.get('location_type', ''),
+                "location_id": group_dict.get('location_id', ''),
+                "booking_name": group_dict.get('booking_name', '')
+            }
+            
+            timeslot = schedule_collection.find_one(query)
+
+            if not timeslot:
+                raise HTTPException(status_code=404, detail="Timeslot or user group not found.")
+            
+            total_users = len(timeslot.get("user_ids",""))
+            
             # if isinstance(location_data, dict) and '_id' in location_data:
             #     location_data['_id'] = str(location_data['_id'])
 
@@ -769,7 +785,8 @@ async def get_user_groups(request_data: GetUserGroupRequest):
                 "chat_data": {'chat_id': chat_id,
                                 'chat_history': chat_data},
                 "checked_in": group_dict.get('checked_in', False),
-                "location_data": location_data
+                "location_data": location_data,
+                "total_users" : total_users
             })
 
     return {

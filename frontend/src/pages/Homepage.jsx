@@ -91,22 +91,28 @@ export default function Homepage() {
       const locationData = data.locations[id];
 
       let totalPopularity = 0
-      if (locationData.bookings.length != 0) {
-        let bookings = locationData.bookings
+      let totalUser = 0
+      let bookings = {}
 
-        bookings.forEach((booking) => {
-          Object.keys(booking).forEach((timeslot) => {
-            let selectedTime = timeValue
-          
-            if (selectedTime <= 10) {
-              selectedTime = `0${timeValue}`
-            }
+      if (Object.keys(locationData.bookings).length > 0) {
 
-            let selectedTimeSlot = `${selectedTime}:00:00`
-            if (selectedTimeSlot === timeslot.split("T")[1]) {
-              totalPopularity += booking[timeslot].user_ids.length
+        Object.entries(locationData.bookings).forEach(([timestamp, events]) => {
+          let selectedTime = timeValue
+
+          if (selectedTime <= 10) {
+            selectedTime = `0${timeValue}`
+          }
+
+          let selectedTimeSlot = `${selectedTime}:00:00`
+
+          events.forEach((booking) => {
+            totalUser = booking.user_ids.length
+            if (selectedTimeSlot === timestamp.split("T")[1]) {
+              totalPopularity += totalUser
             }
-          })
+            bookings[booking.booking_name] = totalUser
+          }) 
+
         })
       }
 
@@ -124,7 +130,8 @@ export default function Homepage() {
         locationType : locationData.location_type,
         coordinates: locationData.location_data.coordinates,
         markerName: `${popularityStatus}-${locationData.location_type}`,
-        address : locationData.location_data.address || `${locationData.location_data.name}, ${locationData.location_data.postal_code}`
+        address : locationData.location_data.address || `${locationData.location_data.name}, ${locationData.location_data.postal_code}`,
+        bookings
       });
       
 
@@ -438,6 +445,12 @@ export default function Homepage() {
                               <FontAwesomeIcon icon={faMapMarkerAlt} className="mr-3 flex-shrink-0" />
                               <span className="text-gray-500 truncate overflow-hidden whitespace-nowrap">{groupObj.location_data.address || groupObj.location_data.name + ", " + groupObj.location_data.postal_code}</span>
                             </p>
+
+                            <p className="flex items-center">
+                              <FontAwesomeIcon icon={faUser} className="mr-3 flex-shrink-0" />
+                              <span className="text-gray-500 truncate overflow-hidden whitespace-nowrap">Users booked: {groupObj.total_users}</span>
+                            </p>
+                            
                               
 
                             <button

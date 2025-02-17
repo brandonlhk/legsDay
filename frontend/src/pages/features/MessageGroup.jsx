@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useLocation  } from "react-router-dom";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faCalendarAlt, faMapMarkerAlt, faPaperPlane } from "@fortawesome/free-solid-svg-icons";
+import { faCalendarAlt, faMapMarkerAlt, faPaperPlane, faUser } from "@fortawesome/free-solid-svg-icons";
 import dayjs from "dayjs";
 
 export default function MessageGroup() {
@@ -247,6 +247,13 @@ export default function MessageGroup() {
                         {location.address || location.name + ", " + location.postal_code}
                       </span>
                     </p>
+                    <p>
+                      <FontAwesomeIcon icon={faUser} className="mr-3" />
+                      <span className="text-gray-500">
+                        Users booked: {groupObj.total_users}
+                      </span>
+                    </p>
+
 
                     <button
                       className={`w-full py-3 font-bold rounded-full ${
@@ -303,6 +310,10 @@ export default function MessageGroup() {
             <p>
               <FontAwesomeIcon icon={faMapMarkerAlt} className="mr-3" />
               {currentGroup.location_data.address || currentGroup.location_data.name + ", " + currentGroup.location_data.postal_code}
+            </p>
+            <p>
+              <FontAwesomeIcon icon={faUser} className="mr-3" />
+              Users booked: {currentGroup.total_users}
             </p>
           </div>
 
