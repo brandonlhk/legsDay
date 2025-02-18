@@ -109,8 +109,8 @@ export default function Homepage() {
             totalUser = booking.user_ids.length
             if (selectedTimeSlot === timestamp.split("T")[1]) {
               totalPopularity += totalUser
+              bookings[booking.booking_name] = totalUser
             }
-            bookings[booking.booking_name] = totalUser
           }) 
 
         })
@@ -221,7 +221,7 @@ export default function Homepage() {
   const [selectedDate, setSelectedDate] = useState(
     currentHour >= 21 ? today.add(1, "day").format("YYYY-MM-DD") : today.format("YYYY-MM-DD")
   );
-  const startDay = currentHour >= 21 ? today.add(1, "day") : today;
+  const startDay = currentHour >= 22 ? today.add(1, "day") : today;
   const dates = Array.from({ length: 7 }, (_, index) =>
     startDay.add(index, "day").format("YYYY-MM-DD"));
   const startHour = 7; // Start at 7 AM
@@ -244,6 +244,10 @@ export default function Homepage() {
 
   const handleDateSelect = (date) => {
     setSelectedDate(date);
+    setSelectedTimeslot((prev) => ({
+      ...prev,
+      date: date,
+    }));
     const isToday = dayjs(date).isSame(dayjs(), "day");
     const filteredSlots = isToday
       ? timeslots.filter((_, index) => startHour + index >= currentHour)

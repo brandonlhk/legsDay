@@ -294,7 +294,7 @@ export default function Booking() {
             <>
                 <div className="flex items-center gap-3 mb-2">
                     <FontAwesomeIcon icon={faUser} />
-                    <span className="text-gray-500">Users booked: {Number(marker.bookings[selectedWorkout.name] + 1)}</span>
+                    <span className="text-gray-500">Users booked: {Number(marker.bookings[selectedWorkout.name] ?? 0) + 1}</span>
                 </div>
             
             </>
