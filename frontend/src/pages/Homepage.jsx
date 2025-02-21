@@ -221,7 +221,7 @@ export default function Homepage() {
   const [selectedDate, setSelectedDate] = useState(
     currentHour >= 21 ? today.add(1, "day").format("YYYY-MM-DD") : today.format("YYYY-MM-DD")
   );
-  const startDay = currentHour >= 22 ? today.add(1, "day") : today;
+  const startDay = currentHour >= 21 ? today.add(1, "day") : today;
   const dates = Array.from({ length: 7 }, (_, index) =>
     startDay.add(index, "day").format("YYYY-MM-DD"));
   const startHour = 7; // Start at 7 AM
@@ -545,41 +545,41 @@ export default function Homepage() {
           {/* LEGEND */}
           <div className="mt-2">
             {/* top part */}
-            <div className="flex gap-3 text-sm">
+            <div className="flex gap-3 text-sm justify-center">
 
               <div className="flex items-center gap-2">
                 <span className="w-8 h-2 bg-green-500 rounded-md"></span>
-                <span>Less Popular</span>
+                <span className="text-[0.8rem]">Less Popular</span>
               </div>
 
               <div className="flex items-center gap-2">
                 <span className="w-8 h-2 bg-yellow-500 rounded-md"></span>
-                <span>Popular</span>
+                <span className="text-[0.8rem]">Popular</span>
               </div>
 
               <div className="flex items-center gap-2">
                 <span className="w-8 h-2 bg-orange-500 rounded-md"></span>
-                <span>Very Popular</span>
+                <span className="text-[0.8rem]">Very Popular</span>
               </div>
 
             </div>
             
             {view === "all_markers" && (
-              <div className="flex gap-6 text-sm">
+              <div className="flex gap-6 text-sm justify-center">
 
                 <div className="flex">
                   <img src="park.png" alt="" className="w-6 h-6"/>
-                  <p>Park</p>
+                  <p className="text-[0.8rem]">Park</p>
                 </div>
 
                 <div className="flex">
                   <img src="fitness-corner.png" alt="" className="w-6 h-6"/>
-                  <p>Fitness Corner</p>
+                  <p className="text-[0.8rem]">Fitness Corner</p>
                 </div>
                 
                 <div className="flex">
                   <img src="gym.png" alt="" className="w-6 h-6"/>
-                  <p>Gym</p>
+                  <p className="text-[0.8rem]">Gym</p>
                 </div>
 
               </div>
@@ -591,7 +591,8 @@ export default function Homepage() {
           {view === "all_markers" && (
             <>
             {/* SLIDER */}
-            <div className="flex flex-col items-center">
+            <div className="flex items-center gap-3">
+
               <div className="relative w-full mt-10">
                 {/* Tooltip */}
                 <div
@@ -608,7 +609,7 @@ export default function Homepage() {
                   max="21" // End time (10 PM)
                   value={timeValue}
                   step="1" // Step increments of 1 hour
-                  className="range  w-full range-xs"
+                  className="range w-full"
                   onChange={(e) => {
                     const newValue = Number(e.target.value);
                     // If today, prevent moving slider to earlier times than currentHour
@@ -764,6 +765,7 @@ export default function Homepage() {
                   </button>
               ))}
             </div>
+
    
 
             <div className="mb-32"></div>
