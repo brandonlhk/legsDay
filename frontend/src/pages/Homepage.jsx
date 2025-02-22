@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faTrophy, faSearch, faUser, faCalendarAlt, faMapMarkerAlt } from "@fortawesome/free-solid-svg-icons";
 import Map from "../components/Map";
+import TimeSlotButton from "../components/TimeSlotButton"
 import dayjs from "dayjs"; 
 
 
@@ -349,6 +350,53 @@ export default function Homepage() {
     // Update the slider value
     setTimeValue(parsedHour);
   };
+
+  function convertTo24Hour(timeStr) {
+    // Split into the numeric part and the AM/PM modifier.
+    const [time, modifier] = timeStr.split(/(am|pm)/i).filter(Boolean);
+    let [hours, minutes] = time.split(':');
+    hours = parseInt(hours, 10);
+    minutes = parseInt(minutes, 10);
+  
+    // Adjust hours based on the modifier.
+    if (modifier.toLowerCase() === 'pm' && hours < 12) {
+      hours += 12;
+    }
+    if (modifier.toLowerCase() === 'am' && hours === 12) {
+      hours = 0;
+    }
+  
+    // Format hours and minutes with leading zeros and append seconds.
+    return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:00`;
+  }
+
+  const getPopularityForTimeSlot = (date, timeslot, location) => {
+    let totalPopularity = 0;
+
+      // If no location or no bookings, return 0
+    if (!location || !location.bookings) return 0;
+
+    // Extract the start time from the timeslot (assumes format "8:00am - 9:00am")
+    const startTimeStr = timeslot.split(" - ")[0]; // "8:00am"
+    
+    // Convert to a 24-hour time format to match booking timestamps (assumes date is in "YYYY-MM-DD")
+    const formattedTime = convertTo24Hour(startTimeStr)
+    
+    Object.entries(location.bookings).forEach(([timestamp, events]) => {
+      // Example timestamp: "2025-02-22T18:00:00"
+      const bookingTime = timestamp.split("T")[1]; // "18:00:00"
+      if (bookingTime === formattedTime) {
+        // Sum up the user_ids length
+        events.forEach((booking) => {
+          totalPopularity += booking.user_ids.length;
+        });
+      }
+    });
+    
+    return totalPopularity;
+  };
+  
+  
   
 
   // ------------------------------------------- END RENDER TIMESLOT  -------------------------------------------
@@ -763,22 +811,30 @@ export default function Homepage() {
             
             {/* RENDER DATES */}
             <div className="grid grid-cols-2 gap-4 mt-4">
-              {renderedTimeslots.map((timeslot, index) => (
-                <button
+              {renderedTimeslots.map((timeslot, index) => {
+                const popularity = getPopularityForTimeSlot(
+                  selectedDate,
+                  timeslot,
+                  currentLocationData.locations[selectedMarkerId] // pass just the selected location
+                );
+
+                const isSelected =
+                  selectedTimeslot.date === selectedDate &&
+                  selectedTimeslot.timeslot === timeslot;
+
+                return (
+                  <TimeSlotButton
                     key={index}
+                    timeslot={timeslot}
+                    popularity={popularity}
+                    isSelected={isSelected}
                     onClick={() => handleTimeslotSelect(selectedDate, timeslot)}
-                    className={`p-3 rounded-md border font-bold text-[0.9rem] ${
-                      selectedTimeslot.date === selectedDate && selectedTimeslot.timeslot === timeslot
-                        ? "border-green-500 border-2"
-                        : "border-gray-200 text-gray-700 border-2"
-                    }`}
-                  >
-                    {timeslot}
-                  </button>
-              ))}
+                  />
+                );
+              })}
             </div>
 
-   
+
 
             <div className="mb-32"></div>
 
