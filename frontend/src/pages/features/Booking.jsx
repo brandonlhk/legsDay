@@ -8,6 +8,7 @@ export default function Booking() {
     const marker = JSON.parse(localStorage.getItem("marker"))
     const timeslot = JSON.parse(localStorage.getItem("timeslot"))
     const userId = localStorage.getItem("userId")
+    const bookings = JSON.parse(localStorage.getItem("bookings"))
     // console.log(marker)
 
     // Extract and preprocess the start time (e.g., "7:00am")
@@ -16,8 +17,6 @@ export default function Booking() {
     const [hour, minute] = startTime.replace(/am|pm/i, "").split(":").map(Number); // Extract hour and minute
     const formattedHour = isPM && hour !== 12 ? hour + 12 : (!isPM && hour === 12 ? 0 : hour); // Handle PM and 12 AM edge cases
     const formattedTime = `${String(formattedHour).padStart(2, "0")}:${String(minute || 0).padStart(2, "0")}:00`; // Format to "HH:MM:SS"
-
-    const timestampKey = `${timeslot.date}T${formattedTime}`
 
     const navigate = useNavigate()
     const [selectedWorkout, setSelectedWorkout] = useState(null);
@@ -294,7 +293,7 @@ export default function Booking() {
             <>
                 <div className="flex items-center gap-3 mb-2">
                     <FontAwesomeIcon icon={faUser} />
-                    <span className="text-gray-500">Users booked: {Number(marker.bookings[selectedWorkout.name] ?? 0) + 1}</span>
+                    <span className="text-gray-500">Users booked: {Number(bookings[selectedWorkout.name] ?? 0) + 1}</span>
                 </div>
             
             </>
@@ -341,7 +340,11 @@ export default function Booking() {
                 {filteredWorkouts.map((workout) => {
                     // Get the booking count from the marker's bookings using the workout name.
                     // If there's no booking for this workout, default to 0.
-                    const bookingCount = marker.bookings[workout.name] || 0;
+                    const bookingsObj = bookings[marker.id]
+                    let bookingCount = 0
+                    if (bookingsObj){ 
+                        bookingCount = bookingsObj[workout.name];
+                    }                    
 
                     return (
                     <div
@@ -360,7 +363,7 @@ export default function Booking() {
                         <img src={workout.image} alt={workout.name} />
                         <p className="font-semibold">{workout.description}</p>
                         <p className="text-sm text-gray-600">
-                            Users Booked: {bookingCount}
+                            No of attendees: {bookingCount}
                         </p>
                         </div>
                     </div>

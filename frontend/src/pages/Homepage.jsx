@@ -89,7 +89,6 @@ export default function Homepage() {
     const allLocations = [];
     Object.keys(data.locations).forEach((id) => {
       const locationData = data.locations[id];
-
       let totalPopularity = 0
       let totalUser = 0
       let bookings = {}
@@ -109,7 +108,8 @@ export default function Homepage() {
             totalUser = booking.user_ids.length
             if (selectedTimeSlot === timestamp.split("T")[1]) {
               totalPopularity += totalUser
-              bookings[booking.booking_name] = totalUser
+              bookings[id] = {[booking.booking_name] : totalUser}
+              localStorage.setItem("bookings", JSON.stringify(bookings))
             }
           }) 
 
@@ -131,9 +131,7 @@ export default function Homepage() {
         coordinates: locationData.location_data.coordinates,
         markerName: `${popularityStatus}-${locationData.location_type}`,
         address : locationData.location_data.address || `${locationData.location_data.name}, ${locationData.location_data.postal_code}`,
-        bookings
       });
-      
 
     });
 
