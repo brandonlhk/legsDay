@@ -30,6 +30,14 @@ export default function Booking() {
     // view
     const [view, setView] = useState("selectWorkout")
     
+    const scrollBackToTop = () => {
+        window.scrollTo({
+            top: 0,
+            left: 0,
+            behavior: 'smooth'
+        });
+    }
+
     // handleViews
     const handleBack = () => {
         if (view === "selectWorkout") {
@@ -38,11 +46,13 @@ export default function Booking() {
 
         if (view === "agree") {
             setView("selectWorkout")
+            scrollBackToTop()
         }
     }
 
     const selectWorkout = () => {
         setView("agree")
+        scrollBackToTop()
     }
 
 
@@ -207,6 +217,11 @@ export default function Booking() {
 
             // Update the view after both requests succeed
             setView("complete");
+            window.scrollTo({
+                top: 0,
+                left: 0,
+                behavior: 'smooth'
+            });
         } catch (error) {
             console.error("An error occurred:", error);
             alert("An error occurred. Please try again.");

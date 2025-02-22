@@ -58,16 +58,26 @@ export default function Homepage() {
   const [selectedMarker, setSelectedMarker] = useState(null);
   const [selectedMarkerId, setSelectedMarkerId] = useState(null)
 
+  const scrollBackToTop = () => {
+    window.scrollTo({
+      top: 0,
+      left: 0,
+      behavior: 'smooth'
+  });
+  }
+
   const handleMarkerClick = (location) => {
     setSelectedMarker(location);
     setSelectedMarkerId(location.id)
     setView("timeslots"); // Switch to timeslot view
+    scrollBackToTop()
   }
 
   const handleBack = () => {
     setSelectedMarker(null);
     setSelectedMarkerId(null)
     setView("all_markers"); // Switch back to all markers view
+    scrollBackToTop()
   }
 
   // ------------------------------------------- END VIEW -------------------------------------  
@@ -205,6 +215,10 @@ export default function Homepage() {
 
       fetchGroups();
   }, []);
+
+  useEffect(() => {
+    scrollBackToTop()
+  }, [])
   
 
   // ------------------------------------------- END MAP  -------------------------------------------
