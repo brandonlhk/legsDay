@@ -34,7 +34,6 @@ export default function MessageGroup() {
 
     if ( from === "joinConvo") {
       const groupData = JSON.parse(sessionStorage.getItem("groupData"));
-      console.log(groupData)
       setView("viewGroup");
       setGroupTime(groupData.datetime)
       setLocationId(groupData.location_id)

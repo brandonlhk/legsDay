@@ -232,9 +232,9 @@ export default function Homepage() {
   const today = dayjs(); // Today's date
   const currentHour = today.hour()
   const [selectedDate, setSelectedDate] = useState(
-    currentHour >= 21 ? today.add(1, "day").format("YYYY-MM-DD") : today.format("YYYY-MM-DD")
+    currentHour >= 22 ? today.add(1, "day").format("YYYY-MM-DD") : today.format("YYYY-MM-DD")
   );
-  const startDay = currentHour >= 21 ? today.add(1, "day") : today;
+  const startDay = currentHour >= 22 ? today.add(1, "day") : today;
   const dates = Array.from({ length: 7 }, (_, index) =>
     startDay.add(index, "day").format("YYYY-MM-DD"));
   const startHour = 7; // Start at 7 AM

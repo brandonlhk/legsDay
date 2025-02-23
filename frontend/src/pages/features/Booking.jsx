@@ -194,7 +194,6 @@ export default function Booking() {
             
             // Handle the join request response
             const status = await joinResponse.json() 
-            console.log(status)
 
             if (status.message.includes("already joined")) {
                 alert("You have joined another group in the same timeslot!");
