@@ -357,7 +357,9 @@ export default function Booking() {
                     const bookingsObj = bookings[marker.id]
                     let bookingCount = 0
                     if (bookingsObj){ 
-                        bookingCount = bookingsObj[workout.name];
+                        if (bookingsObj[workout.name]) {
+                            bookingCount = bookingsObj[workout.name];
+                        }
                     }                    
 
                     return (

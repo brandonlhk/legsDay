@@ -257,16 +257,26 @@ export default function Homepage() {
 
   const handleDateSelect = (date) => {
     setSelectedDate(date);
-    setSelectedTimeslot((prev) => ({
-      ...prev,
-      date: date,
-    }));
     const isToday = dayjs(date).isSame(dayjs(), "day");
     const filteredSlots = isToday
       ? timeslots.filter((_, index) => startHour + index >= currentHour)
       : timeslots;
     setRenderedTimeslots(filteredSlots);
+  
+    // Set the first available timeslot as active if it exists
+    if (filteredSlots.length > 0) {
+      setSelectedTimeslot({
+        date: date,
+        timeslot: filteredSlots[0],
+      });
+    } else {
+      setSelectedTimeslot({
+        date: date,
+        timeslot: null,
+      });
+    }
   };
+  
 
 
   const formatTime = (value) => {
