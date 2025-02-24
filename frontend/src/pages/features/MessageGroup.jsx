@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate, useLocation  } from "react-router-dom";
+import { useNavigate, useLocation, Navigate  } from "react-router-dom";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faCalendarAlt, faMapMarkerAlt, faPaperPlane, faUser } from "@fortawesome/free-solid-svg-icons";
 import dayjs from "dayjs";
@@ -8,6 +8,10 @@ export default function MessageGroup() {
   const navigate = useNavigate();
   const name = localStorage.getItem("name")
   const userId = localStorage.getItem("userId");
+
+  if (!userId) {
+    return <Navigate to="/signin" />;
+  }
 
   const [groups, setGroups] = useState(null); // State to store user groups
   const [view, setView] = useState("groups"); // Tracks which view to display (group list or chat)

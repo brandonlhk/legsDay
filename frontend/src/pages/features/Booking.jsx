@@ -1,13 +1,18 @@
 import { useState, useEffect } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faCalendarAlt, faMapMarkerAlt, faUser, faSignal, faFileLines, faCircleCheck, faBookOpen } from "@fortawesome/free-solid-svg-icons";
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Navigate } from 'react-router-dom';
 import dayjs from "dayjs"
 
 export default function Booking() {
     const marker = JSON.parse(localStorage.getItem("marker"))
     const timeslot = JSON.parse(localStorage.getItem("timeslot"))
     const userId = localStorage.getItem("userId")
+
+    if (!userId) {
+        return <Navigate to="/signin" />;
+    }
+
     const bookings = JSON.parse(localStorage.getItem("bookings"))
     // console.log(marker)
 
@@ -46,8 +51,9 @@ export default function Booking() {
 
         if (view === "agree") {
             setView("selectWorkout")
-            scrollBackToTop()
         }
+
+        scrollBackToTop()
     }
 
     const selectWorkout = () => {
@@ -217,11 +223,7 @@ export default function Booking() {
 
             // Update the view after both requests succeed
             setView("complete");
-            window.scrollTo({
-                top: 0,
-                left: 0,
-                behavior: 'smooth'
-            });
+            scrollBackToTop()
         } catch (error) {
             console.error("An error occurred:", error);
             alert("An error occurred. Please try again.");

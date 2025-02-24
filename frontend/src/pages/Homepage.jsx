@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Navigate } from 'react-router-dom';
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faTrophy, faSearch, faUser, faCalendarAlt, faMapMarkerAlt } from "@fortawesome/free-solid-svg-icons";
 import Map from "../components/Map";
@@ -9,12 +9,16 @@ import dayjs from "dayjs";
 
 export default function Homepage() {
 
-
+  const userId = localStorage.getItem("userId")
+  
+  if (!userId) {
+    return <Navigate to="/signin" />;
+  }
+  
   // ------------------------------------------- LOAD -------------------------------------------
   const [name, setName] = useState(localStorage.getItem("name"))
   const [workoutProg, setWorkoutProg] = useState(localStorage.getItem("workoutCounter"))
   const [groups, setGroups] = useState(null); // State to store user groups
-  const userId = localStorage.getItem("userId")
   const navigate = useNavigate()
   const [loading, setLoading] = useState(false)
   // Track if `fetchCurrentLocation` has been called
