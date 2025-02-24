@@ -220,6 +220,8 @@ export default function Homepage() {
   useEffect(() => {
     scrollBackToTop()
   }, [])
+
+  
   
 
   // ------------------------------------------- END MAP  -------------------------------------------
@@ -326,7 +328,6 @@ export default function Homepage() {
     ? timeslots.filter((_, index) => startHour + index === currentHour)
     : timeslots;
   const [renderedTimeslots, setRenderedTimeslots] = useState(filteredTimeslots);
-  console.log(renderedTimeslots)
   
 
   // ------------------------------------------- END SLIDER -------------------------------------------
@@ -416,7 +417,6 @@ export default function Homepage() {
 
 
     const handleNextPage = () => {
-      console.log(selectedMarker)
       localStorage.setItem("marker", JSON.stringify(selectedMarker))
       localStorage.setItem("timeslot", JSON.stringify(selectedTimeslot))
       navigate("/booking")
@@ -459,6 +459,19 @@ export default function Homepage() {
 
       handleSearch();
     }, [selectedDate]);
+
+    useEffect(() => {
+      if (renderedTimeslots.length > 0) {
+        const firstSlot = renderedTimeslots[0];
+        // If there's only one timeslot, or if there are multiple but nothing is selected
+        if (
+          renderedTimeslots.length === 1 && selectedTimeslot?.timeslot !== firstSlot ||
+          renderedTimeslots.length > 1 && !selectedTimeslot?.timeslot
+        ) {
+          handleTimeslotSelect(selectedDate, firstSlot);
+        }
+      }
+    }, [renderedTimeslots, selectedDate, selectedTimeslot]);
   
 
   return (
