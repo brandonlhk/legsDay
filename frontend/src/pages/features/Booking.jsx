@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faCalendarAlt, faMapMarkerAlt, faUser, faSignal, faFileLines, faCircleCheck, faBookOpen } from "@fortawesome/free-solid-svg-icons";
 import { useNavigate } from 'react-router-dom';
@@ -54,6 +54,10 @@ export default function Booking() {
         setView("agree")
         scrollBackToTop()
     }
+
+    useEffect(() => {
+        scrollBackToTop()
+    }, [])
 
 
     const workouts = [
