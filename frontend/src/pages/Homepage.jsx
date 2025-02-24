@@ -319,11 +319,14 @@ export default function Homepage() {
   };
   const [timeValue, setTimeValue] = useState(getDefaultTime);
   const timeslots = generateTimeSlots(startHour, endHour + 1)
+  const isToday = dayjs(selectedDate).isSame(dayjs(), 'day');
+  const cutoffHour = 22
   const filteredTimeslots =
-  dayjs(selectedDate).isSame(dayjs(), "day") && !isAfterEndHour
-    ? timeslots.filter((_, index) => startHour + index >= currentHour)
+  isToday && timeValue < cutoffHour
+    ? timeslots.filter((_, index) => startHour + index === currentHour)
     : timeslots;
   const [renderedTimeslots, setRenderedTimeslots] = useState(filteredTimeslots);
+  console.log(renderedTimeslots)
   
 
   // ------------------------------------------- END SLIDER -------------------------------------------
@@ -413,6 +416,7 @@ export default function Homepage() {
 
 
     const handleNextPage = () => {
+      console.log(selectedMarker)
       localStorage.setItem("marker", JSON.stringify(selectedMarker))
       localStorage.setItem("timeslot", JSON.stringify(selectedTimeslot))
       navigate("/booking")
