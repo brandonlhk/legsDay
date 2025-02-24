@@ -12,19 +12,21 @@ export default function TimeSlotButton ({ timeslot, popularity, isSelected, onCl
     return (
       <button
         onClick={onClick}
-        className={`p-3 rounded-md border font-bold text-[0.8rem] ${
+        className={`relative p-3 rounded-md border font-bold text-[0.8rem] ${
           isSelected ? "border-green-500 border-2" : "border-gray-200 text-gray-700 border-2"
         }`}
       >
         {timeslot}
-        {/* Circle indicator */}
-        <span className={circleColor}
+        {/* Circle indicator positioned at the top right */}
+        <span
+          className={circleColor}
           style={{
             width: '12px',
             height: '12px',
             borderRadius: '50%',
-            display: 'inline-block',
-            marginLeft: '8px'
+            position: 'absolute',
+            top: '8px',
+            right: '8px'
           }}
         ></span>
       </button>
