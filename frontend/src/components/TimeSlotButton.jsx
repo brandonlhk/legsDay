@@ -12,7 +12,7 @@ export default function TimeSlotButton ({ timeslot, popularity, isSelected, onCl
     return (
       <button
         onClick={onClick}
-        className={`p-3 rounded-md border font-bold text-[0.9rem] ${
+        className={`p-3 rounded-md border font-bold text-[0.8rem] ${
           isSelected ? "border-green-500 border-2" : "border-gray-200 text-gray-700 border-2"
         }`}
       >

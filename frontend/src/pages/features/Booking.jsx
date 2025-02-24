@@ -9,7 +9,7 @@ export default function Booking() {
     const timeslot = JSON.parse(localStorage.getItem("timeslot"))
     const userId = localStorage.getItem("userId")
     const bookings = JSON.parse(localStorage.getItem("bookings"))
-    console.log(marker)
+    // console.log(marker)
 
     // Extract and preprocess the start time (e.g., "7:00am")
     const startTime = timeslot.timeslot.split(" - ")[0].trim(); // Extract the starting time
@@ -136,9 +136,6 @@ export default function Booking() {
     );
 
     const join = async () => {
-        // Construct the join request payload
-        // console.log(marker)
-        // console.log(selectedWorkout);
         const payloadForJoin = {
             date: timeslot.date, // Expected timeslot format: { date: "YYYY-MM-DD", time: "HH:mm" }
             time: formattedTime,
