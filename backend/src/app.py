@@ -28,9 +28,10 @@ app.add_middleware(
     allow_headers=["*"]
 )
 # MongoDB connection
-mongo_uri = os.getenv('MONGO_URI', 'mongodb+srv://a9542152:qBieNIqZZsRhEzDr@legsday.69mgs.mongodb.net/?retryWrites=true&w=majority&appName=legsDay')
+mongo_uri = os.environ['MONGO_URI']
+# print(mongo_uri)
 client = MongoClient(mongo_uri)
-client.server_info()
+client.admin.command("ping")
 user_db = client.user
 user_collection = user_db.users
 exercise_db = client['exercise_database']

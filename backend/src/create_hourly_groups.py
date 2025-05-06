@@ -100,7 +100,7 @@ def generate_empty_dict(location_ids):
 
     # Loop through each day of the next week (7 days)
     current_day = current_date
-    for _ in tqdm(range(8)):  # Try 2 weeks first
+    for _ in tqdm(range(30)):  # Try 2 weeks first
         for hour in range(7, 23):  # Restrict to hours between 7 AM (inclusive) and 10 PM (inclusive)
             # Generate the current hour key (in datetime format)
             hour_time = current_day.replace(hour=hour, minute=0, second=0, microsecond=0)

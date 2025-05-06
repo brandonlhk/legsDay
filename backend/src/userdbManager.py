@@ -2,7 +2,7 @@ import os
 from pymongo import MongoClient
 
 # MongoDB connection
-mongo_uri = os.getenv('MONGO_URI', 'mongodb+srv://a9542152:qBieNIqZZsRhEzDr@legsday.69mgs.mongodb.net/?retryWrites=true&w=majority&appName=legsDay')
+mongo_uri = os.environ['MONGO_URI']
 client = MongoClient(mongo_uri)
 client.server_info()
 user_db = client.user

@@ -25,9 +25,7 @@ services:
       - ./data:/data
       # - ../data:/data 
     # depends_on: 
-    #   - mongodb 
-    environment: 
-      MONGO_URI: mongodb+srv://a9542152:qBieNIqZZsRhEzDr@legsday.69mgs.mongodb.net/?retryWrites=true&w=majority&appName=legsDay
+    #   - mongodb
     # command: python3 exercisedbDriver.py  # Example of starting a service, can run from inside container so commented out 
     ports: 
       - "5000:5000"  # For local testing; AWS Lambda doesn't need this 
